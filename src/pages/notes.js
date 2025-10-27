@@ -2,13 +2,14 @@ import { html } from '../lib/ui.js';
 import { useState } from '../lib/hooks.js';
 import NoteCard from '../components/note-card.js';
 import { getNotes, getTags } from '../data/store.js';
+import { useSignalValue } from '../lib/signals.js';
 
 const segments = ['Tous', 'Favoris'];
 
 export default function NotesPage() {
   const [segment, setSegment] = useState('Tous');
-  const notes = getNotes().value;
-  const tags = getTags().value;
+  const notes = useSignalValue(getNotes());
+  const tags = useSignalValue(getTags());
 
   const filtered = notes.filter((note) => {
     if (segment === 'Favoris') {

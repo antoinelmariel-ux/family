@@ -1,6 +1,6 @@
 import { html } from '../lib/ui.js';
 import { useEffect, useState } from '../lib/hooks.js';
-import { useSignalEffect } from '../lib/signals.js';
+import { useSignalEffect, useSignalValue } from '../lib/signals.js';
 import { activeTab, bootstrap, isReady, searchQuery, version } from '../data/store.js';
 import TabBar from './tabbar.js';
 import SearchBar from './search-bar.js';
@@ -40,7 +40,8 @@ function useHashRoute(signal) {
 
 export default function AppShell() {
   const [showSheet, setShowSheet] = useState(false);
-  const ready = isReady();
+  const ready = useSignalValue(isReady());
+  const currentTab = useSignalValue(activeTab);
 
   useEffect(() => {
     bootstrap();
@@ -48,7 +49,7 @@ export default function AppShell() {
 
   useHashRoute(activeTab);
 
-  const ActivePage = routeMap[activeTab.value];
+  const ActivePage = routeMap[currentTab];
 
   return html`
     <div class="app-shell">

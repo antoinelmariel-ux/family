@@ -2,13 +2,14 @@ import { html } from '../lib/ui.js';
 import { useState } from '../lib/hooks.js';
 import TaskItem from '../components/task-item.js';
 import { getTasks, getTags } from '../data/store.js';
+import { useSignalValue } from '../lib/signals.js';
 
 const filters = ['Aujourd’hui', 'À venir', 'Toutes'];
 
 export default function TasksPage() {
   const [filter, setFilter] = useState('Aujourd’hui');
-  const tasks = getTasks().value;
-  const tags = getTags().value;
+  const tasks = useSignalValue(getTasks());
+  const tags = useSignalValue(getTags());
 
   const todayISO = new Date().toISOString().split('T')[0];
   const filtered = tasks.filter((task) => {

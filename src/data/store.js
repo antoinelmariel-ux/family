@@ -14,7 +14,7 @@ const ready = signal(false);
 export const searchQuery = signal('');
 export const activeTab = signal('home');
 
-const fallbackVersion = '0.1.2';
+const fallbackVersion = '0.1.3';
 const versionSource = typeof window !== 'undefined' && window.APP_VERSION ? window.APP_VERSION : fallbackVersion;
 export const version = `v${versionSource}`;
 
@@ -94,7 +94,7 @@ export async function bootstrap() {
 }
 
 export function isReady() {
-  return ready.value;
+  return ready;
 }
 
 export function getNotes() {
