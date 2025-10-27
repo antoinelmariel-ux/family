@@ -1,9 +1,5 @@
-/// <reference lib="webworker" />
-
 const CACHE_NAME = 'codex-shell-v1';
 const ASSETS = ['/', '/index.html'];
-
-declare const self: ServiceWorkerGlobalScope;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

@@ -1,4 +1,4 @@
-const defaultCategories: Record<string, string> = {
+const defaultCategories = {
   tomate: 'Fruits & Légumes',
   tomates: 'Fruits & Légumes',
   banane: 'Fruits & Légumes',
@@ -16,7 +16,7 @@ const defaultCategories: Record<string, string> = {
   café: 'Épicerie'
 };
 
-export function guessCategory(name: string) {
+export function guessCategory(name) {
   const key = name.normalize('NFD').replace(/[^\p{L}\p{N}]+/gu, '').toLowerCase();
   const entries = Object.entries(defaultCategories);
   for (const [word, category] of entries) {

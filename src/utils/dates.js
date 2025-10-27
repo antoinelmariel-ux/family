@@ -1,4 +1,4 @@
-export function formatDate(date?: string | number) {
+export function formatDate(date) {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : new Date(date);
   return d.toLocaleDateString('fr-FR', {
@@ -7,7 +7,7 @@ export function formatDate(date?: string | number) {
   });
 }
 
-export function isToday(date?: string) {
+export function isToday(date) {
   if (!date) return false;
   const today = new Date();
   const candidate = new Date(date);
@@ -18,7 +18,7 @@ export function isToday(date?: string) {
   );
 }
 
-export function isPast(date?: string) {
+export function isPast(date) {
   if (!date) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);

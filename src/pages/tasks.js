@@ -1,7 +1,7 @@
-import { useState } from 'preact/hooks';
-import TaskItem from '../components/task-item';
-import { getTasks, getTags } from '../data/store';
-import './tasks.css';
+import { html } from '../lib/ui.js';
+import { useState } from '../lib/hooks.js';
+import TaskItem from '../components/task-item.js';
+import { getTasks, getTags } from '../data/store.js';
 
 const filters = ['Aujourd’hui', 'À venir', 'Toutes'];
 
@@ -21,22 +21,22 @@ export default function TasksPage() {
     return true;
   });
 
-  return (
+  return html`
     <section class="tasks">
       <div class="chips">
-        {filters.map((name) => (
-          <button key={name} class={filter === name ? 'active' : ''} onClick={() => setFilter(name)}>
-            {name}
-          </button>
-        ))}
-      </div>
-      <div>
-        {filtered.length ? (
-          filtered.map((task) => <TaskItem key={task.id} task={task} tags={tags} />)
-        ) : (
-          <p class="empty">Aucune tâche dans cette vue.</p>
+        ${filters.map(
+          (name) => html`
+            <button key=${name} class=${filter === name ? 'active' : ''} onClick=${() => setFilter(name)}>
+              ${name}
+            </button>
+          `
         )}
       </div>
+      <div>
+        ${filtered.length
+          ? filtered.map((task) => html`<${TaskItem} key=${task.id} task=${task} tags=${tags} />`)
+          : html`<p class="empty">Aucune tâche dans cette vue.</p>`}
+      </div>
     </section>
-  );
+  `;
 }

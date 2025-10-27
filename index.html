@@ -2,14 +2,29 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <link rel="icon" type="image/svg+xml" href="./public/icons/icon-192.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Codex Notes • Tâches • Courses</title>
     <meta name="theme-color" content="#0A84FF" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="./public/manifest.webmanifest" />
+    <link rel="stylesheet" href="./src/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/components/app-shell.css" />
+    <link rel="stylesheet" href="./src/components/tabbar.css" />
+    <link rel="stylesheet" href="./src/components/search-bar.css" />
+    <link rel="stylesheet" href="./src/components/sheet-add.css" />
+    <link rel="stylesheet" href="./src/components/note-card.css" />
+    <link rel="stylesheet" href="./src/components/task-item.css" />
+    <link rel="stylesheet" href="./src/components/grocery-item.css" />
+    <link rel="stylesheet" href="./src/pages/home.css" />
+    <link rel="stylesheet" href="./src/pages/notes.css" />
+    <link rel="stylesheet" href="./src/pages/tasks.css" />
+    <link rel="stylesheet" href="./src/pages/groceries.css" />
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      window.APP_VERSION = '0.1.2';
+    </script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

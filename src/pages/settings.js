@@ -1,5 +1,7 @@
+import { html } from '../lib/ui.js';
+
 export default function SettingsPage() {
-  return (
+  return html`
     <section>
       <h2>Réglages</h2>
       <ul>
@@ -8,5 +10,5 @@ export default function SettingsPage() {
         <li>Templates personnalisés</li>
       </ul>
     </section>
-  );
+  `;
 }

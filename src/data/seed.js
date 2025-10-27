@@ -1,7 +1,6 @@
-import { nanoid } from '../utils/id';
-import type { Note, Task, GroceryItem, Store, Tag } from './models';
+import { nanoid } from '../utils/id.js';
 
-export function seedNotes(): Note[] {
+export function seedNotes() {
   const now = Date.now();
   return [
     {
@@ -16,14 +15,14 @@ export function seedNotes(): Note[] {
   ];
 }
 
-export function seedTasks(tags: Tag[]): Task[] {
+export function seedTasks(tags) {
   const now = Date.now();
-  const todayTag = tags.find((tag) => tag.name === 'Aujourd\'hui');
+  const todayTag = tags.find((tag) => tag.name === "Aujourd'hui");
   return [
     {
       id: nanoid(),
       title: 'Tester Codex',
-      note: 'Appuie sur **+** pour créer une tâche.',
+      note: "Appuie sur **+** pour créer une tâche.",
       due: new Date().toISOString().split('T')[0],
       priority: 2,
       tags: todayTag ? [todayTag.id] : [],
@@ -34,7 +33,7 @@ export function seedTasks(tags: Tag[]): Task[] {
   ];
 }
 
-export function seedGroceries(store: Store): GroceryItem[] {
+export function seedGroceries(store) {
   const now = Date.now();
   return [
     {
@@ -48,7 +47,7 @@ export function seedGroceries(store: Store): GroceryItem[] {
     },
     {
       id: nanoid(),
-      name: 'Lait d\'avoine',
+      name: "Lait d'avoine",
       qty: '2L',
       category: 'Laitier',
       storeId: store.id,
@@ -58,7 +57,7 @@ export function seedGroceries(store: Store): GroceryItem[] {
   ];
 }
 
-export function seedStores(): Store[] {
+export function seedStores() {
   return [
     {
       id: nanoid(),
@@ -68,9 +67,9 @@ export function seedStores(): Store[] {
   ];
 }
 
-export function seedTags(): Tag[] {
+export function seedTags() {
   return [
-    { id: nanoid(), name: 'Aujourd\'hui', color: '#0A84FF' },
+    { id: nanoid(), name: "Aujourd'hui", color: '#0A84FF' },
     { id: nanoid(), name: 'Courses', color: '#34C759' }
   ];
 }
