@@ -1,15 +1,21 @@
 import { html } from '../lib/ui.js';
 import { todayTasks, recentNotes, getGroceries, activeStore, getStores, getTags } from '../data/store.js';
+import { useSignalValue } from '../lib/signals.js';
 import TaskItem from '../components/task-item.js';
 import NoteCard from '../components/note-card.js';
 import GroceryItemRow from '../components/grocery-item.js';
 
 export default function HomePage() {
-  const tasks = todayTasks.value.slice(0, 3);
-  const notes = recentNotes.value.slice(0, 3);
-  const tags = getTags().value;
-  const groceries = getGroceries().value.filter((item) => item.storeId === activeStore.value).slice(0, 4);
-  const store = getStores().value.find((s) => s.id === activeStore.value);
+  const tasks = useSignalValue(todayTasks).slice(0, 3);
+  const notes = useSignalValue(recentNotes).slice(0, 3);
+  const tags = useSignalValue(getTags());
+  const groceriesList = useSignalValue(getGroceries());
+  const currentStore = useSignalValue(activeStore);
+  const stores = useSignalValue(getStores());
+  const groceries = groceriesList
+    .filter((item) => item.storeId === currentStore)
+    .slice(0, 4);
+  const store = stores.find((s) => s.id === currentStore);
 
   const openNote = (id) => {
     console.info('Open note', id);

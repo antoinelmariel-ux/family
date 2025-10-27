@@ -1,5 +1,6 @@
 import { html } from '../lib/ui.js';
 import { activeTab } from '../data/store.js';
+import { useSignalValue } from '../lib/signals.js';
 
 const tabs = [
   { key: 'home', label: 'Accueil', icon: 'house' },
@@ -16,13 +17,15 @@ const icons = {
 };
 
 export default function TabBar({ onAdd }) {
+  const currentTab = useSignalValue(activeTab);
+
   return html`
     <nav class="tabbar" aria-label="Navigation principale">
       ${tabs.map(
         (tab) => html`
           <button
             key=${tab.key}
-            class="tab ${activeTab.value === tab.key ? 'active' : ''}"
+            class="tab ${currentTab === tab.key ? 'active' : ''}"
             onClick=${() => {
               activeTab.value = tab.key;
             }}

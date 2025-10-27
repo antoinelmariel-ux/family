@@ -1,6 +1,6 @@
 {
   "name": "codex-notes-tasks-groceries",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@preact/signals": "^1.3.6",
     "idb": "^7.1.1",
     "marked": "^9.1.7",
     "preact": "^10.19.2"
