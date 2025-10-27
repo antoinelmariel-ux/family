@@ -1,0 +1,30 @@
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.segments {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+.segments button {
+  border: none;
+  background: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--muted);
+  min-height: 44px;
+}
+
+.segments button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.notes .empty {
+  color: var(--muted);
+}

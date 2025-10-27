@@ -1,0 +1,37 @@
+.groceries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.store-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.store-select select {
+  border-radius: var(--radius);
+  border: none;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  color: var(--text);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.category h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 18px;
+}
+
+.groceries .empty {
+  color: var(--muted);
+}

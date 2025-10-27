@@ -1,0 +1,7 @@
+node_modules
+.dist
+.vscode
+.idea
+dist
+npm-debug.log*
+.DS_Store
