@@ -1,20 +1,22 @@
-import { signal, computed } from '@preact/signals';
-import { getAll, putItem, putItems, deleteItem } from './db';
-import type { GroceryItem, Note, Store as StoreModel, Tag, Task } from './models';
-import { seedGroceries, seedNotes, seedStores, seedTags, seedTasks } from './seed';
-import { nanoid } from '../utils/id';
-import { guessCategory } from '../utils/categorize';
+import { signal, computed } from '../lib/signals.js';
+import { getAll, putItem, putItems, deleteItem } from './db.js';
+import { seedGroceries, seedNotes, seedStores, seedTags, seedTasks } from './seed.js';
+import { nanoid } from '../utils/id.js';
+import { guessCategory } from '../utils/categorize.js';
 
-const notes = signal<Note[]>([]);
-const tasks = signal<Task[]>([]);
-const groceries = signal<GroceryItem[]>([]);
-const stores = signal<StoreModel[]>([]);
-const tags = signal<Tag[]>([]);
+const notes = signal([]);
+const tasks = signal([]);
+const groceries = signal([]);
+const stores = signal([]);
+const tags = signal([]);
 const ready = signal(false);
 
 export const searchQuery = signal('');
-export const activeTab = signal<'home' | 'notes' | 'tasks' | 'groceries'>('home');
-export const version = `v${import.meta.env.VITE_APP_VERSION ?? '0.1.1'}`;
+export const activeTab = signal('home');
+
+const fallbackVersion = '0.1.2';
+const versionSource = typeof window !== 'undefined' && window.APP_VERSION ? window.APP_VERSION : fallbackVersion;
+export const version = `v${versionSource}`;
 
 export const todayTasks = computed(() =>
   tasks.value.filter((task) => {
@@ -30,7 +32,7 @@ export const recentNotes = computed(() =>
     .slice(0, 5)
 );
 
-export const activeStore = signal<string | null>(null);
+export const activeStore = signal(null);
 
 export async function bootstrap() {
   const [storedNotes, storedTasks, storedGroceries, storedStores, storedTags] = await Promise.all([
@@ -115,7 +117,7 @@ export function getTags() {
   return tags;
 }
 
-export async function toggleTask(taskId: string) {
+export async function toggleTask(taskId) {
   const task = tasks.value.find((t) => t.id === taskId);
   if (!task) return;
   const updated = { ...task, done: !task.done, updatedAt: Date.now() };
@@ -123,7 +125,7 @@ export async function toggleTask(taskId: string) {
   await putItem('tasks', updated);
 }
 
-export async function toggleGrocery(groceryId: string) {
+export async function toggleGrocery(groceryId) {
   const item = groceries.value.find((g) => g.id === groceryId);
   if (!item) return;
   const updated = { ...item, checked: !item.checked };
@@ -131,7 +133,7 @@ export async function toggleGrocery(groceryId: string) {
   await putItem('groceries', updated);
 }
 
-export async function addQuickItem(raw: string) {
+export async function addQuickItem(raw) {
   const now = Date.now();
   const lines = raw.split('\n');
   const title = lines[0] ?? 'Nouvel élément';
@@ -145,27 +147,27 @@ export async function addQuickItem(raw: string) {
       done: false,
       createdAt: now,
       updatedAt: now
-    } as Task;
+    };
     tasks.value = [task, ...tasks.value];
     await putItem('tasks', task);
-    return { type: 'task', id: task.id } as const;
+    return { type: 'task', id: task.id };
   }
 
   if (raw.includes('@')) {
-    const item: GroceryItem = {
+    const item = {
       id: nanoid(),
       name: title.replace(/^[-*]\s*/, ''),
       checked: false,
       category: guessCategory(title),
-      storeId: activeStore.value ?? stores.value[0]?.id,
+      storeId: activeStore.value ?? (stores.value[0] ? stores.value[0].id : undefined),
       lastBoughtAt: now
     };
     groceries.value = [item, ...groceries.value];
     await putItem('groceries', item);
-    return { type: 'grocery', id: item.id } as const;
+    return { type: 'grocery', id: item.id };
   }
 
-  const note: Note = {
+  const note = {
     id: nanoid(),
     title,
     contentMD: raw,
@@ -175,35 +177,25 @@ export async function addQuickItem(raw: string) {
   };
   notes.value = [note, ...notes.value];
   await putItem('notes', note);
-  return { type: 'note', id: note.id } as const;
+  return { type: 'note', id: note.id };
 }
 
-export async function saveNote(note: Note) {
+export async function saveNote(note) {
   notes.value = notes.value.map((n) => (n.id === note.id ? note : n));
   await putItem('notes', note);
 }
 
-export async function saveTask(task: Task) {
+export async function saveTask(task) {
   tasks.value = tasks.value.map((t) => (t.id === task.id ? task : t));
   await putItem('tasks', task);
 }
 
-export async function saveGrocery(item: GroceryItem) {
+export async function saveGrocery(item) {
   groceries.value = groceries.value.map((g) => (g.id === item.id ? item : g));
   await putItem('groceries', item);
 }
 
-export async function removeNote(id: string) {
+export async function removeNote(id) {
   notes.value = notes.value.filter((n) => n.id !== id);
   await deleteItem('notes', id);
-}
-
-export async function removeTask(id: string) {
-  tasks.value = tasks.value.filter((t) => t.id !== id);
-  await deleteItem('tasks', id);
-}
-
-export async function removeGrocery(id: string) {
-  groceries.value = groceries.value.filter((g) => g.id !== id);
-  await deleteItem('groceries', id);
 }

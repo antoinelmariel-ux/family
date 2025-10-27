@@ -1,7 +1,7 @@
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const alphabetLength = alphabet.length;
 
-export function nanoid(size = 12): string {
+export function nanoid(size = 12) {
   let id = '';
   const randomValues = crypto.getRandomValues(new Uint32Array(size));
   for (let i = 0; i < size; i += 1) {

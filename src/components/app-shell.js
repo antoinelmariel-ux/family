@@ -1,30 +1,28 @@
-import { useEffect, useState } from 'preact/hooks';
-import { Signal, useSignalEffect } from '@preact/signals';
-import { activeTab, bootstrap, isReady, searchQuery, version } from '../data/store';
-import TabBar from './tabbar';
-import SearchBar from './search-bar';
-import SheetAdd from './sheet-add';
-import './app-shell.css';
-import HomePage from '../pages/home';
-import NotesPage from '../pages/notes';
-import TasksPage from '../pages/tasks';
-import GroceriesPage from '../pages/groceries';
+import { html } from '../lib/ui.js';
+import { useEffect, useState } from '../lib/hooks.js';
+import { useSignalEffect } from '../lib/signals.js';
+import { activeTab, bootstrap, isReady, searchQuery, version } from '../data/store.js';
+import TabBar from './tabbar.js';
+import SearchBar from './search-bar.js';
+import SheetAdd from './sheet-add.js';
+import HomePage from '../pages/home.js';
+import NotesPage from '../pages/notes.js';
+import TasksPage from '../pages/tasks.js';
+import GroceriesPage from '../pages/groceries.js';
 
 const routeMap = {
   home: HomePage,
   notes: NotesPage,
   tasks: TasksPage,
   groceries: GroceriesPage
-} as const;
+};
 
-type RouteKey = keyof typeof routeMap;
-
-function useHashRoute(signal: Signal<RouteKey>) {
+function useHashRoute(signal) {
   useEffect(() => {
     const update = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && hash in routeMap) {
-        signal.value = hash as RouteKey;
+      if (hash && routeMap[hash]) {
+        signal.value = hash;
       }
     };
     update();
@@ -48,27 +46,27 @@ export default function AppShell() {
     bootstrap();
   }, []);
 
-  useHashRoute(activeTab as Signal<RouteKey>);
+  useHashRoute(activeTab);
 
   const ActivePage = routeMap[activeTab.value];
 
-  return (
+  return html`
     <div class="app-shell">
       <header class="app-header">
         <div class="title">
           <h1>Codex</h1>
           <p>Notes • Tâches • Courses</p>
         </div>
-        <SearchBar query={searchQuery} />
+        <${SearchBar} query=${searchQuery} />
       </header>
       <main class="app-content" aria-live="polite">
-        {!ready ? <p class="loading">Chargement…</p> : <ActivePage />}
+        ${!ready ? html`<p class="loading">Chargement…</p>` : html`<${ActivePage} />`}
       </main>
       <footer class="app-footer">
-        <small>Codex {version}</small>
+        <small>Codex ${version}</small>
       </footer>
-      <TabBar onAdd={() => setShowSheet(true)} />
-      {showSheet ? <SheetAdd onClose={() => setShowSheet(false)} /> : null}
+      <${TabBar} onAdd=${() => setShowSheet(true)} />
+      ${showSheet ? html`<${SheetAdd} onClose=${() => setShowSheet(false)} />` : null}
     </div>
-  );
+  `;
 }

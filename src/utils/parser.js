@@ -1,19 +1,8 @@
-import type { ItemType } from '../data/models';
-
 const dueRegex = /!(aujourd'hui|demain|\d{4}-\d{2}-\d{2})/i;
 const tagRegex = /#(\w+)/g;
 const storeRegex = /@(\w+)/;
 
-export type ParsedInput = {
-  type: ItemType;
-  title: string;
-  tags: string[];
-  due?: string;
-  store?: string;
-  lines: string[];
-};
-
-export function parseSmartInput(raw: string): ParsedInput {
+export function parseSmartInput(raw) {
   const lines = raw.split(/\n+/).map((line) => line.trim()).filter(Boolean);
   const firstLine = lines[0] ?? '';
   const matches = [...firstLine.matchAll(tagRegex)];
@@ -21,7 +10,7 @@ export function parseSmartInput(raw: string): ParsedInput {
   const dueMatch = firstLine.match(dueRegex);
   const storeMatch = raw.match(storeRegex);
 
-  let type: ItemType = 'note';
+  let type = 'note';
   if (raw.startsWith('- ') || raw.includes('\n- ')) {
     type = 'task';
   }
@@ -32,7 +21,7 @@ export function parseSmartInput(raw: string): ParsedInput {
     type = 'grocery';
   }
 
-  let due: string | undefined;
+  let due;
   if (dueMatch) {
     const keyword = dueMatch[1].toLowerCase();
     if (keyword === "aujourd'hui") {
