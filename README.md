@@ -1,13 +1,7 @@
 # Codex — Notes • Tâches • Courses
 
-Prototype PWA iOS-first pour capturer des notes, gérer ses tâches et préparer ses courses hors-ligne.
+Ce dépôt a été réduit à ce seul fichier README.
 
-## Scripts
+---
 
-```bash
-npm install
-npm run dev
-npm run build
-```
-
-_Note : l’installation des dépendances nécessite un accès au registre npm._
+_Version : v0.1.4_
