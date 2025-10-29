@@ -17,7 +17,7 @@ const storage = {
   },
 };
 
-const AppVersion = 'v0.2.0';
+const AppVersion = 'v0.3.0';
 document.getElementById('appVersion').textContent = AppVersion;
 
 const groceriesKey = 'codex_groceries';
@@ -25,6 +25,7 @@ const categoriesKey = 'codex_categories';
 const tasksKey = 'codex_task_lists';
 const notesKey = 'codex_notes';
 const themeKey = 'codex_theme';
+const activeTabKey = 'codex_active_tab';
 
 const defaultCategories = [
   { id: crypto.randomUUID(), name: 'Fruits & Légumes' },
@@ -55,6 +56,9 @@ const editorToolbar = document.getElementById('editorToolbar');
 const tabs = document.querySelectorAll('.tab-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
 const themeToggle = document.getElementById('themeToggle');
+const groceryCountEl = document.getElementById('count-groceries');
+const taskCountEl = document.getElementById('count-tasks');
+const noteCountEl = document.getElementById('count-notes');
 
 const storedCategories = storage.load(categoriesKey, null);
 let categories = Array.isArray(storedCategories) && storedCategories.length > 0 ? storedCategories : defaultCategories;
@@ -164,6 +168,8 @@ function renderGroceries() {
       "<p><strong>Votre liste est vide.</strong> Ajoutez des produits pour préparer votre prochaine sortie.</p>";
     groceryListEl.appendChild(empty);
   }
+
+  updateTabCounts();
 }
 
 function renderTaskLists() {
@@ -200,6 +206,7 @@ function renderTaskLists() {
         task.done = checkbox.checked;
         saveTaskLists();
         text.classList.toggle('completed', task.done);
+        updateTabCounts();
       });
 
       taskNode.querySelector('[data-action="delete-task"]').addEventListener('click', () => {
@@ -229,6 +236,8 @@ function renderTaskLists() {
       "<p><strong>Aucune liste pour le moment.</strong> Créez une liste pour organiser vos actions.</p>";
     taskListsEl.appendChild(empty);
   }
+
+  updateTabCounts();
 }
 
 function renderNotes() {
@@ -268,6 +277,8 @@ function renderNotes() {
   if (notes.length === 0) {
     activeNoteId = null;
   }
+
+  updateTabCounts();
 }
 
 function setActiveNote(noteId) {
@@ -306,17 +317,75 @@ function updateNoteContent() {
 }
 
 function setupTabs() {
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach((item) => item.classList.remove('is-active'));
-      tab.classList.add('is-active');
-      const target = tab.dataset.target;
-      tabPanels.forEach((panel) => {
-        panel.classList.toggle('is-active', panel.id === target);
-      });
+  const tabArray = Array.from(tabs);
+  const panelMap = new Map(Array.from(tabPanels, (panel) => [panel.id, panel]));
+
+  const defaultTab = tabArray[0]?.dataset.target ?? 'groceries';
+  const savedActiveTab = storage.load(activeTabKey, defaultTab) ?? defaultTab;
+
+  function activateTab(target, { scroll = false, focusTab = false } = {}) {
+    if (!panelMap.has(target)) {
+      return;
+    }
+
+    tabArray.forEach((tab) => {
+      const isActive = tab.dataset.target === target;
+      tab.classList.toggle('is-active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.tabIndex = isActive ? 0 : -1;
+      if (isActive && focusTab) {
+        tab.focus();
+      }
+    });
+
+    tabPanels.forEach((panel) => {
+      const isActive = panel.id === target;
+      panel.classList.toggle('is-active', isActive);
+      panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+      panel.tabIndex = isActive ? 0 : -1;
+      if (!isActive) {
+        panel.setAttribute('hidden', '');
+      } else {
+        panel.removeAttribute('hidden');
+      }
+    });
+
+    storage.save(activeTabKey, target);
+
+    if (scroll) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  tabArray.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      activateTab(tab.dataset.target, { scroll: true, focusTab: true });
+    });
+
+    tab.addEventListener('keydown', (event) => {
+      const { key } = event;
+      if (key === 'ArrowRight' || key === 'ArrowLeft') {
+        event.preventDefault();
+        const direction = key === 'ArrowRight' ? 1 : -1;
+        const nextIndex = (index + direction + tabArray.length) % tabArray.length;
+        activateTab(tabArray[nextIndex].dataset.target, { focusTab: true });
+      }
+      if (key === 'Home') {
+        event.preventDefault();
+        activateTab(tabArray[0].dataset.target, { focusTab: true });
+      }
+      if (key === 'End') {
+        event.preventDefault();
+        activateTab(tabArray[tabArray.length - 1].dataset.target, { focusTab: true });
+      }
     });
   });
+
+  if (panelMap.has(savedActiveTab)) {
+    activateTab(savedActiveTab);
+  } else {
+    activateTab(tabArray[0]?.dataset.target ?? 'groceries');
+  }
 }
 
 function setupTheme() {
@@ -429,6 +498,40 @@ function createCategory(name) {
   saveCategories();
   renderCategorySelect();
   categorySelect.value = newCategory.id;
+}
+
+function updateTabCounts() {
+  const remainingGroceries = groceries.filter((item) => !item.checked).length;
+  groceryCountEl.textContent = remainingGroceries;
+  groceryCountEl.dataset.empty = remainingGroceries === 0;
+  groceryCountEl.setAttribute(
+    'aria-label',
+    remainingGroceries === 0
+      ? 'Aucun article à acheter'
+      : `${remainingGroceries} ${remainingGroceries > 1 ? 'articles' : 'article'} à acheter`,
+  );
+
+  const remainingTasks = taskLists.reduce(
+    (total, list) => total + list.tasks.filter((task) => !task.done).length,
+    0,
+  );
+  taskCountEl.textContent = remainingTasks;
+  taskCountEl.dataset.empty = remainingTasks === 0;
+  taskCountEl.setAttribute(
+    'aria-label',
+    remainingTasks === 0
+      ? 'Aucune tâche en cours'
+      : `${remainingTasks} ${remainingTasks > 1 ? 'tâches' : 'tâche'} en cours`,
+  );
+
+  noteCountEl.textContent = notes.length;
+  noteCountEl.dataset.empty = notes.length === 0;
+  noteCountEl.setAttribute(
+    'aria-label',
+    notes.length === 0
+      ? 'Aucune note enregistrée'
+      : `${notes.length} ${notes.length > 1 ? 'notes' : 'note'}`,
+  );
 }
 
 window.addEventListener('DOMContentLoaded', init);

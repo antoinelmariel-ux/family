@@ -23,16 +23,50 @@
       </button>
     </header>
 
-    <nav class="tab-bar" aria-label="Sections principales">
-      <button class="tab-button is-active" data-target="groceries" id="tab-groceries">
-        Courses
+    <nav class="tab-bar" aria-label="Sections principales" role="tablist">
+      <button
+        class="tab-button is-active"
+        data-target="groceries"
+        id="tab-groceries"
+        role="tab"
+        aria-selected="true"
+        aria-controls="groceries"
+      >
+        <span class="tab-label">Courses</span>
+        <span class="tab-count" id="count-groceries" aria-live="polite">0</span>
       </button>
-      <button class="tab-button" data-target="tasks" id="tab-tasks">Tâches</button>
-      <button class="tab-button" data-target="notes" id="tab-notes">Notes</button>
+      <button
+        class="tab-button"
+        data-target="tasks"
+        id="tab-tasks"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tasks"
+      >
+        <span class="tab-label">Tâches</span>
+        <span class="tab-count" id="count-tasks" aria-live="polite">0</span>
+      </button>
+      <button
+        class="tab-button"
+        data-target="notes"
+        id="tab-notes"
+        role="tab"
+        aria-selected="false"
+        aria-controls="notes"
+      >
+        <span class="tab-label">Notes</span>
+        <span class="tab-count" id="count-notes" aria-live="polite">0</span>
+      </button>
     </nav>
 
     <main>
-      <section id="groceries" class="tab-panel is-active" aria-labelledby="tab-groceries">
+      <section
+        id="groceries"
+        class="tab-panel is-active"
+        aria-labelledby="tab-groceries"
+        role="tabpanel"
+        tabindex="0"
+      >
         <header class="panel-header">
           <h2>Liste de courses organisée</h2>
           <p>Ajoutez vos produits, classez-les par rayon et cochez-les au fur et à mesure.</p>
@@ -57,7 +91,7 @@
         <div class="category-list" id="groceryList" aria-live="polite"></div>
       </section>
 
-      <section id="tasks" class="tab-panel" aria-labelledby="tab-tasks">
+      <section id="tasks" class="tab-panel" aria-labelledby="tab-tasks" role="tabpanel" tabindex="0">
         <header class="panel-header">
           <h2>Vos to-do lists</h2>
           <p>Créez plusieurs listes pour garder vos journées organisées.</p>
@@ -76,7 +110,7 @@
         <div class="task-lists" id="taskLists" aria-live="polite"></div>
       </section>
 
-      <section id="notes" class="tab-panel" aria-labelledby="tab-notes">
+      <section id="notes" class="tab-panel" aria-labelledby="tab-notes" role="tabpanel" tabindex="0">
         <header class="panel-header">
           <h2>Notes enrichies</h2>
           <p>Composez vos notes avec mise en page avancée comme sur votre iPhone.</p>
@@ -121,7 +155,7 @@
     </main>
 
     <footer class="app-footer">
-      <small>Codex — Version <span id="appVersion">v0.2.0</span></small>
+      <small>Codex — Version <span id="appVersion">v0.3.0</span></small>
     </footer>
 
     <dialog id="categoryDialog">

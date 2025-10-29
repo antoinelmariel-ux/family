@@ -133,19 +133,58 @@ main {
 .tab-button {
   appearance: none;
   border: none;
-  padding: 10px 12px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
   font-weight: 600;
   font-size: 0.95rem;
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
 }
 
 .tab-button.is-active {
   background: var(--surface);
   color: var(--text-primary);
   box-shadow: var(--shadow);
+}
+
+.tab-button:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.6);
+  outline-offset: 2px;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.16);
+  color: var(--primary-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tab-count[data-empty='true'] {
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-secondary);
+}
+
+body.dark .tab-count {
+  background: rgba(56, 189, 248, 0.16);
+  color: var(--primary);
+}
+
+body.dark .tab-count[data-empty='true'] {
+  background: rgba(148, 163, 184, 0.12);
+  color: rgba(226, 232, 240, 0.78);
 }
 
 .tab-panel {
