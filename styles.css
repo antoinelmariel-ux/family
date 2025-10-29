@@ -1,29 +1,29 @@
 :root {
   color-scheme: light dark;
-  --background: #f6f6f6;
+  --background: #f2f4f8;
   --surface: #ffffff;
-  --surface-elevated: rgba(255, 255, 255, 0.75);
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
+  --surface-elevated: rgba(255, 255, 255, 0.9);
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
   --primary: #0ea5e9;
   --primary-dark: #0284c7;
-  --border: rgba(148, 163, 184, 0.6);
-  --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-  --radius-lg: 24px;
-  --radius-md: 18px;
+  --border: rgba(148, 163, 184, 0.35);
+  --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+  --radius-lg: 20px;
+  --radius-md: 16px;
   --radius-sm: 12px;
 }
 
 body.dark {
-  --background: #07090c;
-  --surface: rgba(15, 23, 42, 0.75);
-  --surface-elevated: rgba(15, 23, 42, 0.9);
-  --text-primary: #f8fafc;
-  --text-secondary: rgba(226, 232, 240, 0.78);
+  --background: #05060a;
+  --surface: rgba(15, 23, 42, 0.88);
+  --surface-elevated: rgba(17, 24, 39, 0.92);
+  --text-primary: #f1f5f9;
+  --text-secondary: rgba(226, 232, 240, 0.72);
   --primary: #38bdf8;
   --primary-dark: #0ea5e9;
-  --border: rgba(148, 163, 184, 0.25);
-  --shadow: 0 16px 40px rgba(2, 6, 23, 0.72);
+  --border: rgba(148, 163, 184, 0.28);
+  --shadow: 0 18px 40px rgba(2, 6, 23, 0.65);
 }
 
 * {
@@ -38,7 +38,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 0 16px 24px;
+  padding: 0 16px 128px;
 }
 
 body::before {
@@ -46,14 +46,13 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: radial-gradient(circle at top, rgba(14, 165, 233, 0.28), transparent 55%),
-    radial-gradient(circle at bottom, rgba(236, 72, 153, 0.24), transparent 55%);
-  opacity: 0.7;
+  background: radial-gradient(circle at top 8% right 40%, rgba(14, 165, 233, 0.12), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.12), transparent 60%);
 }
 
 body.dark::before {
-  background: radial-gradient(circle at top, rgba(56, 189, 248, 0.24), transparent 55%),
-    radial-gradient(circle at bottom, rgba(147, 51, 234, 0.18), transparent 60%);
+  background: radial-gradient(circle at top 12% right 50%, rgba(56, 189, 248, 0.2), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(147, 51, 234, 0.18), transparent 60%);
 }
 
 h1,
@@ -74,15 +73,16 @@ main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding-bottom: 64px;
+  gap: 36px;
+  padding-bottom: 40px;
 }
 
 .app-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 32px 0 16px;
+  align-items: center;
+  padding: 28px 0 12px;
+  gap: 16px;
 }
 
 .app-header h1 {
@@ -97,7 +97,7 @@ main {
 }
 
 .color-scheme-toggle {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(14, 165, 233, 0.12);
   border: 1px solid var(--border);
   border-radius: 20px;
   width: 44px;
@@ -107,7 +107,7 @@ main {
   justify-content: center;
   font-size: 20px;
   cursor: pointer;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
   transition: transform 0.2s ease;
   color: var(--text-primary);
 }
@@ -117,40 +117,43 @@ main {
 }
 
 .tab-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(100% - 32px, 520px);
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(20px);
-  padding: 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  position: sticky;
-  top: 12px;
-  z-index: 5;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  z-index: 20;
 }
 
 .tab-button {
   appearance: none;
   border: none;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: -0.01em;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 10px;
   cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .tab-button.is-active {
-  background: var(--surface);
+  background: rgba(14, 165, 233, 0.12);
   color: var(--text-primary);
-  box-shadow: var(--shadow);
 }
 
 .tab-button:focus-visible {
@@ -158,32 +161,49 @@ main {
   outline-offset: 2px;
 }
 
+.tab-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.tab-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.tab-label {
+  letter-spacing: -0.01em;
+}
+
 .tab-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 28px;
+  height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.16);
+  background: rgba(14, 165, 233, 0.14);
   color: var(--primary-dark);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  line-height: 1;
 }
 
 .tab-count[data-empty='true'] {
-  background: rgba(148, 163, 184, 0.16);
+  background: rgba(148, 163, 184, 0.18);
   color: var(--text-secondary);
 }
 
 body.dark .tab-count {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(56, 189, 248, 0.18);
   color: var(--primary);
 }
 
 body.dark .tab-count[data-empty='true'] {
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(148, 163, 184, 0.14);
   color: rgba(226, 232, 240, 0.78);
 }
 
@@ -212,14 +232,38 @@ body.dark .tab-count[data-empty='true'] {
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.form-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.quick-form {
+  position: sticky;
+  bottom: 120px;
+  margin-top: 12px;
+  z-index: 10;
 }
 
 .input {
@@ -284,6 +328,11 @@ button:focus {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s ease;
 }
 
 .primary-button {
@@ -300,6 +349,11 @@ button:focus {
 .form-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.primary-button.full-width,
+.secondary-button.full-width {
+  width: 100%;
 }
 
 .category-list {
@@ -339,8 +393,8 @@ button:focus {
   gap: 12px;
   padding: 12px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 body.dark .category li {
@@ -381,7 +435,7 @@ body.dark .category li {
 
 .task-lists {
   display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
 .task-list-header {
@@ -446,8 +500,8 @@ body.dark .category li {
   background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
 
 .notes-sidebar ul {
@@ -466,8 +520,8 @@ body.dark .category li {
   align-items: center;
   padding: 12px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
 }
 
 body.dark .notes-sidebar li {
@@ -506,9 +560,9 @@ body.dark .notes-sidebar li {
   position: relative;
   background: var(--surface);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
   min-height: 280px;
   display: flex;
   flex-direction: column;
@@ -590,15 +644,26 @@ body.dark .notes-sidebar li {
   gap: 12px;
 }
 
+@media (min-width: 560px) {
+  .form-row {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
 @media (min-width: 720px) {
   body {
     margin: 0 auto;
     max-width: 640px;
-    padding-bottom: 48px;
+    padding-bottom: 96px;
   }
 
   main {
     gap: 48px;
+  }
+
+  .quick-form {
+    position: static;
+    margin-top: 16px;
   }
 
   .notes-layout {

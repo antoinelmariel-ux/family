@@ -17,7 +17,7 @@ const storage = {
   },
 };
 
-const AppVersion = 'v0.3.0';
+const AppVersion = 'v0.4.0';
 document.getElementById('appVersion').textContent = AppVersion;
 
 const groceriesKey = 'codex_groceries';
