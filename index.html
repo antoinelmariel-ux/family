@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Éditeur de Procédures IA Friendly</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #2f4f9f;
+      --accent: #f8f9ff;
+      --border: #dce0f3;
+      --text: #1c2240;
+      --muted: #5c6280;
+      --warning: #d64545;
+      --success: #20895e;
+      --bg: #f4f6fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: white;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 24px;
+      padding: 24px 32px 120px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(28, 34, 64, 0.08);
+      border: 1px solid var(--border);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h3 {
+      margin-top: 24px;
+      font-size: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    textarea,
+    select,
+    input[type="date"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus,
+    .editor:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(47, 79, 159, 0.15);
+    }
+
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px 20px;
+    }
+
+    .editor-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toolbar button {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: var(--accent);
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .toolbar button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(28, 34, 64, 0.12);
+    }
+
+    .editor {
+      min-height: 320px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      line-height: 1.6;
+      font-size: 15px;
+      background: #fff;
+      overflow-y: auto;
+    }
+
+    .editor h1,
+    .editor h2,
+    .editor h3,
+    .editor h4 {
+      font-weight: 700;
+      margin-top: 24px;
+    }
+
+    .editor ul,
+    .editor ol {
+      padding-left: 24px;
+    }
+
+    .qa-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafbff;
+    }
+
+    .qa-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--warning);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .insights {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 120px;
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    .insight-card {
+      border-left: 4px solid var(--primary);
+      padding: 16px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .insight-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .insight-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      padding: 12px 18px;
+      font-size: 15px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-btn:disabled {
+      background: #b0b7d6;
+      cursor: not-allowed;
+    }
+
+    .secondary-btn {
+      background: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .warning {
+      color: var(--warning);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 35, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      z-index: 10;
+    }
+
+    .preview-content {
+      background: white;
+      border-radius: 16px;
+      max-width: 960px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(14, 24, 56, 0.32);
+    }
+
+    .preview-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-body {
+      padding: 24px;
+      overflow-y: auto;
+      background: #f9f9ff;
+    }
+
+    pre {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 13px;
+    }
+
+    footer {
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 16px 32px;
+      text-align: right;
+      font-size: 13px;
+      color: var(--muted);
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .insights {
+        position: static;
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Studio de Procédures IA Friendly</h1>
+  </header>
+  <div id="root"></div>
+  <footer>
+    Version 1.0.0
+  </footer>
+
+  <script>
+    const ACRONYM_DB = {
+      "LFB": "Laboratoire Français du Fractionnement et des Biotechnologies",
+      "GMP": "Good Manufacturing Practice",
+      "QA": "Quality Assurance",
+      "SOP": "Standard Operating Procedure"
+    };
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.2/dist/turndown.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script type="text/babel">
+    const { useState, useMemo, useRef } = React;
+
+    const metadataFields = [
+      { key: 'title', label: 'Titre', type: 'text', placeholder: 'Titre de la procédure' },
+      { key: 'reference', label: 'Référence', type: 'text', placeholder: 'Référence interne' },
+      { key: 'author', label: 'Auteur', type: 'text', placeholder: 'Nom complet' },
+      {
+        key: 'businessScope',
+        label: 'Périmètre métier',
+        type: 'select',
+        options: ['Médical', 'Commercial', 'Neutre']
+      },
+      {
+        key: 'companyScope',
+        label: 'Périmètre société',
+        type: 'select',
+        options: ['LFB Bio Médicament', 'LFB Biomanufacturing']
+      },
+      {
+        key: 'geoScope',
+        label: 'Périmètre géographique',
+        type: 'select',
+        options: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique']
+      },
+      { key: 'keywords', label: 'Mots clefs', type: 'text', placeholder: 'Séparés par des virgules' },
+      { key: 'summary', label: 'Résumé', type: 'textarea', placeholder: 'Résumé exécutif de la procédure' },
+      { key: 'parentProcedure', label: 'Procédure mère', type: 'text', placeholder: 'Référence ou titre' },
+      { key: 'effectiveDate', label: "Date d'entrée en vigueur", type: 'date' }
+    ];
+
+    const initialMetadata = metadataFields.reduce((acc, field) => {
+      acc[field.key] = '';
+      return acc;
+    }, {});
+
+    const pronouns = ['il', 'elle', 'ils', 'elles', 'lui', 'leur', 'leurs', 'son', 'sa', 'ses', 'eux'];
+
+    function formatSelection(command, value = null) {
+      document.execCommand(command, false, value);
+    }
+
+    function sanitizeHTML(html) {
+      return html.replace(/\s+style="[^"]*"/g, '');
+    }
+
+    function computeGuidelines(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+      const guidelines = [];
+
+      doc.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
+        const text = heading.textContent.trim() || '(titre sans texte)';
+        guidelines.push({
+          type: 'heading',
+          message: `"${text}" — Commencez la section par un résumé bref et concis.`
+        });
+      });
+
+      doc.querySelectorAll('ul, ol').forEach((list) => {
+        const label = list.tagName === 'UL' ? 'liste à puces' : 'liste numérotée';
+        guidelines.push({
+          type: 'list-transition',
+          message: `Assurez-vous que la ${label} est reliée par une transition claire entre les étapes.`
+        });
+        const previous = list.previousElementSibling;
+        const hasIntro = previous && previous.textContent.trim().length > 0 && previous.textContent.trim().endsWith(':');
+        if (!hasIntro) {
+          guidelines.push({
+            type: 'list-intro',
+            message: `Ajoutez une phrase introductive se terminant par un deux-points avant la liste.`
+          });
+        }
+      });
+
+      const textContent = doc.body.textContent || '';
+      const pronounMatches = Array.from(new Set(textContent.match(/\b(?:il|elle|ils|elles|lui|leur|leurs|son|sa|ses|eux)\b/gi)));
+      pronounMatches.forEach((item) => {
+        guidelines.push({
+          type: 'pronoun',
+          message: `Précisez le référent du pronom "${item}" pour éviter toute ambiguïté.`
+        });
+      });
+
+      const acronymMatches = Array.from(new Set(textContent.match(/\b[A-Z]{2,}\b/g))) || [];
+      acronymMatches.forEach((acronym) => {
+        if (!ACRONYM_DB[acronym]) {
+          guidelines.push({
+            type: 'acronym',
+            message: `Documentez l'acronyme "${acronym}" ou ajoutez-le à la base des acronymes.`
+          });
+        }
+      });
+
+      return guidelines;
+    }
+
+    function detectBlockingIssues(html, qaItems) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+      const textContent = doc.body.textContent || '';
+      const qaText = qaItems.map((item) => `${item.question} ${item.answer}`).join(' ');
+
+      const emojiRegex = /[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F900}-\u{1F9FF}]/u;
+      const warnings = [];
+
+      if (emojiRegex.test(textContent) || emojiRegex.test(qaText)) {
+        warnings.push('Retirez les émojis pour respecter la charte éditoriale.');
+      }
+
+      if (doc.querySelector('img')) {
+        warnings.push('Les images ne sont pas autorisées dans la procédure.');
+      }
+
+      if (doc.querySelector('a[href]')) {
+        warnings.push('Les liens URL doivent être retirés avant export.');
+      }
+
+      if (doc.querySelector('table')) {
+        warnings.push('Les tableaux ne peuvent pas être exportés dans ce format.');
+      }
+
+      const rawText = sanitizeHTML(html).replace(/<[^>]+>/g, '\n');
+      const hasUnformattedList = /^\s*[-*]\s+.+/m.test(rawText);
+      if (hasUnformattedList) {
+        warnings.push('Convertissez toutes les listes en listes formatées via la barre d’édition.');
+      }
+
+      return warnings;
+    }
+
+    function buildMarkdown(metadata, contentHTML, qaItems) {
+      const td = new TurndownService({ headingStyle: 'atx' });
+      td.addRule('removeStyles', {
+        filter: ['span'],
+        replacement: (content) => content
+      });
+
+      const contentMarkdown = td.turndown(contentHTML || '');
+      const cleanContent = contentMarkdown
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\s+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      const lines = [
+        '---',
+        `Titre: ${metadata.title}`,
+        `Référence: ${metadata.reference}`,
+        `Auteur: ${metadata.author}`,
+        `Périmètre métier: ${metadata.businessScope}`,
+        `Périmètre société: ${metadata.companyScope}`,
+        `Périmètre géographique: ${metadata.geoScope}`,
+        `Mots clefs: ${metadata.keywords}`,
+        `Résumé: ${metadata.summary}`,
+        `Procédure mère: ${metadata.parentProcedure}`,
+        `Date d'entrée en vigueur: ${metadata.effectiveDate}`,
+        '---',
+        '',
+        cleanContent
+      ];
+
+      if (qaItems.length > 0) {
+        lines.push('', '## Questions & Réponses');
+        qaItems.forEach((item, index) => {
+          const question = item.question.trim().replace(/[ \t]+/g, ' ');
+          const answer = item.answer.trim().replace(/[ \t]+/g, ' ');
+          lines.push('', `### Question ${index + 1}`, `**Question :** ${question}`, `**Réponse :** ${answer}`);
+        });
+      }
+
+      return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    function exportToPDF(markdown, metadata) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 48;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const usableWidth = pageWidth - margin * 2;
+      const lineHeight = 18;
+      let cursorY = margin;
+
+      const addTextBlock = (text, options = {}) => {
+        const paragraphs = text.split('\n');
+        pdf.setFont('Helvetica', options.bold ? 'bold' : 'normal');
+        pdf.setFontSize(options.size || 12);
+        paragraphs.forEach((paragraph) => {
+          const lines = pdf.splitTextToSize(paragraph, usableWidth);
+          lines.forEach((line) => {
+            if (cursorY + lineHeight > pdf.internal.pageSize.getHeight() - 72) {
+              pdf.addPage();
+              cursorY = margin;
+            }
+            pdf.text(line, margin, cursorY);
+            cursorY += lineHeight;
+          });
+          cursorY += lineHeight * 0.5;
+        });
+      };
+
+      const [metaBlock, bodyBlock] = markdown.split('\n---\n');
+      const bodyText = bodyBlock ? bodyBlock.replace(/^\s+/, '') : markdown;
+      addTextBlock('Procédure', { size: 18, bold: true });
+      addTextBlock(metaBlock.replace(/---\n?/, ''), { size: 11 });
+      addTextBlock(bodyText, { size: 12 });
+
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i += 1) {
+        pdf.setPage(i);
+        const footerY = pdf.internal.pageSize.getHeight() - 40;
+        const pageLabel = `${i} / ${totalPages}`;
+        pdf.setFont('Helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.text(`${metadata.reference || 'Réf. non renseignée'} | ${metadata.title || 'Titre non renseigné'} | ${metadata.effectiveDate || 'Date non renseignée'}`, margin, footerY);
+        pdf.text(pageLabel, pageWidth - margin, footerY, { align: 'right' });
+      }
+
+      pdf.save(`${metadata.reference || 'procedure'}.pdf`);
+    }
+
+    function App() {
+      const [metadata, setMetadata] = useState(initialMetadata);
+      const [contentHTML, setContentHTML] = useState('');
+      const [qaItems, setQaItems] = useState([{ question: '', answer: '' }]);
+      const [guidelines, setGuidelines] = useState([]);
+      const [blockingWarnings, setBlockingWarnings] = useState([]);
+      const [preview, setPreview] = useState({ open: false, markdown: '' });
+      const editorRef = useRef(null);
+
+      const handleMetadataChange = (key, value) => {
+        setMetadata((prev) => ({ ...prev, [key]: value }));
+      };
+
+      const updateContent = (html) => {
+        const sanitized = sanitizeHTML(html);
+        setContentHTML(sanitized);
+        setGuidelines(computeGuidelines(sanitized));
+        setBlockingWarnings(detectBlockingIssues(sanitized, qaItems));
+      };
+
+      const handleEditorInput = (event) => {
+        updateContent(event.currentTarget.innerHTML);
+      };
+
+      const handleQAChange = (index, field, value) => {
+        setQaItems((prev) => {
+          const next = [...prev];
+          next[index] = { ...next[index], [field]: value };
+          return next;
+        });
+      };
+
+      const addQAItem = () => {
+        setQaItems((prev) => [...prev, { question: '', answer: '' }]);
+      };
+
+      const removeQAItem = (index) => {
+        setQaItems((prev) => prev.filter((_, i) => i !== index));
+      };
+
+      React.useEffect(() => {
+        setGuidelines(computeGuidelines(contentHTML));
+        setBlockingWarnings(detectBlockingIssues(contentHTML, qaItems));
+      }, [qaItems]);
+
+      const markdownPreview = useMemo(() => buildMarkdown(metadata, contentHTML, qaItems), [metadata, contentHTML, qaItems]);
+
+      const handlePreview = () => {
+        setPreview({ open: true, markdown: markdownPreview });
+      };
+
+      const handleExportMarkdown = () => {
+        const markdown = markdownPreview;
+        const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${metadata.reference || 'procedure'}.md`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      };
+
+      const handleExportPDF = () => {
+        exportToPDF(markdownPreview, metadata);
+      };
+
+      return (
+        <>
+          <div className="layout">
+            <div className="content">
+              <section className="card">
+                <h2>1. Métadonnées</h2>
+                <div className="metadata-grid">
+                  {metadataFields.map((field) => (
+                    <div key={field.key}>
+                      <label htmlFor={field.key}>{field.label}</label>
+                      {field.type === 'select' ? (
+                        <select
+                          id={field.key}
+                          value={metadata[field.key]}
+                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                        >
+                          <option value="">Sélectionnez une option</option>
+                          {field.options.map((option) => (
+                            <option value={option} key={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === 'textarea' ? (
+                        <textarea
+                          id={field.key}
+                          value={metadata[field.key]}
+                          placeholder={field.placeholder}
+                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                        />
+                      ) : (
+                        <input
+                          id={field.key}
+                          type={field.type}
+                          value={metadata[field.key]}
+                          placeholder={field.placeholder}
+                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="card editor-card">
+                <h2>2. Contenu de la procédure</h2>
+                <div className="toolbar">
+                  <button type="button" onClick={() => formatSelection('formatBlock', 'H1')}>H1</button>
+                  <button type="button" onClick={() => formatSelection('formatBlock', 'H2')}>H2</button>
+                  <button type="button" onClick={() => formatSelection('formatBlock', 'H3')}>H3</button>
+                  <button type="button" onClick={() => formatSelection('formatBlock', 'H4')}>H4</button>
+                  <button type="button" onClick={() => formatSelection('insertUnorderedList')}>Liste à puces</button>
+                  <button type="button" onClick={() => formatSelection('insertOrderedList')}>Liste numérotée</button>
+                </div>
+                <div
+                  className="editor"
+                  contentEditable
+                  ref={editorRef}
+                  onInput={handleEditorInput}
+                  suppressContentEditableWarning
+                  spellCheck
+                  aria-label="Zone d'édition du contenu"
+                />
+              </section>
+
+              <section className="card">
+                <h2>3. Questions & Réponses</h2>
+                <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: 0 }}>
+                  Structurez la session de questions-réponses qui conclura la procédure.
+                </p>
+                <div className="qa-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {qaItems.map((item, index) => (
+                    <div className="qa-item" key={index}>
+                      <div>
+                        <label htmlFor={`question-${index}`}>Question</label>
+                        <textarea
+                          id={`question-${index}`}
+                          value={item.question}
+                          placeholder="Formulez la question de manière explicite"
+                          onChange={(event) => handleQAChange(index, 'question', event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`answer-${index}`}>Réponse</label>
+                        <textarea
+                          id={`answer-${index}`}
+                          value={item.answer}
+                          placeholder="Fournissez une réponse précise et contextualisée"
+                          onChange={(event) => handleQAChange(index, 'answer', event.target.value)}
+                        />
+                      </div>
+                      <div className="qa-actions">
+                        {qaItems.length > 1 && (
+                          <button type="button" className="remove-btn" onClick={() => removeQAItem(index)}>
+                            Retirer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="export-actions" style={{ justifyContent: 'flex-start', marginTop: '16px' }}>
+                  <button type="button" className="secondary-btn" onClick={addQAItem}>
+                    Ajouter une question
+                  </button>
+                </div>
+              </section>
+
+              <section className="card">
+                <h2>Aperçu & Export</h2>
+                {blockingWarnings.length > 0 && (
+                  <div className="warning">
+                    ⚠️ Export impossible tant que les points suivants ne sont pas corrigés :
+                    <ul className="insight-list">
+                      {blockingWarnings.map((warning, index) => (
+                        <li key={index}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="export-actions">
+                  <button type="button" className="secondary-btn" onClick={handlePreview}>
+                    Prévisualiser le Markdown
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={handleExportMarkdown}
+                    disabled={blockingWarnings.length > 0}
+                  >
+                    Exporter en Markdown
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={handleExportPDF}
+                    disabled={blockingWarnings.length > 0}
+                  >
+                    Exporter en PDF
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <aside className="insights">
+              <div className="insight-card">
+                <h3>Guidelines IA Friendly</h3>
+                {guidelines.length === 0 ? (
+                  <p style={{ color: 'var(--muted)', margin: 0 }}>Commencez votre rédaction pour recevoir des recommandations.</p>
+                ) : (
+                  <ul className="insight-list">
+                    {guidelines.map((item, index) => (
+                      <li key={`${item.type}-${index}`}>{item.message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="insight-card">
+                <h3>Base des acronymes</h3>
+                <ul className="insight-list">
+                  {Object.entries(ACRONYM_DB).map(([acronym, definition]) => (
+                    <li key={acronym}>
+                      <strong>{acronym}</strong> : {definition}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          </div>
+
+          {preview.open && (
+            <div className="preview-modal" role="dialog" aria-modal="true">
+              <div className="preview-content">
+                <div className="preview-header">
+                  <h3 style={{ margin: 0 }}>Aperçu Markdown</h3>
+                  <button type="button" className="secondary-btn" onClick={() => setPreview({ open: false, markdown: '' })}>
+                    Fermer
+                  </button>
+                </div>
+                <div className="preview-body">
+                  <pre>{preview.markdown}</pre>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
