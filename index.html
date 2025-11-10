@@ -464,24 +464,16 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.3
+    Version 1.1.4
   </footer>
 
-  <script>
-    const ACRONYM_DB = {
-      "LFB": "Laboratoire Français du Fractionnement et des Biotechnologies",
-      "GMP": "Good Manufacturing Practice",
-      "QA": "Quality Assurance",
-      "SOP": "Standard Operating Procedure"
-    };
-  </script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.2/dist/turndown.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
-    const { useState, useMemo, useRef } = React;
+    const { useState, useMemo, useRef, useEffect } = React;
 
     const KEYWORD_COLOR_PALETTE = [
       { background: 'rgba(47, 79, 159, 0.15)', color: '#2f4f9f', border: 'rgba(47, 79, 159, 0.35)' },
@@ -536,7 +528,7 @@
       return html.replace(/\s+style="[^"]*"/g, '');
     }
 
-    function computeGuidelines(html) {
+    function computeGuidelines(html, acronymDB = {}) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
       const guidelines = [];
@@ -580,7 +572,7 @@
 
       const acronymMatches = Array.from(new Set(textContent.match(/\b[A-Z]{2,}\b/g))) || [];
       acronymMatches.forEach((acronym) => {
-        if (!ACRONYM_DB[acronym]) {
+        if (!acronymDB[acronym]) {
           guidelines.push({
             type: 'acronym',
             anchor: acronym,
@@ -724,6 +716,9 @@
       const [blockingWarnings, setBlockingWarnings] = useState([]);
       const [preview, setPreview] = useState({ open: false, markdown: '' });
       const [hasStarted, setHasStarted] = useState(false);
+      const [glossary, setGlossary] = useState({});
+      const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
+      const [glossaryError, setGlossaryError] = useState(null);
       const editorRef = useRef(null);
       const keywordList = useMemo(
         () =>
@@ -754,7 +749,7 @@
       const updateContent = (html) => {
         const sanitized = sanitizeHTML(html);
         setContentHTML(sanitized);
-        setGuidelines(computeGuidelines(sanitized));
+        setGuidelines(computeGuidelines(sanitized, glossary));
         setBlockingWarnings(detectBlockingIssues(sanitized, qaItems));
       };
 
@@ -781,10 +776,84 @@
         setQaItems((prev) => prev.filter((_, i) => i !== index));
       };
 
-      React.useEffect(() => {
-        setGuidelines(computeGuidelines(contentHTML));
+      useEffect(() => {
+        setGuidelines(computeGuidelines(contentHTML, glossary));
         setBlockingWarnings(detectBlockingIssues(contentHTML, qaItems));
-      }, [qaItems]);
+      }, [qaItems, contentHTML, glossary]);
+
+      useEffect(() => {
+        let isCancelled = false;
+
+        const normalizeGlossary = (data) => {
+          if (!data) {
+            return {};
+          }
+
+          if (Array.isArray(data)) {
+            return data.reduce((acc, entry) => {
+              if (entry && typeof entry.term === 'string' && typeof entry.definition === 'string') {
+                acc[entry.term] = entry.definition;
+              }
+              return acc;
+            }, {});
+          }
+
+          if (data && typeof data === 'object' && Array.isArray(data.acronyms)) {
+            return data.acronyms.reduce((acc, entry) => {
+              if (entry && typeof entry.term === 'string' && typeof entry.definition === 'string') {
+                acc[entry.term] = entry.definition;
+              }
+              return acc;
+            }, {});
+          }
+
+          if (data && typeof data === 'object') {
+            return Object.entries(data).reduce((acc, [key, value]) => {
+              if (typeof key === 'string' && typeof value === 'string') {
+                acc[key] = value;
+              }
+              return acc;
+            }, {});
+          }
+
+          return {};
+        };
+
+        async function loadGlossary() {
+          try {
+            const response = await fetch('./glossary.json');
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (isCancelled) {
+              return;
+            }
+
+            setGlossary(normalizeGlossary(data));
+            setGlossaryError(null);
+          } catch (error) {
+            if (isCancelled) {
+              return;
+            }
+
+            console.error('Erreur lors du chargement du glossaire :', error);
+            setGlossaryError("Le glossaire n'a pas pu être chargé.");
+            setGlossary({});
+          } finally {
+            if (!isCancelled) {
+              setIsGlossaryLoading(false);
+            }
+          }
+        }
+
+        loadGlossary();
+
+        return () => {
+          isCancelled = true;
+        };
+      }, []);
 
       const markdownPreview = useMemo(() => buildMarkdown(metadata, contentHTML, qaItems), [metadata, contentHTML, qaItems]);
 
@@ -1051,13 +1120,21 @@
               </div>
               <div className="insight-card">
                 <h3>Base des acronymes</h3>
-                <ul className="insight-list">
-                  {Object.entries(ACRONYM_DB).map(([acronym, definition]) => (
-                    <li key={acronym}>
-                      <strong>{acronym}</strong> : {definition}
-                    </li>
-                  ))}
-                </ul>
+                {isGlossaryLoading ? (
+                  <p style={{ color: 'var(--muted)', margin: 0 }}>Chargement du glossaire…</p>
+                ) : glossaryError ? (
+                  <p style={{ color: 'var(--warning)', margin: 0 }}>{glossaryError}</p>
+                ) : Object.keys(glossary).length === 0 ? (
+                  <p style={{ color: 'var(--muted)', margin: 0 }}>Aucun acronyme disponible pour le moment.</p>
+                ) : (
+                  <ul className="insight-list">
+                    {Object.entries(glossary).map(([acronym, definition]) => (
+                      <li key={acronym}>
+                        <strong>{acronym}</strong> : {definition}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </aside>
           </div>
