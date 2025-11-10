@@ -220,13 +220,34 @@
     .keyword-tag {
       display: inline-flex;
       align-items: center;
-      padding: 6px 12px;
+      padding: 6px 10px 6px 12px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       border: 1px solid transparent;
       background: var(--accent);
       color: var(--primary);
+      gap: 8px;
+    }
+
+    .keyword-remove {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .keyword-remove:focus {
+      outline: none;
+      text-decoration: underline;
     }
 
     .keyword-empty {
@@ -515,7 +536,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.6
+    Version 1.1.7
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -622,8 +643,8 @@
             key: 'keywords',
             label: 'Mots clefs',
             type: 'text',
-            placeholder: 'Séparés par des virgules',
-            hint: 'Utilisez des mots clefs pour accélérer les recherches et le classement.'
+            placeholder: 'Appuyez sur Entrée pour ajouter un mot clef',
+            hint: 'Utilisez la touche Entrée pour valider chaque mot clef.'
           }
         ]
       }
@@ -736,6 +757,13 @@
       }
 
       return warnings;
+    }
+
+    function parseKeywords(value = '') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
     }
 
     function buildMarkdown(metadata, contentHTML, qaItems) {
@@ -932,14 +960,8 @@
       const [glossaryError, setGlossaryError] = useState(null);
       const editorRef = useRef(null);
       const [isExportingPDF, setIsExportingPDF] = useState(false);
-      const keywordList = useMemo(
-        () =>
-          metadata.keywords
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
-        [metadata.keywords]
-      );
+      const keywordList = useMemo(() => parseKeywords(metadata.keywords), [metadata.keywords]);
+      const [keywordInput, setKeywordInput] = useState('');
 
       const isFormDirty = useMemo(() => {
         const metadataFilled = Object.values(metadata).some((value) => `${value || ''}`.trim().length > 0);
@@ -956,6 +978,48 @@
       const handleMetadataChange = (key, value) => {
         setMetadata((prev) => ({ ...prev, [key]: value }));
         setHasStarted(true);
+      };
+
+      const handleKeywordAdd = (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          setKeywordInput('');
+          return;
+        }
+
+        const existingKeywords = parseKeywords(metadata.keywords);
+        if (existingKeywords.includes(trimmed)) {
+          setKeywordInput('');
+          return;
+        }
+
+        const updated = [...existingKeywords, trimmed];
+        setMetadata((prev) => ({ ...prev, keywords: updated.join(', ') }));
+        setKeywordInput('');
+        setHasStarted(true);
+      };
+
+      const handleKeywordRemove = (indexToRemove) => {
+        const updated = keywordList.filter((_, index) => index !== indexToRemove);
+        setMetadata((prev) => ({ ...prev, keywords: updated.join(', ') }));
+        setHasStarted(true);
+      };
+
+      const handleKeywordInputChange = (event) => {
+        setKeywordInput(event.target.value);
+      };
+
+      const handleKeywordKeyDown = (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          handleKeywordAdd(keywordInput);
+        } else if (event.key === 'Backspace' && keywordInput === '') {
+          if (keywordList.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          handleKeywordRemove(keywordList.length - 1);
+        }
       };
 
       const updateContent = (html) => {
@@ -1086,6 +1150,7 @@
         setBlockingWarnings([]);
         setPreview({ open: false, markdown: '' });
         setHasStarted(true);
+        setKeywordInput('');
 
         if (editorRef.current) {
           editorRef.current.innerHTML = '';
@@ -1185,9 +1250,10 @@
                                 <input
                                   id={field.key}
                                   type="text"
-                                  value={metadata[field.key]}
+                                  value={keywordInput}
                                   placeholder={field.placeholder}
-                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                                  onChange={handleKeywordInputChange}
+                                  onKeyDown={handleKeywordKeyDown}
                                 />
                                 <div className="keyword-tags" aria-live="polite">
                                   {keywordList.map((keyword, index) => {
@@ -1202,12 +1268,20 @@
                                           borderColor: palette.border
                                         }}
                                       >
-                                        {keyword}
+                                        <span>{keyword}</span>
+                                        <button
+                                          type="button"
+                                          className="keyword-remove"
+                                          onClick={() => handleKeywordRemove(index)}
+                                          aria-label={`Retirer le mot clef ${keyword}`}
+                                        >
+                                          ×
+                                        </button>
                                       </span>
                                     );
                                   })}
                                   {keywordList.length === 0 && (
-                                    <span className="keyword-empty">Ajoutez des mots clefs séparés par des virgules.</span>
+                                    <span className="keyword-empty">Ajoutez un mot clef puis validez avec Entrée.</span>
                                   )}
                                 </div>
                                 {field.hint && <p className="field-hint">{field.hint}</p>}
