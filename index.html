@@ -50,6 +50,17 @@
       font-size: 24px;
     }
 
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      height: 48px;
+      width: auto;
+    }
+
     .header-actions {
       display: flex;
       align-items: center;
@@ -450,6 +461,16 @@
         justify-content: flex-start;
       }
 
+      .header-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .header-logo {
+        height: 40px;
+      }
+
       .header-actions {
         width: 100%;
         justify-content: flex-start;
@@ -464,7 +485,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.4
+    Version 1.1.5
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -474,6 +495,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
     const { useState, useMemo, useRef, useEffect } = React;
+
+    const LFB_LOGO_URL = 'https://mma.prnewswire.com/media/1736228/LFB_Logo.jpg?p=publish';
 
     const KEYWORD_COLOR_PALETTE = [
       { background: 'rgba(47, 79, 159, 0.15)', color: '#2f4f9f', border: 'rgba(47, 79, 159, 0.35)' },
@@ -661,51 +684,142 @@
       return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
     }
 
-    function exportToPDF(markdown, metadata) {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-      const margin = 48;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const usableWidth = pageWidth - margin * 2;
-      const lineHeight = 18;
-      let cursorY = margin;
+    let logoAssetCache = null;
+    let logoAssetPromise = null;
 
-      const addTextBlock = (text, options = {}) => {
-        const paragraphs = text.split('\n');
-        pdf.setFont('Helvetica', options.bold ? 'bold' : 'normal');
-        pdf.setFontSize(options.size || 12);
-        paragraphs.forEach((paragraph) => {
-          const lines = pdf.splitTextToSize(paragraph, usableWidth);
-          lines.forEach((line) => {
-            if (cursorY + lineHeight > pdf.internal.pageSize.getHeight() - 72) {
-              pdf.addPage();
-              cursorY = margin;
-            }
-            pdf.text(line, margin, cursorY);
-            cursorY += lineHeight;
-          });
-          cursorY += lineHeight * 0.5;
-        });
-      };
-
-      const [metaBlock, bodyBlock] = markdown.split('\n---\n');
-      const bodyText = bodyBlock ? bodyBlock.replace(/^\s+/, '') : markdown;
-      addTextBlock('Procédure', { size: 18, bold: true });
-      addTextBlock(metaBlock.replace(/---\n?/, ''), { size: 11 });
-      addTextBlock(bodyText, { size: 12 });
-
-      const totalPages = pdf.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i += 1) {
-        pdf.setPage(i);
-        const footerY = pdf.internal.pageSize.getHeight() - 40;
-        const pageLabel = `${i} / ${totalPages}`;
-        pdf.setFont('Helvetica', 'normal');
-        pdf.setFontSize(10);
-        pdf.text(`${metadata.reference || 'Réf. non renseignée'} | ${metadata.title || 'Titre non renseigné'} | ${metadata.effectiveDate || 'Date non renseignée'}`, margin, footerY);
-        pdf.text(pageLabel, pageWidth - margin, footerY, { align: 'right' });
+    async function loadLogoAsset() {
+      if (logoAssetCache) {
+        return logoAssetCache;
       }
 
-      pdf.save(`${metadata.reference || 'procedure'}.pdf`);
+      if (logoAssetPromise) {
+        return logoAssetPromise;
+      }
+
+      logoAssetPromise = (async () => {
+        try {
+          const response = await fetch(LFB_LOGO_URL, { mode: 'cors' });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Lecture du logo impossible'));
+            reader.readAsDataURL(blob);
+          });
+
+          const dimensions = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve({ width: image.width, height: image.height });
+            image.onerror = () => reject(new Error('Chargement du logo impossible'));
+            image.src = dataUrl;
+          });
+
+          const asset = {
+            dataUrl,
+            width: dimensions.width,
+            height: dimensions.height
+          };
+
+          logoAssetCache = asset;
+          return asset;
+        } catch (error) {
+          console.error('Impossible de charger le logo LFB :', error);
+          return null;
+        } finally {
+          logoAssetPromise = null;
+        }
+      })();
+
+      return logoAssetPromise;
+    }
+
+    async function exportToPDF(markdown, metadata) {
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 48;
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const usableWidth = pageWidth - margin * 2;
+        const lineHeight = 18;
+        const footerPadding = 72;
+        const logoAsset = await loadLogoAsset();
+        let headerHeight = 0;
+
+        const drawHeader = () => {
+          if (!logoAsset || !logoAsset.width || !logoAsset.height) {
+            headerHeight = 0;
+            return headerHeight;
+          }
+
+          const maxLogoWidth = Math.min(logoAsset.width, pageWidth - margin * 2, 200);
+          if (maxLogoWidth <= 0) {
+            headerHeight = 0;
+            return headerHeight;
+          }
+
+          const displayHeight = (logoAsset.height / logoAsset.width) * maxLogoWidth;
+          const verticalOffset = 16;
+          const yPosition = Math.max(24, margin - verticalOffset);
+          pdf.addImage(logoAsset.dataUrl, 'JPEG', margin, yPosition, maxLogoWidth, displayHeight);
+          headerHeight = displayHeight + (margin - yPosition) + 8;
+          return headerHeight;
+        };
+
+        if (logoAsset) {
+          drawHeader();
+        }
+
+        let cursorY = margin + headerHeight;
+
+        const addTextBlock = (text, options = {}) => {
+          const paragraphs = text.split('\n');
+          pdf.setFont('Helvetica', options.bold ? 'bold' : 'normal');
+          pdf.setFontSize(options.size || 12);
+          paragraphs.forEach((paragraph) => {
+            const lines = pdf.splitTextToSize(paragraph, usableWidth);
+            lines.forEach((line) => {
+              if (cursorY + lineHeight > pdf.internal.pageSize.getHeight() - footerPadding) {
+                pdf.addPage();
+                if (logoAsset) {
+                  drawHeader();
+                } else {
+                  headerHeight = 0;
+                }
+                cursorY = margin + headerHeight;
+              }
+              pdf.text(line, margin, cursorY);
+              cursorY += lineHeight;
+            });
+            cursorY += lineHeight * 0.5;
+          });
+        };
+
+        const [metaBlock, bodyBlock] = markdown.split('\n---\n');
+        const bodyText = bodyBlock ? bodyBlock.replace(/^\s+/, '') : markdown;
+        addTextBlock('Procédure', { size: 18, bold: true });
+        addTextBlock(metaBlock.replace(/---\n?/, ''), { size: 11 });
+        addTextBlock(bodyText, { size: 12 });
+
+        const totalPages = pdf.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i += 1) {
+          pdf.setPage(i);
+          const footerY = pdf.internal.pageSize.getHeight() - 40;
+          const pageLabel = `${i} / ${totalPages}`;
+          pdf.setFont('Helvetica', 'normal');
+          pdf.setFontSize(10);
+          pdf.text(`${metadata.reference || 'Réf. non renseignée'} | ${metadata.title || 'Titre non renseigné'} | ${metadata.effectiveDate || 'Date non renseignée'}`, margin, footerY);
+          pdf.text(pageLabel, pageWidth - margin, footerY, { align: 'right' });
+        }
+
+        pdf.save(`${metadata.reference || 'procedure'}.pdf`);
+      } catch (error) {
+        console.error('Erreur lors de la génération du PDF :', error);
+        throw error;
+      }
     }
 
     function App() {
@@ -720,6 +834,7 @@
       const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
       const [glossaryError, setGlossaryError] = useState(null);
       const editorRef = useRef(null);
+      const [isExportingPDF, setIsExportingPDF] = useState(false);
       const keywordList = useMemo(
         () =>
           metadata.keywords
@@ -899,14 +1014,24 @@
         URL.revokeObjectURL(link.href);
       };
 
-      const handleExportPDF = () => {
-        exportToPDF(markdownPreview, metadata);
+      const handleExportPDF = async () => {
+        try {
+          setIsExportingPDF(true);
+          await exportToPDF(markdownPreview, metadata);
+        } catch (error) {
+          window.alert("Le PDF n'a pas pu être généré. Veuillez réessayer.");
+        } finally {
+          setIsExportingPDF(false);
+        }
       };
 
       return (
         <React.Fragment>
           <header>
-            <h1>Studio de Procédures IA Friendly</h1>
+            <div className="header-brand">
+              <img src={LFB_LOGO_URL} alt="Logo LFB" className="header-logo" />
+              <h1>Studio de Procédures IA Friendly</h1>
+            </div>
             <div className="header-actions">
               <button type="button" className="new-procedure-btn" onClick={handleNewProcedure}>
                 Nouvelle procédure
@@ -1092,9 +1217,9 @@
                     type="button"
                     className="primary-btn"
                     onClick={handleExportPDF}
-                    disabled={blockingWarnings.length > 0}
+                    disabled={blockingWarnings.length > 0 || isExportingPDF}
                   >
-                    Exporter en PDF
+                    {isExportingPDF ? 'Export PDF en cours…' : 'Exporter en PDF'}
                   </button>
                 </div>
               </section>
