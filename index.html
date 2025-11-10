@@ -167,9 +167,45 @@
     }
 
     .metadata-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .metadata-group {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      background: #f9faff;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: inset 0 0 0 1px rgba(47, 79, 159, 0.05);
+    }
+
+    .metadata-group-header h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .metadata-group-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .metadata-group-fields {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px 20px;
+    }
+
+    .field-hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .keyword-input-wrapper {
@@ -485,7 +521,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.5
+    Version 1.1.6
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -506,33 +542,100 @@
       { background: 'rgba(103, 64, 152, 0.15)', color: '#5d3a92', border: 'rgba(103, 64, 152, 0.35)' }
     ];
 
-    const metadataFields = [
-      { key: 'title', label: 'Titre', type: 'text', placeholder: 'Titre de la procédure' },
-      { key: 'reference', label: 'Référence', type: 'text', placeholder: 'Référence interne' },
-      { key: 'author', label: 'Auteur', type: 'text', placeholder: 'Nom complet' },
+    const metadataGroups = [
       {
-        key: 'businessScope',
-        label: 'Périmètre métier',
-        type: 'select',
-        options: ['Médical', 'Commercial', 'Neutre']
+        key: 'identification',
+        title: 'Identification',
+        description: 'Renseignez les éléments essentiels pour retrouver et suivre cette procédure.',
+        fields: [
+          {
+            key: 'title',
+            label: 'Titre',
+            type: 'text',
+            placeholder: 'Titre de la procédure',
+            hint: 'Nom tel qu’il apparaîtra dans les exports et la base documentaire.'
+          },
+          {
+            key: 'reference',
+            label: 'Référence',
+            type: 'text',
+            placeholder: 'Référence interne',
+            hint: 'Identifiant unique ou code interne facilitant le suivi des versions.'
+          },
+          {
+            key: 'author',
+            label: 'Auteur',
+            type: 'text',
+            placeholder: 'Nom complet',
+            hint: 'Indiquez la personne responsable de la rédaction ou de la validation.'
+          },
+          {
+            key: 'effectiveDate',
+            label: "Date d'entrée en vigueur",
+            type: 'date',
+            hint: 'Date à laquelle la procédure devient applicable.'
+          }
+        ]
       },
       {
-        key: 'companyScope',
-        label: 'Périmètre société',
-        type: 'select',
-        options: ['LFB Bio Médicament', 'LFB Biomanufacturing']
+        key: 'contexte',
+        title: 'Contexte',
+        description: 'Situez la procédure au sein de votre dispositif documentaire.',
+        fields: [
+          {
+            key: 'summary',
+            label: 'Résumé',
+            type: 'textarea',
+            placeholder: 'Résumé exécutif de la procédure',
+            hint: 'Présentez l’objectif et les points clés en quelques phrases.'
+          },
+          {
+            key: 'parentProcedure',
+            label: 'Procédure mère',
+            type: 'text',
+            placeholder: 'Référence ou titre',
+            hint: 'Mentionnez la procédure qui encadre ou complète celle-ci, si applicable.'
+          }
+        ]
       },
       {
-        key: 'geoScope',
-        label: 'Périmètre géographique',
-        type: 'select',
-        options: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique']
-      },
-      { key: 'keywords', label: 'Mots clefs', type: 'text', placeholder: 'Séparés par des virgules' },
-      { key: 'summary', label: 'Résumé', type: 'textarea', placeholder: 'Résumé exécutif de la procédure' },
-      { key: 'parentProcedure', label: 'Procédure mère', type: 'text', placeholder: 'Référence ou titre' },
-      { key: 'effectiveDate', label: "Date d'entrée en vigueur", type: 'date' }
+        key: 'diffusion',
+        title: 'Diffusion',
+        description: 'Précisez à qui s’adresse la procédure et dans quelles zones elle s’applique.',
+        fields: [
+          {
+            key: 'businessScope',
+            label: 'Périmètre métier',
+            type: 'select',
+            options: ['Médical', 'Commercial', 'Neutre'],
+            hint: 'Sélectionnez le domaine métier principalement concerné.'
+          },
+          {
+            key: 'companyScope',
+            label: 'Périmètre société',
+            type: 'select',
+            options: ['LFB Bio Médicament', 'LFB Biomanufacturing'],
+            hint: 'Choisissez l’entité juridique ou la filiale de diffusion.'
+          },
+          {
+            key: 'geoScope',
+            label: 'Périmètre géographique',
+            type: 'select',
+            options: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique'],
+            hint: 'Zone géographique de validité de la procédure.'
+          },
+          {
+            key: 'keywords',
+            label: 'Mots clefs',
+            type: 'text',
+            placeholder: 'Séparés par des virgules',
+            hint: 'Utilisez des mots clefs pour accélérer les recherches et le classement.'
+          }
+        ]
+      }
     ];
+
+    const metadataFields = metadataGroups.flatMap((group) => group.fields);
 
     const initialMetadata = metadataFields.reduce((acc, field) => {
       acc[field.key] = '';
@@ -1057,70 +1160,90 @@
               <section className="card">
                 <h2>1. Métadonnées</h2>
                 <div className="metadata-grid">
-                  {metadataFields.map((field) => (
-                    <div key={field.key}>
-                      <label htmlFor={field.key}>{field.label}</label>
-                      {field.type === 'select' ? (
-                        <select
-                          id={field.key}
-                          value={metadata[field.key]}
-                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
-                        >
-                          <option value="">Sélectionnez une option</option>
-                          {field.options.map((option) => (
-                            <option value={option} key={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      ) : field.key === 'keywords' ? (
-                        <div className="keyword-input-wrapper">
-                          <input
-                            id={field.key}
-                            type="text"
-                            value={metadata[field.key]}
-                            placeholder={field.placeholder}
-                            onChange={(event) => handleMetadataChange(field.key, event.target.value)}
-                          />
-                          <div className="keyword-tags" aria-live="polite">
-                            {keywordList.map((keyword, index) => {
-                              const palette = KEYWORD_COLOR_PALETTE[index % KEYWORD_COLOR_PALETTE.length];
-                              return (
-                                <span
-                                  key={`${keyword}-${index}`}
-                                  className="keyword-tag"
-                                  style={{
-                                    background: palette.background,
-                                    color: palette.color,
-                                    borderColor: palette.border
-                                  }}
+                  {metadataGroups.map((group) => (
+                    <section className="metadata-group" key={group.key}>
+                      <div className="metadata-group-header">
+                        <h3>{group.title}</h3>
+                        {group.description && <p>{group.description}</p>}
+                      </div>
+                      <div className="metadata-group-fields">
+                        {group.fields.map((field) => (
+                          <div key={field.key}>
+                            <label htmlFor={field.key}>{field.label}</label>
+                            {field.type === 'select' ? (
+                              <>
+                                <select
+                                  id={field.key}
+                                  value={metadata[field.key]}
+                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
                                 >
-                                  {keyword}
-                                </span>
-                              );
-                            })}
-                            {keywordList.length === 0 && (
-                              <span className="keyword-empty">Ajoutez des mots clefs séparés par des virgules.</span>
+                                  <option value="">Sélectionnez une option</option>
+                                  {field.options.map((option) => (
+                                    <option value={option} key={option}>
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+                                {field.hint && <p className="field-hint">{field.hint}</p>}
+                              </>
+                            ) : field.key === 'keywords' ? (
+                              <div className="keyword-input-wrapper">
+                                <input
+                                  id={field.key}
+                                  type="text"
+                                  value={metadata[field.key]}
+                                  placeholder={field.placeholder}
+                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                                />
+                                <div className="keyword-tags" aria-live="polite">
+                                  {keywordList.map((keyword, index) => {
+                                    const palette = KEYWORD_COLOR_PALETTE[index % KEYWORD_COLOR_PALETTE.length];
+                                    return (
+                                      <span
+                                        key={`${keyword}-${index}`}
+                                        className="keyword-tag"
+                                        style={{
+                                          background: palette.background,
+                                          color: palette.color,
+                                          borderColor: palette.border
+                                        }}
+                                      >
+                                        {keyword}
+                                      </span>
+                                    );
+                                  })}
+                                  {keywordList.length === 0 && (
+                                    <span className="keyword-empty">Ajoutez des mots clefs séparés par des virgules.</span>
+                                  )}
+                                </div>
+                                {field.hint && <p className="field-hint">{field.hint}</p>}
+                              </div>
+                            ) : field.type === 'textarea' ? (
+                              <>
+                                <textarea
+                                  id={field.key}
+                                  value={metadata[field.key]}
+                                  placeholder={field.placeholder}
+                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                                />
+                                {field.hint && <p className="field-hint">{field.hint}</p>}
+                              </>
+                            ) : (
+                              <>
+                                <input
+                                  id={field.key}
+                                  type={field.type}
+                                  value={metadata[field.key]}
+                                  placeholder={field.placeholder}
+                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                                />
+                                {field.hint && <p className="field-hint">{field.hint}</p>}
+                              </>
                             )}
                           </div>
-                        </div>
-                      ) : field.type === 'textarea' ? (
-                        <textarea
-                          id={field.key}
-                          value={metadata[field.key]}
-                          placeholder={field.placeholder}
-                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
-                        />
-                      ) : (
-                        <input
-                          id={field.key}
-                          type={field.type}
-                          value={metadata[field.key]}
-                          placeholder={field.placeholder}
-                          onChange={(event) => handleMetadataChange(field.key, event.target.value)}
-                        />
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               </section>
