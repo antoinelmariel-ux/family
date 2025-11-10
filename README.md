@@ -10,6 +10,8 @@ Une webapp mobile-first pour orchestrer vos journées depuis une seule interface
 
 Ce projet est conçu pour être hébergé sur GitHub Pages ou tout autre hébergement statique. Il suffit de publier les fichiers `index.html`, `styles.css` et `app.js`.
 
+> ⚠️ Les fichiers sources `index.html`, `styles.css` et `app.js` ont été retirés afin de ne conserver que cette documentation Markdown dans le dépôt.
+
 ## Fonctionnalités clés
 
 - Interface pensée pour un usage 100 % mobile, fluide et tactile.
@@ -19,4 +21,4 @@ Ce projet est conçu pour être hébergé sur GitHub Pages ou tout autre héberg
 - Création de catégories de courses personnalisées.
 
 ---
-_Version : v0.2.0_
+_Version : v0.3.0_
