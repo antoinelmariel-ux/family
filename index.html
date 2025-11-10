@@ -296,6 +296,42 @@
       font-size: 14px;
     }
 
+    .guideline-comment-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .guideline-comment-list li + li {
+      margin-top: 12px;
+    }
+
+    .insight-comment {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .comment-anchor {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 12px;
+      border: 1px solid rgba(47, 79, 159, 0.2);
+      white-space: nowrap;
+    }
+
+    .comment-message {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
     .export-actions {
       display: flex;
       gap: 12px;
@@ -428,7 +464,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.2
+    Version 1.1.3
   </footer>
 
   <script>
@@ -509,22 +545,25 @@
         const text = heading.textContent.trim() || '(titre sans texte)';
         guidelines.push({
           type: 'heading',
-          message: `"${text}" — Commencez la section par un résumé bref et concis.`
+          anchor: text,
+          message: 'Commencez la section par un résumé bref et concis.'
         });
       });
 
       doc.querySelectorAll('ul, ol').forEach((list) => {
-        const label = list.tagName === 'UL' ? 'liste à puces' : 'liste numérotée';
+        const label = list.tagName === 'UL' ? 'Liste à puces' : 'Liste numérotée';
         guidelines.push({
           type: 'list-transition',
-          message: `Assurez-vous que la ${label} est reliée par une transition claire entre les étapes.`
+          anchor: label,
+          message: 'Reliez la liste par une transition claire entre les étapes.'
         });
         const previous = list.previousElementSibling;
         const hasIntro = previous && previous.textContent.trim().length > 0 && previous.textContent.trim().endsWith(':');
         if (!hasIntro) {
           guidelines.push({
             type: 'list-intro',
-            message: `Ajoutez une phrase introductive se terminant par un deux-points avant la liste.`
+            anchor: label,
+            message: 'Ajoutez une phrase introductive se terminant par un deux-points avant la liste.'
           });
         }
       });
@@ -534,7 +573,8 @@
       pronounMatches.forEach((item) => {
         guidelines.push({
           type: 'pronoun',
-          message: `Précisez le référent du pronom "${item}" pour éviter toute ambiguïté.`
+          anchor: item,
+          message: 'Précisez le référent du pronom pour éviter toute ambiguïté.'
         });
       });
 
@@ -543,7 +583,8 @@
         if (!ACRONYM_DB[acronym]) {
           guidelines.push({
             type: 'acronym',
-            message: `Documentez l'acronyme "${acronym}" ou ajoutez-le à la base des acronymes.`
+            anchor: acronym,
+            message: "Documentez l'acronyme ou ajoutez-le à la base des acronymes."
           });
         }
       });
@@ -996,9 +1037,14 @@
                 {guidelines.length === 0 ? (
                   <p style={{ color: 'var(--muted)', margin: 0 }}>Commencez votre rédaction pour recevoir des recommandations.</p>
                 ) : (
-                  <ul className="insight-list">
+                  <ul className="insight-list guideline-comment-list">
                     {guidelines.map((item, index) => (
-                      <li key={`${item.type}-${index}`}>{item.message}</li>
+                      <li key={`${item.type}-${item.anchor || index}`}>
+                        <div className="insight-comment">
+                          <span className="comment-anchor">{item.anchor || 'Texte'}</span>
+                          <span className="comment-message">{item.message}</span>
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 )}
