@@ -161,6 +161,35 @@
       gap: 16px 20px;
     }
 
+    .keyword-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .keyword-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .keyword-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      background: var(--accent);
+      color: var(--primary);
+    }
+
+    .keyword-empty {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
     .editor-card {
       display: flex;
       flex-direction: column;
@@ -399,7 +428,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.1
+    Version 1.1.2
   </footer>
 
   <script>
@@ -417,6 +446,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
     const { useState, useMemo, useRef } = React;
+
+    const KEYWORD_COLOR_PALETTE = [
+      { background: 'rgba(47, 79, 159, 0.15)', color: '#2f4f9f', border: 'rgba(47, 79, 159, 0.35)' },
+      { background: 'rgba(32, 137, 94, 0.15)', color: '#20895e', border: 'rgba(32, 137, 94, 0.35)' },
+      { background: 'rgba(214, 69, 69, 0.15)', color: '#d64545', border: 'rgba(214, 69, 69, 0.35)' },
+      { background: 'rgba(237, 180, 52, 0.18)', color: '#8a5a00', border: 'rgba(237, 180, 52, 0.4)' },
+      { background: 'rgba(103, 64, 152, 0.15)', color: '#5d3a92', border: 'rgba(103, 64, 152, 0.35)' }
+    ];
 
     const metadataFields = [
       { key: 'title', label: 'Titre', type: 'text', placeholder: 'Titre de la procédure' },
@@ -647,6 +684,14 @@
       const [preview, setPreview] = useState({ open: false, markdown: '' });
       const [hasStarted, setHasStarted] = useState(false);
       const editorRef = useRef(null);
+      const keywordList = useMemo(
+        () =>
+          metadata.keywords
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        [metadata.keywords]
+      );
 
       const isFormDirty = useMemo(() => {
         const metadataFilled = Object.values(metadata).some((value) => `${value || ''}`.trim().length > 0);
@@ -793,6 +838,37 @@
                             </option>
                           ))}
                         </select>
+                      ) : field.key === 'keywords' ? (
+                        <div className="keyword-input-wrapper">
+                          <input
+                            id={field.key}
+                            type="text"
+                            value={metadata[field.key]}
+                            placeholder={field.placeholder}
+                            onChange={(event) => handleMetadataChange(field.key, event.target.value)}
+                          />
+                          <div className="keyword-tags" aria-live="polite">
+                            {keywordList.map((keyword, index) => {
+                              const palette = KEYWORD_COLOR_PALETTE[index % KEYWORD_COLOR_PALETTE.length];
+                              return (
+                                <span
+                                  key={`${keyword}-${index}`}
+                                  className="keyword-tag"
+                                  style={{
+                                    background: palette.background,
+                                    color: palette.color,
+                                    borderColor: palette.border
+                                  }}
+                                >
+                                  {keyword}
+                                </span>
+                              );
+                            })}
+                            {keywordList.length === 0 && (
+                              <span className="keyword-empty">Ajoutez des mots clefs séparés par des virgules.</span>
+                            )}
+                          </div>
+                        </div>
                       ) : field.type === 'textarea' ? (
                         <textarea
                           id={field.key}
