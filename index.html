@@ -569,6 +569,25 @@
       border: 1px solid var(--primary);
     }
 
+    .ghost-btn {
+      padding: 10px 16px;
+      font-size: 15px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px dashed rgba(47, 79, 159, 0.6);
+      background: transparent;
+      color: var(--primary);
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .ghost-btn:hover,
+    .ghost-btn:focus-visible {
+      background: rgba(47, 79, 159, 0.08);
+      border-color: rgba(47, 79, 159, 0.85);
+      outline: none;
+    }
+
     .warning {
       color: var(--warning);
       font-weight: 600;
@@ -576,6 +595,51 @@
       align-items: center;
       gap: 8px;
       font-size: 14px;
+    }
+
+    .backoffice-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 35, 0.55);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 24px;
+      z-index: 20;
+      overflow-y: auto;
+    }
+
+    .backoffice-overlay.open {
+      display: flex;
+    }
+
+    .backoffice-panel {
+      background: #fff;
+      border-radius: 18px;
+      max-width: 960px;
+      width: 100%;
+      box-shadow: 0 18px 48px rgba(14, 24, 56, 0.28);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      outline: none;
+    }
+
+    .backoffice-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .backoffice-panel-header h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .backoffice-actions {
+      justify-content: flex-end;
     }
 
     .preview-modal {
@@ -643,6 +707,11 @@
         position: static;
         max-height: none;
       }
+
+      .backoffice-panel {
+        max-width: 720px;
+        padding: 28px;
+      }
     }
 
     @media (max-width: 600px) {
@@ -669,13 +738,44 @@
       .new-procedure-btn {
         width: 100%;
       }
+
+      .ghost-btn {
+        width: 100%;
+      }
+
+      .backoffice-overlay {
+        padding: 32px 16px;
+      }
+
+      .backoffice-panel {
+        padding: 24px;
+        border-radius: 16px;
+      }
+
+      .backoffice-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .backoffice-panel-header h2 {
+        font-size: 20px;
+      }
+
+      .backoffice-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .backoffice-actions .secondary-btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.17
+    Version 1.1.18
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -697,7 +797,7 @@
       { background: 'rgba(103, 64, 152, 0.15)', color: '#5d3a92', border: 'rgba(103, 64, 152, 0.35)' }
     ];
 
-    const metadataGroups = [
+    const METADATA_GROUP_DEFINITIONS = [
       {
         key: 'identification',
         title: 'Identification',
@@ -769,21 +869,24 @@
             key: 'businessScope',
             label: 'Périmètre métier',
             type: 'select',
-            options: ['Médical', 'Commercial', 'Neutre'],
+            optionsKey: 'businessScope',
+            defaultOptions: ['Médical', 'Commercial', 'Neutre'],
             hint: 'Sélectionnez le domaine métier principalement concerné.'
           },
           {
             key: 'companyScope',
             label: 'Périmètre société',
             type: 'select',
-            options: ['LFB Bio Médicament', 'LFB Biomanufacturing'],
+            optionsKey: 'companyScope',
+            defaultOptions: ['LFB Bio Médicament', 'LFB Biomanufacturing'],
             hint: 'Choisissez l’entité juridique ou la filiale de diffusion.'
           },
           {
             key: 'geoScope',
             label: 'Périmètre géographique',
             type: 'select',
-            options: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique'],
+            optionsKey: 'geoScope',
+            defaultOptions: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique'],
             hint: 'Zone géographique de validité de la procédure.'
           },
           {
@@ -797,26 +900,31 @@
       }
     ];
 
-    const metadataFields = metadataGroups.flatMap((group) => group.fields);
+    const METADATA_FIELD_DEFINITIONS = METADATA_GROUP_DEFINITIONS.flatMap((group) => group.fields);
 
-    const initialMetadata = metadataFields.reduce((acc, field) => {
+    const initialMetadata = METADATA_FIELD_DEFINITIONS.reduce((acc, field) => {
       acc[field.key] = '';
       return acc;
     }, {});
 
-    const selectFieldDefinitions = metadataFields.filter((field) => field.type === 'select');
-    const SELECT_FIELD_KEYS = selectFieldDefinitions.map((field) => field.key);
-    const DEFAULT_SELECT_OPTIONS = selectFieldDefinitions.reduce((acc, field) => {
-      acc[field.key] = field.options ? [...field.options] : [];
+    const SELECT_FIELD_DEFINITIONS = METADATA_FIELD_DEFINITIONS.filter((field) => field.type === 'select');
+    const SELECT_FIELD_KEYS = Array.from(
+      new Set(SELECT_FIELD_DEFINITIONS.map((field) => field.optionsKey || field.key))
+    );
+    const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_DEFINITIONS.reduce((acc, field) => {
+      const key = field.optionsKey || field.key;
+      acc[key] = field.defaultOptions ? [...field.defaultOptions] : [];
       return acc;
     }, {});
     const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
 
-    function normalizeSelectOptions(options) {
+    function normalizeSelectOptions(options, baseOptions = DEFAULT_SELECT_OPTIONS) {
       const normalized = {};
       SELECT_FIELD_KEYS.forEach((key) => {
-        const defaults = DEFAULT_SELECT_OPTIONS[key] || [];
-        const rawValues = options && Array.isArray(options[key]) ? options[key] : defaults;
+        const baseValues = baseOptions && Array.isArray(baseOptions[key])
+          ? baseOptions[key]
+          : DEFAULT_SELECT_OPTIONS[key] || [];
+        const rawValues = options && Array.isArray(options[key]) ? options[key] : baseValues;
         const sanitized = rawValues
           .map((value) => (typeof value === 'string' ? value : String(value)))
           .map((value) => value.trim())
@@ -829,27 +937,45 @@
           }
         });
 
-        normalized[key] = unique.length > 0 ? unique : [...defaults];
+        normalized[key] = unique.length > 0 ? unique : [...baseValues];
       });
       return normalized;
     }
 
-    function loadInitialSelectOptions() {
+    function createResolvedMetadataGroups(selectOptions, baseOptions = DEFAULT_SELECT_OPTIONS) {
+      const normalizedOptions = normalizeSelectOptions(selectOptions, baseOptions);
+      return METADATA_GROUP_DEFINITIONS.map((group) => ({
+        ...group,
+        fields: group.fields.map((field) => {
+          if (field.type !== 'select') {
+            return field;
+          }
+          const optionsKey = field.optionsKey || field.key;
+          return {
+            ...field,
+            options: normalizedOptions[optionsKey] || field.defaultOptions || []
+          };
+        })
+      }));
+    }
+
+    function loadInitialSelectOptions(configOptions = DEFAULT_SELECT_OPTIONS) {
+      const fallback = normalizeSelectOptions(configOptions, configOptions);
       if (typeof window === 'undefined' || !window.localStorage) {
-        return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+        return fallback;
       }
 
       try {
         const raw = window.localStorage.getItem(SELECT_OPTION_STORAGE_KEY);
         if (!raw) {
-          return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+          return fallback;
         }
 
         const parsed = JSON.parse(raw);
-        return normalizeSelectOptions(parsed);
+        return normalizeSelectOptions({ ...configOptions, ...parsed }, configOptions);
       } catch (error) {
         console.warn('Impossible de charger les options personnalisées :', error);
-        return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+        return fallback;
       }
     }
 
@@ -858,6 +984,25 @@
         acc[key] = '';
         return acc;
       }, {});
+    }
+
+    async function loadFieldConfigurationFromFile() {
+      try {
+        const response = await fetch('./field-config.json', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data || typeof data !== 'object') {
+          return DEFAULT_SELECT_OPTIONS;
+        }
+
+        return data;
+      } catch (error) {
+        console.warn('Impossible de charger la configuration des champs :', error);
+        return DEFAULT_SELECT_OPTIONS;
+      }
     }
 
     const createInitialQAItems = () => [{ question: '', answer: '' }];
@@ -1284,7 +1429,12 @@
       }
     }
 
-    function App() {
+    function App({ initialSelectOptions }) {
+      const normalizedInitialSelectOptions = useMemo(
+        () => normalizeSelectOptions(initialSelectOptions, initialSelectOptions),
+        [initialSelectOptions]
+      );
+      const configDefaultsRef = useRef(normalizedInitialSelectOptions);
       const [metadata, setMetadata] = useState(() => ({ ...initialMetadata }));
       const [contentHTML, setContentHTML] = useState(INITIAL_CONTENT_HTML);
       const [qaItems, setQaItems] = useState(() => createInitialQAItems());
@@ -1295,13 +1445,56 @@
       const [glossary, setGlossary] = useState({});
       const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
       const [glossaryError, setGlossaryError] = useState(null);
-      const [selectOptions, setSelectOptions] = useState(() => loadInitialSelectOptions());
+      const [selectOptions, setSelectOptions] = useState(() =>
+        loadInitialSelectOptions(normalizedInitialSelectOptions)
+      );
       const [selectOptionDrafts, setSelectOptionDrafts] = useState(() => createEmptyOptionDrafts());
+      const [isBackofficeOpen, setIsBackofficeOpen] = useState(false);
       const editorRef = useRef(null);
       const fileInputRef = useRef(null);
+      const backofficePanelRef = useRef(null);
       const [isExportingPDF, setIsExportingPDF] = useState(false);
       const keywordList = useMemo(() => parseKeywords(metadata.keywords), [metadata.keywords]);
       const [keywordInput, setKeywordInput] = useState('');
+      const resolvedMetadataGroups = useMemo(
+        () => createResolvedMetadataGroups(selectOptions, configDefaultsRef.current),
+        [selectOptions]
+      );
+      const resolvedMetadataFields = useMemo(
+        () => resolvedMetadataGroups.flatMap((group) => group.fields),
+        [resolvedMetadataGroups]
+      );
+      const selectFieldDefinitions = useMemo(
+        () => resolvedMetadataFields.filter((field) => field.type === 'select'),
+        [resolvedMetadataFields]
+      );
+
+      useEffect(() => {
+        configDefaultsRef.current = normalizedInitialSelectOptions;
+      }, [normalizedInitialSelectOptions]);
+
+      useEffect(() => {
+        if (isBackofficeOpen && backofficePanelRef.current) {
+          backofficePanelRef.current.focus();
+        }
+      }, [isBackofficeOpen]);
+
+      useEffect(() => {
+        if (!isBackofficeOpen) {
+          return;
+        }
+
+        const handleKeyDown = (event) => {
+          if (event.key === 'Escape') {
+            setIsBackofficeOpen(false);
+          }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+          window.removeEventListener('keydown', handleKeyDown);
+        };
+      }, [isBackofficeOpen]);
 
       const isFormDirty = useMemo(() => {
         const metadataFilled = Object.values(metadata).some((value) => `${value || ''}`.trim().length > 0);
@@ -1423,7 +1616,7 @@
       };
 
       const handleResetSelectOptions = (fieldKey) => {
-        const defaults = DEFAULT_SELECT_OPTIONS[fieldKey] || [];
+        const defaults = configDefaultsRef.current[fieldKey] || DEFAULT_SELECT_OPTIONS[fieldKey] || [];
         let hasChanged = false;
 
         setSelectOptions((prev) => {
@@ -1452,6 +1645,34 @@
 
         if (hasChanged) {
           setHasStarted(true);
+        }
+      };
+
+      const handleExportConfig = () => {
+        try {
+          const data = SELECT_FIELD_KEYS.reduce((acc, key) => {
+            acc[key] = [...(selectOptions[key] || [])];
+            return acc;
+          }, {});
+
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = 'field-config.json';
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Erreur lors de l'export de la configuration :", error);
+          window.alert("L'export de la configuration a échoué. Veuillez réessayer.");
+        }
+      };
+
+      const handleBackofficeOverlayClick = (event) => {
+        if (event.target === event.currentTarget) {
+          setIsBackofficeOpen(false);
         }
       };
 
@@ -1718,7 +1939,7 @@
           editorRef.current.innerHTML = INITIAL_CONTENT_HTML;
         }
 
-        const firstMetadataField = document.getElementById(metadataFields[0].key);
+        const firstMetadataField = document.getElementById(METADATA_FIELD_DEFINITIONS[0].key);
         if (firstMetadataField) {
           firstMetadataField.focus();
         }
@@ -1767,6 +1988,13 @@
               <button type="button" className="secondary-btn" onClick={handleImportClick}>
                 Importer un Markdown
               </button>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setIsBackofficeOpen(true)}
+              >
+                Gérer le backoffice
+              </button>
               <button type="button" className="new-procedure-btn" onClick={handleNewProcedure}>
                 Nouvelle procédure
               </button>
@@ -1791,7 +2019,7 @@
               <section className="card">
                 <h2>1. Métadonnées</h2>
                 <div className="metadata-grid">
-                  {metadataGroups.map((group) => (
+                  {resolvedMetadataGroups.map((group) => (
                     <section className="metadata-group" key={group.key}>
                       <div className="metadata-group-header">
                         <h3>{group.title}</h3>
@@ -1886,68 +2114,6 @@
                     </section>
                   ))}
                 </div>
-              </section>
-
-              <section className="card backoffice-card">
-                <h2>Backoffice — Options des champs</h2>
-                <p className="backoffice-description">
-                  Personnalisez les listes de choix proposées dans les menus déroulants du formulaire.
-                </p>
-                {selectFieldDefinitions.map((field) => {
-                  const options = selectOptions[field.key] || [];
-                  return (
-                    <div className="backoffice-section" key={field.key}>
-                      <div className="backoffice-section-header">
-                        <h3>{field.label}</h3>
-                        <button
-                          type="button"
-                          className="backoffice-reset-btn"
-                          onClick={() => handleResetSelectOptions(field.key)}
-                        >
-                          Réinitialiser
-                        </button>
-                      </div>
-                      <label htmlFor={`${field.key}-new-option`}>Ajouter une option</label>
-                      <div className="backoffice-controls">
-                        <input
-                          id={`${field.key}-new-option`}
-                          type="text"
-                          value={selectOptionDrafts[field.key] || ''}
-                          placeholder="Nouvelle option"
-                          onChange={(event) => handleSelectOptionDraftChange(field.key, event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              handleAddSelectOption(field.key);
-                            }
-                          }}
-                        />
-                        <button type="button" className="backoffice-add-btn" onClick={() => handleAddSelectOption(field.key)}>
-                          Ajouter
-                        </button>
-                      </div>
-                      <div className="option-list" aria-live="polite">
-                        {options.length === 0 ? (
-                          <span className="option-empty">Aucune option enregistrée pour le moment.</span>
-                        ) : (
-                          options.map((option) => (
-                            <span className="option-pill" key={option}>
-                              <span>{option}</span>
-                              <button
-                                type="button"
-                                className="option-pill-remove"
-                                aria-label={`Supprimer l'option ${option}`}
-                                onClick={() => handleRemoveSelectOption(field.key, option)}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
               </section>
 
               <section className="card editor-card">
@@ -2092,6 +2258,93 @@
             </aside>
           </div>
 
+          {isBackofficeOpen && (
+            <div
+              className="backoffice-overlay open"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="backoffice-title"
+              onClick={handleBackofficeOverlayClick}
+            >
+              <div
+                className="backoffice-panel"
+                role="document"
+                ref={backofficePanelRef}
+                tabIndex={-1}
+              >
+                <div className="backoffice-panel-header">
+                  <h2 id="backoffice-title">Backoffice — Options des champs</h2>
+                  <button type="button" className="secondary-btn" onClick={() => setIsBackofficeOpen(false)}>
+                    Fermer
+                  </button>
+                </div>
+                <p className="backoffice-description">
+                  Personnalisez les listes de choix proposées dans les menus déroulants du formulaire.
+                </p>
+                {selectFieldDefinitions.map((field) => {
+                  const options = selectOptions[field.key] || [];
+                  return (
+                    <div className="backoffice-section" key={field.key}>
+                      <div className="backoffice-section-header">
+                        <h3>{field.label}</h3>
+                        <button
+                          type="button"
+                          className="backoffice-reset-btn"
+                          onClick={() => handleResetSelectOptions(field.key)}
+                        >
+                          Réinitialiser
+                        </button>
+                      </div>
+                      <label htmlFor={`${field.key}-new-option`}>Ajouter une option</label>
+                      <div className="backoffice-controls">
+                        <input
+                          id={`${field.key}-new-option`}
+                          type="text"
+                          value={selectOptionDrafts[field.key] || ''}
+                          placeholder="Nouvelle option"
+                          onChange={(event) => handleSelectOptionDraftChange(field.key, event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              handleAddSelectOption(field.key);
+                            }
+                          }}
+                        />
+                        <button type="button" className="backoffice-add-btn" onClick={() => handleAddSelectOption(field.key)}>
+                          Ajouter
+                        </button>
+                      </div>
+                      <div className="option-list" aria-live="polite">
+                        {options.length === 0 ? (
+                          <span className="option-empty">Aucune option enregistrée pour le moment.</span>
+                        ) : (
+                          options.map((option) => (
+                            <span className="option-pill" key={option}>
+                              <span>{option}</span>
+                              <button
+                                type="button"
+                                className="option-pill-remove"
+                                aria-label={`Supprimer l'option ${option}`}
+                                onClick={() => handleRemoveSelectOption(field.key, option)}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="export-actions backoffice-actions">
+                  <button type="button" className="secondary-btn" onClick={handleExportConfig}>
+                    Exporter la configuration JSON
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {preview.open && (
             <div className="preview-modal" role="dialog" aria-modal="true">
               <div className="preview-content">
@@ -2111,7 +2364,24 @@
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    async function bootstrap() {
+      try {
+        const configuration = await loadFieldConfigurationFromFile();
+        const normalizedConfiguration = normalizeSelectOptions(configuration, configuration);
+        const container = document.getElementById('root');
+        if (!container) {
+          return;
+        }
+
+        ReactDOM.createRoot(container).render(
+          <App initialSelectOptions={normalizedConfiguration} />
+        );
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation de l'application :", error);
+      }
+    }
+
+    bootstrap();
   </script>
 </body>
 </html>
