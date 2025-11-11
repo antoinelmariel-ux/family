@@ -40,4 +40,4 @@ Pour que la webapp puisse exploiter la procédure, renseigner les champs suivant
 - Vérifier la cohérence entre les données saisies dans la webapp et celles du document de référence.
 - Mettre à jour la procédure à chaque évolution de processus et notifier les parties prenantes.
 
-_Version : 1.1.24_
+_Version : 1.1.25_

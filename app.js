@@ -133,6 +133,11 @@ const TEXT = {
     en: 'Document the acronym or add it to the acronym repository.',
     es: 'Documenta el acrónimo o añádelo a la base de acrónimos.'
   },
+  'guidelines.definitionCheck': {
+    fr: 'Vérifiez que ce terme est défini dans la section « Définition ».',
+    en: 'Make sure this term is defined in the “Definition” section.',
+    es: 'Asegúrese de que este término esté definido en la sección «Definición».'
+  },
   'guidelines.bulletListLabel': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'guidelines.numberedListLabel': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
   'glossary.title': {
@@ -765,6 +770,67 @@ const createInitialQAItems = () => [{ question: '', answer: '' }];
 
 const pronouns = ['il', 'elle', 'ils', 'elles', 'lui', 'leur', 'leurs', 'son', 'sa', 'ses', 'eux'];
 
+function normalizeDefinitionTerm(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const normalized = typeof value.normalize === 'function' ? value.normalize('NFKC') : value;
+  return normalized
+    .replace(/[\s\u00A0]+/g, ' ')
+    .replace(/^[\s:;,.()\[\]{}«»"'“”‘’]+|[\s:;,.()\[\]{}«»"'“”‘’]+$/gu, '')
+    .trim()
+    .toLowerCase();
+}
+
+function extractDefinitionContext(doc, language = currentLanguage) {
+  const title = (DEFINITION_TITLES[language] || DEFINITION_TITLES[DEFAULT_LANGUAGE] || '').trim();
+  if (!title) {
+    return { nodes: [], terms: new Set() };
+  }
+
+  const titleLower = title.toLowerCase();
+  const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  const targetHeading = headings.find((heading) => heading.textContent.trim().toLowerCase() === titleLower);
+  if (!targetHeading) {
+    return { nodes: [], terms: new Set() };
+  }
+
+  const nodes = [];
+  let sibling = targetHeading.nextElementSibling;
+  while (sibling && !/^H[1-6]$/i.test(sibling.tagName)) {
+    nodes.push(sibling);
+    sibling = sibling.nextElementSibling;
+  }
+
+  const terms = new Set();
+  const registerTerm = (value) => {
+    const normalized = normalizeDefinitionTerm(value);
+    if (normalized) {
+      terms.add(normalized);
+    }
+  };
+
+  nodes.forEach((node) => {
+    node.querySelectorAll('strong, b').forEach((element) => registerTerm(element.textContent));
+    node.querySelectorAll('dt').forEach((element) => registerTerm(element.textContent));
+
+    const candidates = [];
+    if (node.matches && node.matches('p, li')) {
+      candidates.push(node);
+    }
+    node.querySelectorAll('p, li').forEach((element) => candidates.push(element));
+    candidates.forEach((element) => {
+      const text = element.textContent || '';
+      const colonIndex = text.indexOf(':');
+      if (colonIndex > -1) {
+        registerTerm(text.slice(0, colonIndex));
+      }
+    });
+  });
+
+  return { nodes, terms };
+}
+
 function formatSelection(command, value = null) {
   document.execCommand(command, false, value);
 }
@@ -773,8 +839,17 @@ function sanitizeHTML(html) {
   return html.replace(/\s+style="[^"]*"/g, '');
 }
 
+const DEFINITION_TITLES = {
+  fr: 'Définition',
+  en: 'Definition',
+  es: 'Definición'
+};
+
 const PROCEDURE_TEMPLATES = {
   fr: `
+<h2>Définition</h2>
+<p>Recensez les termes clés et précisez leur signification.</p>
+
 <h2>Objectif</h2>
 <p>Précisez ici la finalité de la procédure et le résultat attendu.</p>
 
@@ -811,6 +886,9 @@ const PROCEDURE_TEMPLATES = {
 <p>Référencez les formulaires, modèles ou ressources complémentaires.</p>
 `,
   en: `
+<h2>Definition</h2>
+<p>List the key terms and describe their meaning.</p>
+
 <h2>Objective</h2>
 <p>State the purpose of the procedure and the expected outcome.</p>
 
@@ -847,6 +925,9 @@ const PROCEDURE_TEMPLATES = {
 <p>Reference forms, templates, or additional resources.</p>
 `,
   es: `
+<h2>Definición</h2>
+<p>Enumera los términos clave y detalla su significado.</p>
+
 <h2>Objetivo</h2>
 <p>Indica la finalidad del procedimiento y el resultado esperado.</p>
 
@@ -894,6 +975,7 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
   const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
   const guidelines = [];
 
+  const { nodes: definitionNodes, terms: definitionTerms } = extractDefinitionContext(doc, language);
   const headingMessage = translate('guidelines.headingMessage', {}, '', language);
   const bulletLabel = translate('guidelines.bulletListLabel', {}, 'List', language);
   const numberedLabel = translate('guidelines.numberedListLabel', {}, 'List', language);
@@ -902,6 +984,7 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
   const pronounMessage = translate('guidelines.pronounMessage', {}, '', language);
   const acronymMessage = translate('guidelines.acronymMessage', {}, '', language);
   const headingFallback = translate('guidelines.headingFallback', {}, '(untitled)', language);
+  const definitionMessage = translate('guidelines.definitionCheck', {}, '', language);
 
   doc.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
     const text = heading.textContent.trim() || headingFallback;
@@ -952,6 +1035,34 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
       });
     }
   });
+
+  if (definitionMessage) {
+    const italicSeen = new Set();
+    const italicElements = Array.from(doc.querySelectorAll('em, i'));
+    italicElements.forEach((element) => {
+      const text = element.textContent || '';
+      const normalized = normalizeDefinitionTerm(text);
+      if (!normalized || italicSeen.has(normalized)) {
+        return;
+      }
+      italicSeen.add(normalized);
+
+      if (definitionNodes.some((node) => node.contains(element))) {
+        return;
+      }
+
+      if (definitionTerms.has(normalized)) {
+        return;
+      }
+
+      const anchor = text.trim() || translate('guidelines.anchorFallback', {}, 'Texte', language);
+      guidelines.push({
+        type: 'definition-check',
+        anchor,
+        message: definitionMessage
+      });
+    });
+  }
 
   return guidelines;
 }
