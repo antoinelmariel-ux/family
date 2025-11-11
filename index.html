@@ -61,6 +61,28 @@
       gap: 12px;
     }
 
+    .language-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .language-select-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .language-select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
     .new-procedure-btn {
       padding: 10px 18px;
       border-radius: 10px;
@@ -774,9 +796,17 @@
     <header>
       <div class="header-brand">
         <img src="./assets/images/lfb-logo.svg" alt="Logo LFB" class="header-logo" />
-        <h1>Studio de Procédures IA Friendly</h1>
+        <h1 id="header-title">Studio de Procédures IA Friendly</h1>
       </div>
       <div class="header-actions">
+        <div class="language-selector">
+          <label for="language-select" class="language-select-label" id="language-label">Langue</label>
+          <select id="language-select" class="language-select" aria-labelledby="language-label">
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
         <button type="button" class="secondary-btn" id="import-btn">Importer un Markdown</button>
         <button type="button" class="ghost-btn" id="backoffice-btn">Gérer le backoffice</button>
         <button type="button" class="new-procedure-btn" id="new-procedure-btn">Nouvelle procédure</button>
@@ -785,23 +815,23 @@
     <div class="layout">
       <div class="content">
         <section class="card info-card" id="start-info">
-          <h2>Démarrer une nouvelle procédure</h2>
-          <p>
+          <h2 id="start-info-title">Démarrer une nouvelle procédure</h2>
+          <p id="start-info-description">
             Pour créer un nouveau document, cliquez sur le bouton « Nouvelle procédure » situé dans l'entête.
             Un canevas vierge sera automatiquement préparé pour vous permettre de renseigner chaque section.
           </p>
-          <ul>
+          <ul id="start-info-list">
             <li>Complétez les métadonnées pour contextualiser la procédure.</li>
             <li>Rédigez le contenu opérationnel à l'aide de l'éditeur enrichi.</li>
             <li>Finalisez par la session de Questions &amp; Réponses avant l'export.</li>
           </ul>
         </section>
         <section class="card" id="metadata-card">
-          <h2>1. Métadonnées</h2>
+          <h2 id="metadata-card-title">1. Métadonnées</h2>
           <div class="metadata-grid" id="metadata-groups"></div>
         </section>
         <section class="card editor-card" id="editor-card">
-          <h2>2. Contenu de la procédure</h2>
+          <h2 id="editor-card-title">2. Contenu de la procédure</h2>
           <div class="toolbar" id="editor-toolbar">
             <button type="button" data-command="formatBlock" data-value="H1">H1</button>
             <button type="button" data-command="formatBlock" data-value="H2">H2</button>
@@ -816,8 +846,8 @@
           <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
         </section>
         <section class="card" id="qa-card">
-          <h2>3. Questions &amp; Réponses</h2>
-          <p style="color: var(--muted); font-size: 14px; margin-top: 0;">
+          <h2 id="qa-card-title">3. Questions &amp; Réponses</h2>
+          <p id="qa-card-description" style="color: var(--muted); font-size: 14px; margin-top: 0;">
             Structurez la session de questions-réponses qui conclura la procédure.
           </p>
           <div class="qa-list" id="qa-list" style="display: flex; flex-direction: column; gap: 16px;"></div>
@@ -826,9 +856,9 @@
           </div>
         </section>
         <section class="card" id="export-card">
-          <h2>Aperçu &amp; Export</h2>
+          <h2 id="export-card-title">Aperçu &amp; Export</h2>
           <div class="warning" id="blocking-warning" hidden>
-            <span>⚠️ Export impossible tant que les points suivants ne sont pas corrigés :</span>
+            <span id="blocking-warning-text">⚠️ Export impossible tant que les points suivants ne sont pas corrigés :</span>
             <ul class="insight-list" id="blocking-warning-list"></ul>
           </div>
           <div class="export-actions">
@@ -840,14 +870,14 @@
       </div>
       <aside class="insights">
         <div class="insight-card">
-          <h3>Guidelines IA Friendly</h3>
+          <h3 id="guidelines-title">Guidelines IA Friendly</h3>
           <p id="guidelines-empty" style="color: var(--muted); margin: 0;">
             Commencez votre rédaction pour recevoir des recommandations.
           </p>
           <ul class="insight-list guideline-comment-list" id="guidelines-list"></ul>
         </div>
         <div class="insight-card">
-          <h3>Glossaire</h3>
+          <h3 id="glossary-title">Glossaire</h3>
           <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement du glossaire…</p>
           <p class="warning" id="glossary-error" hidden></p>
           <ul class="insight-list" id="glossary-list"></ul>
@@ -855,7 +885,7 @@
       </aside>
     </div>
   </div>
-  <footer>Version 1.1.21</footer>
+  <footer id="app-version">Version 1.1.23</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">

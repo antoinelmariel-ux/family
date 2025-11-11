@@ -1,4 +1,449 @@
-const LFB_LOGO_URL = './assets/images/lfb-logo.svg';
+const LANGUAGE_STORAGE_KEY = 'procedureBuilderLanguage';
+const DEFAULT_LANGUAGE = 'fr';
+const SUPPORTED_LANGUAGES = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' }
+];
+
+const TEXT = {
+  'language.label': { fr: 'Langue', en: 'Language', es: 'Idioma' },
+  'language.aria': {
+    fr: 'Langue de l’interface',
+    en: 'Interface language',
+    es: 'Idioma de la interfaz'
+  },
+  'language.option.fr': { fr: 'Français', en: 'French', es: 'Francés' },
+  'language.option.en': { fr: 'Anglais', en: 'English', es: 'Inglés' },
+  'language.option.es': { fr: 'Espagnol', en: 'Spanish', es: 'Español' },
+  'page.title': {
+    fr: 'Éditeur de Procédures IA Friendly',
+    en: 'AI-Friendly Procedure Editor',
+    es: 'Editor de Procedimientos compatible con la IA'
+  },
+  'header.title': {
+    fr: 'Studio de Procédures IA Friendly',
+    en: 'AI-Friendly Procedure Studio',
+    es: 'Estudio de Procedimientos compatible con la IA'
+  },
+  'header.import': { fr: 'Importer un Markdown', en: 'Import Markdown', es: 'Importar Markdown' },
+  'header.backoffice': { fr: 'Gérer le backoffice', en: 'Manage back office', es: 'Gestionar el backoffice' },
+  'header.newProcedure': { fr: 'Nouvelle procédure', en: 'New procedure', es: 'Nuevo procedimiento' },
+  'startInfo.title': { fr: 'Démarrer une nouvelle procédure', en: 'Start a new procedure', es: 'Iniciar un nuevo procedimiento' },
+  'startInfo.description': {
+    fr: "Pour créer un nouveau document, cliquez sur le bouton « Nouvelle procédure » situé dans l'entête. Un canevas vierge sera automatiquement préparé pour vous permettre de renseigner chaque section.",
+    en: 'To create a new document, click the “New procedure” button located in the header. A blank template will be prepared automatically so you can fill out each section.',
+    es: 'Para crear un nuevo documento, haz clic en el botón «Nuevo procedimiento» situado en el encabezado. Se preparará automáticamente un lienzo en blanco para que completes cada sección.'
+  },
+  'startInfo.bullet1': {
+    fr: 'Complétez les métadonnées pour contextualiser la procédure.',
+    en: 'Fill in the metadata to put the procedure into context.',
+    es: 'Completa los metadatos para contextualizar el procedimiento.'
+  },
+  'startInfo.bullet2': {
+    fr: "Rédigez le contenu opérationnel à l'aide de l'éditeur enrichi.",
+    en: 'Write the operational content using the rich text editor.',
+    es: 'Redacta el contenido operativo con el editor enriquecido.'
+  },
+  'startInfo.bullet3': {
+    fr: 'Finalisez par la session de Questions & Réponses avant l’export.',
+    en: 'Wrap up with the Questions & Answers session before exporting.',
+    es: 'Finaliza con la sesión de Preguntas y Respuestas antes de exportar.'
+  },
+  'sections.metadata': { fr: '1. Métadonnées', en: '1. Metadata', es: '1. Metadatos' },
+  'sections.editor': { fr: '2. Contenu de la procédure', en: '2. Procedure content', es: '2. Contenido del procedimiento' },
+  'sections.qa': { fr: '3. Questions & Réponses', en: '3. Questions & Answers', es: '3. Preguntas y respuestas' },
+  'sections.export': { fr: 'Aperçu & Export', en: 'Preview & Export', es: 'Vista previa y exportación' },
+  'toolbar.bold': { fr: 'Gras', en: 'Bold', es: 'Negrita' },
+  'toolbar.italic': { fr: 'Italique', en: 'Italic', es: 'Cursiva' },
+  'toolbar.rational': { fr: 'Rationnel', en: 'Rationale', es: 'Racional' },
+  'toolbar.unorderedList': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
+  'toolbar.orderedList': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
+  'editor.ariaLabel': {
+    fr: "Zone d'édition du contenu",
+    en: 'Content editing area',
+    es: 'Área de edición de contenido'
+  },
+  'qa.description': {
+    fr: 'Structurez la session de questions-réponses qui conclura la procédure.',
+    en: 'Structure the Q&A session that closes the procedure.',
+    es: 'Estructura la sesión de preguntas y respuestas que cierra el procedimiento.'
+  },
+  'qa.addQuestion': { fr: 'Ajouter une question', en: 'Add a question', es: 'Agregar una pregunta' },
+  'qa.questionLabel': { fr: 'Question', en: 'Question', es: 'Pregunta' },
+  'qa.questionPlaceholder': {
+    fr: 'Formulez la question de manière explicite',
+    en: 'Write the question explicitly',
+    es: 'Formula la pregunta de manera explícita'
+  },
+  'qa.answerLabel': { fr: 'Réponse', en: 'Answer', es: 'Respuesta' },
+  'qa.answerPlaceholder': {
+    fr: 'Fournissez une réponse précise et contextualisée',
+    en: 'Provide a precise, contextualized answer',
+    es: 'Ofrece una respuesta precisa y contextualizada'
+  },
+  'qa.remove': { fr: 'Retirer', en: 'Remove', es: 'Eliminar' },
+  'export.warning': {
+    fr: '⚠️ Export impossible tant que les points suivants ne sont pas corrigés :',
+    en: '⚠️ Export is not possible until the following points are resolved:',
+    es: '⚠️ La exportación es imposible mientras no se corrijan los siguientes puntos:'
+  },
+  'export.preview': { fr: 'Prévisualiser le Markdown', en: 'Preview Markdown', es: 'Vista previa de Markdown' },
+  'export.markdown': { fr: 'Exporter en Markdown', en: 'Export as Markdown', es: 'Exportar en Markdown' },
+  'export.pdf': { fr: 'Exporter en PDF', en: 'Export as PDF', es: 'Exportar en PDF' },
+  'export.pdfInProgress': {
+    fr: 'Export PDF en cours…',
+    en: 'PDF export in progress…',
+    es: 'Exportación PDF en curso…'
+  },
+  'guidelines.title': { fr: 'Guidelines IA Friendly', en: 'AI-friendly guidelines', es: 'Guías compatibles con la IA' },
+  'guidelines.empty': {
+    fr: 'Commencez votre rédaction pour recevoir des recommandations.',
+    en: 'Start writing to receive recommendations.',
+    es: 'Comienza tu redacción para recibir recomendaciones.'
+  },
+  'guidelines.anchorFallback': { fr: 'Texte', en: 'Text', es: 'Texto' },
+  'guidelines.headingFallback': {
+    fr: '(titre sans texte)',
+    en: '(untitled heading)',
+    es: '(título sin texto)'
+  },
+  'guidelines.headingMessage': {
+    fr: 'Commencez la section par un résumé bref et concis.',
+    en: 'Start the section with a brief, concise summary.',
+    es: 'Comienza la sección con un resumen breve y conciso.'
+  },
+  'guidelines.listTransitionMessage': {
+    fr: 'Reliez la liste par une transition claire entre les étapes.',
+    en: 'Link the list with a clear transition between steps.',
+    es: 'Enlaza la lista con una transición clara entre los pasos.'
+  },
+  'guidelines.listIntroMessage': {
+    fr: 'Ajoutez une phrase introductive se terminant par un deux-points avant la liste.',
+    en: 'Add an introductory sentence ending with a colon before the list.',
+    es: 'Añade una frase introductoria que termine con dos puntos antes de la lista.'
+  },
+  'guidelines.pronounMessage': {
+    fr: 'Précisez le référent du pronom pour éviter toute ambiguïté.',
+    en: 'Clarify the pronoun reference to avoid ambiguity.',
+    es: 'Aclara el referente del pronombre para evitar ambigüedades.'
+  },
+  'guidelines.acronymMessage': {
+    fr: "Documentez l'acronyme ou ajoutez-le à la base des acronymes.",
+    en: 'Document the acronym or add it to the acronym repository.',
+    es: 'Documenta el acrónimo o añádelo a la base de acrónimos.'
+  },
+  'guidelines.bulletListLabel': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
+  'guidelines.numberedListLabel': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
+  'glossary.title': { fr: 'Glossaire', en: 'Glossary', es: 'Glosario' },
+  'glossary.loading': {
+    fr: 'Chargement du glossaire…',
+    en: 'Loading glossary…',
+    es: 'Cargando el glosario…'
+  },
+  'glossary.empty': { fr: 'Aucune entrée disponible.', en: 'No entry available.', es: 'No hay entradas disponibles.' },
+  'glossary.error': {
+    fr: "Le glossaire n'a pas pu être chargé.",
+    en: 'The glossary could not be loaded.',
+    es: 'No se pudo cargar el glosario.'
+  },
+  'preview.title': { fr: 'Aperçu Markdown', en: 'Markdown preview', es: 'Vista previa de Markdown' },
+  'preview.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
+  'backoffice.title': {
+    fr: 'Backoffice — Options des champs',
+    en: 'Back office — Field options',
+    es: 'Backoffice — Opciones de los campos'
+  },
+  'backoffice.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
+  'backoffice.description': {
+    fr: 'Personnalisez les listes de choix proposées dans les menus déroulants du formulaire.',
+    en: 'Customize the choice lists displayed in the form dropdowns.',
+    es: 'Personaliza las listas de opciones mostradas en los desplegables del formulario.'
+  },
+  'backoffice.reset': { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer' },
+  'backoffice.addOptionLabel': { fr: 'Ajouter une option', en: 'Add an option', es: 'Agregar una opción' },
+  'backoffice.newOptionPlaceholder': { fr: 'Nouvelle option', en: 'New option', es: 'Nueva opción' },
+  'backoffice.addOption': { fr: 'Ajouter', en: 'Add', es: 'Agregar' },
+  'backoffice.emptyOptions': {
+    fr: 'Aucune option enregistrée pour le moment.',
+    en: 'No option saved yet.',
+    es: 'Todavía no hay opciones guardadas.'
+  },
+  'backoffice.removeOptionLabel': {
+    fr: "Supprimer l'option {{option}}",
+    en: 'Remove option {{option}}',
+    es: 'Eliminar la opción {{option}}'
+  },
+  'backoffice.exportConfig': {
+    fr: 'Exporter la configuration JSON',
+    en: 'Export JSON configuration',
+    es: 'Exportar la configuración JSON'
+  },
+  'keywords.empty': {
+    fr: 'Ajoutez un mot clef puis validez avec Entrée.',
+    en: 'Add a keyword then validate with Enter.',
+    es: 'Añade una palabra clave y valídala con Enter.'
+  },
+  'keywords.removeLabel': {
+    fr: 'Retirer le mot clef {{keyword}}',
+    en: 'Remove keyword {{keyword}}',
+    es: 'Eliminar la palabra clave {{keyword}}'
+  },
+  'select.placeholder': { fr: 'Sélectionnez une option', en: 'Select an option', es: 'Selecciona una opción' },
+  'pdf.sectionTitle': {
+    fr: 'Questions & Réponses',
+    en: 'Questions & Answers',
+    es: 'Preguntas y respuestas'
+  },
+  'pdf.noQuestions': {
+    fr: 'Aucune question enregistrée.',
+    en: 'No question recorded.',
+    es: 'No hay preguntas registradas.'
+  },
+  'pdf.printWindowError': {
+    fr: 'Impossible d’ouvrir la fenêtre d’impression.',
+    en: 'The print window could not be opened.',
+    es: 'No se pudo abrir la ventana de impresión.'
+  },
+  'pdf.exportError': {
+    fr: "Le PDF n'a pas pu être préparé. Veuillez réessayer.",
+    en: 'The PDF could not be prepared. Please try again.',
+    es: 'No se pudo preparar el PDF. Vuelve a intentarlo.'
+  },
+  'pdf.fallbackTitle': { fr: 'Procédure', en: 'Procedure', es: 'Procedimiento' },
+  'confirm.newProcedure': {
+    fr: 'Voulez-vous vraiment démarrer une nouvelle procédure ? Les informations en cours seront effacées.',
+    en: 'Do you really want to start a new procedure? Current information will be cleared.',
+    es: '¿Seguro que quieres iniciar un nuevo procedimiento? La información actual se borrará.'
+  },
+  'import.error': {
+    fr: "Le fichier Markdown n'a pas pu être importé. Vérifiez son format et réessayez.",
+    en: 'The Markdown file could not be imported. Check its format and try again.',
+    es: 'No se pudo importar el archivo Markdown. Comprueba su formato e inténtalo de nuevo.'
+  },
+  'export.configError': {
+    fr: "L'export de la configuration a échoué. Veuillez réessayer.",
+    en: 'Configuration export failed. Please try again.',
+    es: 'La exportación de la configuración ha fallado. Vuelve a intentarlo.'
+  },
+  'blocking.emoji': {
+    fr: 'Retirez les émojis pour respecter la charte éditoriale.',
+    en: 'Remove emojis to comply with the editorial guidelines.',
+    es: 'Elimina los emojis para respetar la guía editorial.'
+  },
+  'blocking.images': {
+    fr: 'Les images ne sont pas autorisées dans la procédure.',
+    en: 'Images are not allowed in the procedure.',
+    es: 'No se permiten imágenes en el procedimiento.'
+  },
+  'blocking.links': {
+    fr: 'Les liens URL doivent être retirés avant export.',
+    en: 'URL links must be removed before export.',
+    es: 'Los enlaces URL deben retirarse antes de exportar.'
+  },
+  'blocking.tables': {
+    fr: 'Les tableaux ne peuvent pas être exportés dans ce format.',
+    en: 'Tables cannot be exported in this format.',
+    es: 'No es posible exportar tablas en este formato.'
+  },
+  'blocking.lists': {
+    fr: 'Convertissez toutes les listes en listes formatées via la barre d’édition.',
+    en: 'Convert all lists using the editor toolbar formatting.',
+    es: 'Convierte todas las listas usando el formato de la barra del editor.'
+  },
+  'rational.title': { fr: 'Rationnel', en: 'Rationale', es: 'Racional' },
+  'rational.description': {
+    fr: 'Expliquez ici le rationnel associé à cette section.',
+    en: 'Explain the rationale associated with this section.',
+    es: 'Explica aquí el razonamiento asociado a esta sección.'
+  },
+  'version.label': { fr: 'Version', en: 'Version', es: 'Versión' },
+  'metadata.group.identification.title': {
+    fr: 'Identification',
+    en: 'Identification',
+    es: 'Identificación'
+  },
+  'metadata.group.identification.description': {
+    fr: 'Renseignez les éléments essentiels pour retrouver et suivre cette procédure.',
+    en: 'Provide the key elements required to find and track this procedure.',
+    es: 'Indica los elementos esenciales para encontrar y seguir este procedimiento.'
+  },
+  'metadata.group.contexte.title': { fr: 'Contexte', en: 'Context', es: 'Contexto' },
+  'metadata.group.contexte.description': {
+    fr: 'Situez la procédure au sein de votre dispositif documentaire.',
+    en: 'Place the procedure within your documentation system.',
+    es: 'Sitúa el procedimiento dentro de tu sistema documental.'
+  },
+  'metadata.group.diffusion.title': { fr: 'Diffusion', en: 'Distribution', es: 'Difusión' },
+  'metadata.group.diffusion.description': {
+    fr: 'Précisez à qui s’adresse la procédure et dans quelles zones elle s’applique.',
+    en: 'Specify who the procedure is for and where it applies.',
+    es: 'Indica a quién va dirigido el procedimiento y en qué zonas se aplica.'
+  },
+  'metadata.field.title.label': { fr: 'Titre', en: 'Title', es: 'Título' },
+  'metadata.field.title.placeholder': {
+    fr: 'Titre de la procédure',
+    en: 'Procedure title',
+    es: 'Título del procedimiento'
+  },
+  'metadata.field.title.hint': {
+    fr: 'Nom tel qu’il apparaîtra dans les exports et la base documentaire.',
+    en: 'Name as it will appear in exports and the document repository.',
+    es: 'Nombre tal como aparecerá en las exportaciones y en la base documental.'
+  },
+  'metadata.field.reference.label': { fr: 'Référence', en: 'Reference', es: 'Referencia' },
+  'metadata.field.reference.placeholder': {
+    fr: 'Référence interne',
+    en: 'Internal reference',
+    es: 'Referencia interna'
+  },
+  'metadata.field.reference.hint': {
+    fr: 'Identifiant unique ou code interne facilitant le suivi des versions.',
+    en: 'Unique identifier or internal code that helps track versions.',
+    es: 'Identificador único o código interno que facilita el seguimiento de versiones.'
+  },
+  'metadata.field.author.label': { fr: 'Auteur', en: 'Author', es: 'Autor' },
+  'metadata.field.author.placeholder': {
+    fr: 'Nom complet',
+    en: 'Full name',
+    es: 'Nombre completo'
+  },
+  'metadata.field.author.hint': {
+    fr: 'Indiquez la personne responsable de la rédaction ou de la validation.',
+    en: 'Indicate who is responsible for drafting or approving the procedure.',
+    es: 'Indica quién es responsable de la redacción o de la validación.'
+  },
+  'metadata.field.procedureLanguage.label': {
+    fr: 'Langue de la procédure',
+    en: 'Procedure language',
+    es: 'Idioma del procedimiento'
+  },
+  'metadata.field.procedureLanguage.hint': {
+    fr: 'Sélectionnez la langue principale dans laquelle la procédure est rédigée.',
+    en: 'Select the main language in which the procedure is written.',
+    es: 'Selecciona el idioma principal en el que está redactado el procedimiento.'
+  },
+  'metadata.field.effectiveDate.label': {
+    fr: "Date d'entrée en vigueur",
+    en: 'Effective date',
+    es: 'Fecha de entrada en vigor'
+  },
+  'metadata.field.effectiveDate.hint': {
+    fr: 'Date à laquelle la procédure devient applicable.',
+    en: 'Date when the procedure becomes applicable.',
+    es: 'Fecha en la que el procedimiento entra en vigor.'
+  },
+  'metadata.field.summary.label': { fr: 'Résumé', en: 'Summary', es: 'Resumen' },
+  'metadata.field.summary.placeholder': {
+    fr: 'Résumé exécutif de la procédure',
+    en: 'Executive summary of the procedure',
+    es: 'Resumen ejecutivo del procedimiento'
+  },
+  'metadata.field.summary.hint': {
+    fr: 'Présentez l’objectif et les points clés en quelques phrases.',
+    en: 'Present the objective and key points in a few sentences.',
+    es: 'Presenta el objetivo y los puntos clave en unas pocas frases.'
+  },
+  'metadata.field.parentProcedure.label': {
+    fr: 'Procédure mère',
+    en: 'Parent procedure',
+    es: 'Procedimiento padre'
+  },
+  'metadata.field.parentProcedure.placeholder': {
+    fr: 'Référence ou titre',
+    en: 'Reference or title',
+    es: 'Referencia o título'
+  },
+  'metadata.field.parentProcedure.hint': {
+    fr: 'Mentionnez la procédure qui encadre ou complète celle-ci, si applicable.',
+    en: 'Mention the procedure that frames or complements this one, if applicable.',
+    es: 'Menciona el procedimiento que enmarca o complementa este, si procede.'
+  },
+  'metadata.field.changeHistory.label': {
+    fr: 'Historique des modifications',
+    en: 'Change history',
+    es: 'Historial de cambios'
+  },
+  'metadata.field.changeHistory.placeholder': {
+    fr: 'Consignez les évolutions majeures et leurs dates',
+    en: 'Record major updates and their dates',
+    es: 'Registra las principales evoluciones y sus fechas.'
+  },
+  'metadata.field.changeHistory.hint': {
+    fr: 'Décrivez les principales modifications apportées et leur contexte.',
+    en: 'Describe the main changes made and their context.',
+    es: 'Describe los principales cambios realizados y su contexto.'
+  },
+  'metadata.field.businessScope.label': {
+    fr: 'Périmètre métier',
+    en: 'Business scope',
+    es: 'Ámbito empresarial'
+  },
+  'metadata.field.businessScope.hint': {
+    fr: 'Sélectionnez un ou plusieurs domaines métiers concernés.',
+    en: 'Select one or more business domains involved.',
+    es: 'Selecciona uno o varios ámbitos de negocio implicados.'
+  },
+  'metadata.field.companyScope.label': {
+    fr: 'Périmètre société',
+    en: 'Company scope',
+    es: 'Ámbito de la empresa'
+  },
+  'metadata.field.companyScope.hint': {
+    fr: 'Choisissez une ou plusieurs entités juridiques ou filiales de diffusion.',
+    en: 'Choose one or more legal entities or subsidiaries where it applies.',
+    es: 'Elige una o varias entidades jurídicas o filiales de difusión.'
+  },
+  'metadata.field.geoScope.label': {
+    fr: 'Périmètre géographique',
+    en: 'Geographical scope',
+    es: 'Ámbito geográfico'
+  },
+  'metadata.field.geoScope.hint': {
+    fr: 'Sélectionnez une ou plusieurs zones géographiques de validité.',
+    en: 'Select one or more geographical areas where it is valid.',
+    es: 'Selecciona una o varias zonas geográficas de validez.'
+  },
+  'metadata.field.keywords.label': { fr: 'Mots clefs', en: 'Keywords', es: 'Palabras clave' },
+  'metadata.field.keywords.placeholder': {
+    fr: 'Appuyez sur Entrée pour ajouter un mot clef',
+    en: 'Press Enter to add a keyword',
+    es: 'Pulsa Enter para añadir una palabra clave'
+  },
+  'metadata.field.keywords.hint': {
+    fr: 'Utilisez la touche Entrée pour valider chaque mot clef.',
+    en: 'Use the Enter key to validate each keyword.',
+    es: 'Utiliza la tecla Enter para validar cada palabra clave.'
+  }
+};
+
+const SELECT_OPTION_LABELS = {
+  procedureLanguage: {
+    English: { fr: 'Anglais', en: 'English', es: 'Inglés' },
+    French: { fr: 'Français', en: 'French', es: 'Francés' },
+    Spanish: { fr: 'Espagnol', en: 'Spanish', es: 'Español' }
+  },
+  businessScope: {
+    'Médical': { fr: 'Médical', en: 'Medical', es: 'Médico' },
+    'Commercial': { fr: 'Commercial', en: 'Commercial', es: 'Comercial' },
+    'Neutre': { fr: 'Neutre', en: 'Neutral', es: 'Neutro' }
+  },
+  companyScope: {
+    'LFB Bio Médicament': { fr: 'LFB Bio Médicament', en: 'LFB Bio Médicament', es: 'LFB Bio Médicament' },
+    'LFB Biomanufacturing': { fr: 'LFB Biomanufacturing', en: 'LFB Biomanufacturing', es: 'LFB Biomanufacturing' }
+  },
+  geoScope: {
+    'Monde': { fr: 'Monde', en: 'Worldwide', es: 'Mundo' },
+    'France': { fr: 'France', en: 'France', es: 'Francia' },
+    'Europe hors France': {
+      fr: 'Europe hors France',
+      en: 'Europe (excluding France)',
+      es: 'Europa (sin Francia)'
+    },
+    'USA': { fr: 'USA', en: 'USA', es: 'EE. UU.' },
+    'Mexique': { fr: 'Mexique', en: 'Mexico', es: 'México' }
+  }
+};
 
 const KEYWORD_COLOR_PALETTE = [
   { background: 'rgba(47, 79, 159, 0.15)', color: '#2f4f9f', border: 'rgba(47, 79, 159, 0.35)' },
@@ -8,154 +453,231 @@ const KEYWORD_COLOR_PALETTE = [
   { background: 'rgba(103, 64, 152, 0.15)', color: '#5d3a92', border: 'rgba(103, 64, 152, 0.35)' }
 ];
 
-const METADATA_GROUP_DEFINITIONS = [
+const METADATA_GROUP_TEMPLATES = [
   {
     key: 'identification',
-    title: 'Identification',
-    description: 'Renseignez les éléments essentiels pour retrouver et suivre cette procédure.',
+    titleKey: 'metadata.group.identification.title',
+    descriptionKey: 'metadata.group.identification.description',
     fields: [
       {
         key: 'title',
-        label: 'Titre',
         type: 'text',
-        placeholder: 'Titre de la procédure',
-        hint: 'Nom tel qu’il apparaîtra dans les exports et la base documentaire.'
+        labelKey: 'metadata.field.title.label',
+        placeholderKey: 'metadata.field.title.placeholder',
+        hintKey: 'metadata.field.title.hint'
       },
       {
         key: 'reference',
-        label: 'Référence',
         type: 'text',
-        placeholder: 'Référence interne',
-        hint: 'Identifiant unique ou code interne facilitant le suivi des versions.'
+        labelKey: 'metadata.field.reference.label',
+        placeholderKey: 'metadata.field.reference.placeholder',
+        hintKey: 'metadata.field.reference.hint'
       },
       {
         key: 'author',
-        label: 'Auteur',
         type: 'text',
-        placeholder: 'Nom complet',
-        hint: 'Indiquez la personne responsable de la rédaction ou de la validation.'
+        labelKey: 'metadata.field.author.label',
+        placeholderKey: 'metadata.field.author.placeholder',
+        hintKey: 'metadata.field.author.hint'
       },
       {
         key: 'procedureLanguage',
-        label: 'Langue de la procédure',
         type: 'select',
         optionsKey: 'procedureLanguage',
         defaultOptions: ['English', 'French', 'Spanish'],
-        hint: 'Sélectionnez la langue principale dans laquelle la procédure est rédigée.'
+        labelKey: 'metadata.field.procedureLanguage.label',
+        hintKey: 'metadata.field.procedureLanguage.hint'
       },
       {
         key: 'effectiveDate',
-        label: "Date d'entrée en vigueur",
         type: 'date',
-        hint: 'Date à laquelle la procédure devient applicable.'
+        labelKey: 'metadata.field.effectiveDate.label',
+        hintKey: 'metadata.field.effectiveDate.hint'
       }
     ]
   },
   {
     key: 'contexte',
-    title: 'Contexte',
-    description: 'Situez la procédure au sein de votre dispositif documentaire.',
+    titleKey: 'metadata.group.contexte.title',
+    descriptionKey: 'metadata.group.contexte.description',
     fields: [
       {
         key: 'summary',
-        label: 'Résumé',
         type: 'textarea',
-        placeholder: 'Résumé exécutif de la procédure',
-        hint: 'Présentez l’objectif et les points clés en quelques phrases.'
+        labelKey: 'metadata.field.summary.label',
+        placeholderKey: 'metadata.field.summary.placeholder',
+        hintKey: 'metadata.field.summary.hint'
       },
       {
         key: 'parentProcedure',
-        label: 'Procédure mère',
         type: 'text',
-        placeholder: 'Référence ou titre',
-        hint: 'Mentionnez la procédure qui encadre ou complète celle-ci, si applicable.'
+        labelKey: 'metadata.field.parentProcedure.label',
+        placeholderKey: 'metadata.field.parentProcedure.placeholder',
+        hintKey: 'metadata.field.parentProcedure.hint'
       },
       {
         key: 'changeHistory',
-        label: 'Historique des modifications',
         type: 'textarea',
-        placeholder: 'Consignez les évolutions majeures et leurs dates',
-        hint: 'Décrivez les principales modifications apportées et leur contexte.'
+        labelKey: 'metadata.field.changeHistory.label',
+        placeholderKey: 'metadata.field.changeHistory.placeholder',
+        hintKey: 'metadata.field.changeHistory.hint'
       }
     ]
   },
   {
     key: 'diffusion',
-    title: 'Diffusion',
-    description: 'Précisez à qui s’adresse la procédure et dans quelles zones elle s’applique.',
+    titleKey: 'metadata.group.diffusion.title',
+    descriptionKey: 'metadata.group.diffusion.description',
     fields: [
       {
         key: 'businessScope',
-        label: 'Périmètre métier',
         type: 'select',
         multiple: true,
         optionsKey: 'businessScope',
         defaultOptions: ['Médical', 'Commercial', 'Neutre'],
-        hint: 'Sélectionnez un ou plusieurs domaines métiers concernés.'
+        labelKey: 'metadata.field.businessScope.label',
+        hintKey: 'metadata.field.businessScope.hint'
       },
       {
         key: 'companyScope',
-        label: 'Périmètre société',
         type: 'select',
         multiple: true,
         optionsKey: 'companyScope',
         defaultOptions: ['LFB Bio Médicament', 'LFB Biomanufacturing'],
-        hint: 'Choisissez une ou plusieurs entités juridiques ou filiales de diffusion.'
+        labelKey: 'metadata.field.companyScope.label',
+        hintKey: 'metadata.field.companyScope.hint'
       },
       {
         key: 'geoScope',
-        label: 'Périmètre géographique',
         type: 'select',
         multiple: true,
         optionsKey: 'geoScope',
         defaultOptions: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique'],
-        hint: 'Sélectionnez une ou plusieurs zones géographiques de validité.'
+        labelKey: 'metadata.field.geoScope.label',
+        hintKey: 'metadata.field.geoScope.hint'
       },
       {
         key: 'keywords',
-        label: 'Mots clefs',
         type: 'text',
-        placeholder: 'Appuyez sur Entrée pour ajouter un mot clef',
-        hint: 'Utilisez la touche Entrée pour valider chaque mot clef.'
+        labelKey: 'metadata.field.keywords.label',
+        placeholderKey: 'metadata.field.keywords.placeholder',
+        hintKey: 'metadata.field.keywords.hint'
       }
     ]
   }
 ];
 
-const METADATA_FIELD_DEFINITIONS = METADATA_GROUP_DEFINITIONS.flatMap((group) => group.fields);
-const MULTI_SELECT_FIELD_DEFINITIONS = METADATA_FIELD_DEFINITIONS.filter(
+const METADATA_FIELD_SCHEMAS = METADATA_GROUP_TEMPLATES.flatMap((group) => group.fields);
+const MULTI_SELECT_FIELD_SCHEMAS = METADATA_FIELD_SCHEMAS.filter(
   (field) => field.type === 'select' && field.multiple
 );
-const MULTI_SELECT_METADATA_KEYS = MULTI_SELECT_FIELD_DEFINITIONS.map((field) => field.key);
+const MULTI_SELECT_METADATA_KEYS = MULTI_SELECT_FIELD_SCHEMAS.map((field) => field.key);
 
-function createInitialMetadata() {
-  return METADATA_FIELD_DEFINITIONS.reduce((acc, field) => {
-    if (field.type === 'select' && field.multiple) {
-      acc[field.key] = [];
-    } else {
-      acc[field.key] = '';
-    }
-    return acc;
-  }, {});
-}
-
-const SELECT_FIELD_DEFINITIONS = METADATA_FIELD_DEFINITIONS.filter((field) => field.type === 'select');
-const SELECT_FIELD_KEYS = Array.from(
-  new Set(SELECT_FIELD_DEFINITIONS.map((field) => field.optionsKey || field.key))
-);
-const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_DEFINITIONS.reduce((acc, field) => {
+const SELECT_FIELD_SCHEMAS = METADATA_FIELD_SCHEMAS.filter((field) => field.type === 'select');
+const SELECT_FIELD_KEYS = Array.from(new Set(SELECT_FIELD_SCHEMAS.map((field) => field.optionsKey || field.key)));
+const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   const key = field.optionsKey || field.key;
   acc[key] = field.defaultOptions ? [...field.defaultOptions] : [];
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
+const APP_VERSION = '1.1.23';
+
+let currentLanguage = DEFAULT_LANGUAGE;
+
+function getTranslationValue(key, language = currentLanguage) {
+  const entry = TEXT[key];
+  if (!entry) {
+    if (language !== DEFAULT_LANGUAGE) {
+      return getTranslationValue(key, DEFAULT_LANGUAGE);
+    }
+    return undefined;
+  }
+  const value = entry[language];
+  if (value !== undefined) {
+    return value;
+  }
+  if (language !== DEFAULT_LANGUAGE) {
+    return entry[DEFAULT_LANGUAGE];
+  }
+  return undefined;
+}
+
+function formatTranslation(value, params = {}) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return value.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
+    if (Object.prototype.hasOwnProperty.call(params, key)) {
+      return params[key];
+    }
+    return '';
+  });
+}
+
+function translate(key, params = {}, fallback = '', language = currentLanguage) {
+  const value = getTranslationValue(key, language);
+  if (value === undefined) {
+    return fallback !== undefined ? fallback : key;
+  }
+  if (typeof value === 'string') {
+    return formatTranslation(value, params);
+  }
+  return value;
+}
+
+function translateArray(key, language = currentLanguage) {
+  const value = getTranslationValue(key, language);
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value !== undefined) {
+    return [value];
+  }
+  return [];
+}
+
+function getSelectOptionLabel(optionsKey, optionValue, language = currentLanguage) {
+  const options = SELECT_OPTION_LABELS[optionsKey];
+  if (!options || !options[optionValue]) {
+    return optionValue;
+  }
+  return options[optionValue][language] || options[optionValue][DEFAULT_LANGUAGE] || optionValue;
+}
+
+function loadInitialLanguage() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return DEFAULT_LANGUAGE;
+  }
+  try {
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored && SUPPORTED_LANGUAGES.some((entry) => entry.code === stored)) {
+      return stored;
+    }
+  } catch (error) {
+    console.warn("Impossible de charger la langue enregistrée :", error);
+  }
+  return DEFAULT_LANGUAGE;
+}
+
+function saveLanguagePreference(language) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (error) {
+    console.warn("Impossible de sauvegarder la langue :", error);
+  }
+}
+
+const initialLanguage = loadInitialLanguage();
+currentLanguage = initialLanguage;
 
 function normalizeSelectOptions(options, baseOptions = DEFAULT_SELECT_OPTIONS) {
   const normalized = {};
   SELECT_FIELD_KEYS.forEach((key) => {
-    const baseValues = baseOptions && Array.isArray(baseOptions[key])
-      ? baseOptions[key]
-      : DEFAULT_SELECT_OPTIONS[key] || [];
+    const baseValues = baseOptions && Array.isArray(baseOptions[key]) ? baseOptions[key] : DEFAULT_SELECT_OPTIONS[key] || [];
     const rawValues = options && Array.isArray(options[key]) ? options[key] : baseValues;
     const sanitized = rawValues
       .map((value) => (typeof value === 'string' ? value : String(value)))
@@ -174,9 +696,24 @@ function normalizeSelectOptions(options, baseOptions = DEFAULT_SELECT_OPTIONS) {
   return normalized;
 }
 
-function createResolvedMetadataGroups(selectOptions, baseOptions = DEFAULT_SELECT_OPTIONS) {
+function resolveMetadataGroups(language = currentLanguage) {
+  return METADATA_GROUP_TEMPLATES.map((group) => ({
+    key: group.key,
+    title: translate(group.titleKey, {}, group.titleKey, language),
+    description: group.descriptionKey ? translate(group.descriptionKey, {}, '', language) : '',
+    fields: group.fields.map((field) => ({
+      ...field,
+      label: translate(field.labelKey, {}, field.labelKey, language),
+      placeholder: field.placeholderKey ? translate(field.placeholderKey, {}, '', language) : '',
+      hint: field.hintKey ? translate(field.hintKey, {}, '', language) : ''
+    }))
+  }));
+}
+
+function createResolvedMetadataGroups(selectOptions, baseOptions = DEFAULT_SELECT_OPTIONS, language = currentLanguage) {
   const normalizedOptions = normalizeSelectOptions(selectOptions, baseOptions);
-  return METADATA_GROUP_DEFINITIONS.map((group) => ({
+  const groups = resolveMetadataGroups(language);
+  return groups.map((group) => ({
     ...group,
     fields: group.fields.map((field) => {
       if (field.type !== 'select') {
@@ -190,6 +727,8 @@ function createResolvedMetadataGroups(selectOptions, baseOptions = DEFAULT_SELEC
     })
   }));
 }
+
+const LFB_LOGO_URL = './assets/images/lfb-logo.svg';
 
 function loadInitialSelectOptions(configOptions = DEFAULT_SELECT_OPTIONS) {
   const fallback = normalizeSelectOptions(configOptions, configOptions);
@@ -230,7 +769,8 @@ function sanitizeHTML(html) {
   return html.replace(/\s+style="[^"]*"/g, '');
 }
 
-const PROCEDURE_TEMPLATE = `
+const PROCEDURE_TEMPLATES = {
+  fr: `
 <h2>Objectif</h2>
 <p>Précisez ici la finalité de la procédure et le résultat attendu.</p>
 
@@ -265,29 +805,115 @@ const PROCEDURE_TEMPLATE = `
 
 <h2>Annexes &amp; documents associés</h2>
 <p>Référencez les formulaires, modèles ou ressources complémentaires.</p>
-`;
+`,
+  en: `
+<h2>Objective</h2>
+<p>State the purpose of the procedure and the expected outcome.</p>
 
-const INITIAL_CONTENT_HTML = sanitizeHTML(PROCEDURE_TEMPLATE);
-function computeGuidelines(html, acronymDB = {}) {
+<h2>Scope</h2>
+<p>Describe the coverage: departments, teams, and situations involved.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li>List the necessary conditions (documents, access, equipment, skills).</li>
+  <li>Add any essential preliminary information.</li>
+</ul>
+
+<h2>Roles and responsibilities</h2>
+<ul>
+  <li><strong>Primary actor:</strong> Describe their key role.</li>
+  <li><strong>Contributors:</strong> Mention supporting roles and their actions.</li>
+  <li><strong>Point of contact:</strong> Indicate who to reach out to with questions.</li>
+</ul>
+
+<h2>Detailed steps</h2>
+<ol>
+  <li><strong>Step 1:</strong> Describe the first action precisely.</li>
+  <li><strong>Step 2:</strong> Explain the next step, including control points.</li>
+  <li><strong>Step 3:</strong> Complete with the remaining actions up to closure.</li>
+</ol>
+
+<h2>Control points &amp; indicators</h2>
+<p>Specify the checks to perform and how to assess compliance.</p>
+
+<h2>Deviation management</h2>
+<p>Explain what to do in case of non-compliance or unexpected situations.</p>
+
+<h2>Appendices &amp; related documents</h2>
+<p>Reference forms, templates, or additional resources.</p>
+`,
+  es: `
+<h2>Objetivo</h2>
+<p>Indica la finalidad del procedimiento y el resultado esperado.</p>
+
+<h2>Alcance</h2>
+<p>Describe el perímetro cubierto: áreas, equipos y situaciones implicadas.</p>
+
+<h2>Requisitos previos</h2>
+<ul>
+  <li>Enumera las condiciones necesarias (documentos, accesos, materiales, competencias).</li>
+  <li>Añade cualquier información previa indispensable.</li>
+</ul>
+
+<h2>Roles y responsabilidades</h2>
+<ul>
+  <li><strong>Actor principal:</strong> Describe su rol clave.</li>
+  <li><strong>Colaboradores:</strong> Menciona los apoyos y sus acciones.</li>
+  <li><strong>Persona de contacto:</strong> Indica a quién recurrir en caso de dudas.</li>
+</ul>
+
+<h2>Pasos detallados</h2>
+<ol>
+  <li><strong>Paso 1:</strong> Describe con precisión la primera acción a realizar.</li>
+  <li><strong>Paso 2:</strong> Explica el siguiente paso indicando los puntos de control.</li>
+  <li><strong>Paso 3:</strong> Completa con las acciones restantes hasta finalizar.</li>
+</ol>
+
+<h2>Puntos de control e indicadores</h2>
+<p>Detalla las verificaciones a realizar y cómo evaluar la conformidad.</p>
+
+<h2>Gestión de desviaciones</h2>
+<p>Describe el procedimiento en caso de no conformidad o situaciones imprevistas.</p>
+
+<h2>Anexos y documentos asociados</h2>
+<p>Referencia formularios, plantillas o recursos complementarios.</p>
+`
+};
+
+function getInitialContentHTML(language = currentLanguage) {
+  const template = PROCEDURE_TEMPLATES[language] || PROCEDURE_TEMPLATES[DEFAULT_LANGUAGE];
+  return sanitizeHTML(template);
+}
+
+function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
   const guidelines = [];
 
+  const headingMessage = translate('guidelines.headingMessage', {}, '', language);
+  const bulletLabel = translate('guidelines.bulletListLabel', {}, 'List', language);
+  const numberedLabel = translate('guidelines.numberedListLabel', {}, 'List', language);
+  const listTransitionMessage = translate('guidelines.listTransitionMessage', {}, '', language);
+  const listIntroMessage = translate('guidelines.listIntroMessage', {}, '', language);
+  const pronounMessage = translate('guidelines.pronounMessage', {}, '', language);
+  const acronymMessage = translate('guidelines.acronymMessage', {}, '', language);
+  const headingFallback = translate('guidelines.headingFallback', {}, '(untitled)', language);
+
   doc.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
-    const text = heading.textContent.trim() || '(titre sans texte)';
+    const text = heading.textContent.trim() || headingFallback;
     guidelines.push({
       type: 'heading',
       anchor: text,
-      message: 'Commencez la section par un résumé bref et concis.'
+      message: headingMessage
     });
   });
 
   doc.querySelectorAll('ul, ol').forEach((list) => {
-    const label = list.tagName === 'UL' ? 'Liste à puces' : 'Liste numérotée';
+    const label = list.tagName === 'UL' ? bulletLabel : numberedLabel;
     guidelines.push({
       type: 'list-transition',
       anchor: label,
-      message: 'Reliez la liste par une transition claire entre les étapes.'
+      message: listTransitionMessage
     });
     const previous = list.previousElementSibling;
     const hasIntro = previous && previous.textContent.trim().length > 0 && previous.textContent.trim().endsWith(':');
@@ -295,7 +921,7 @@ function computeGuidelines(html, acronymDB = {}) {
       guidelines.push({
         type: 'list-intro',
         anchor: label,
-        message: 'Ajoutez une phrase introductive se terminant par un deux-points avant la liste.'
+        message: listIntroMessage
       });
     }
   });
@@ -308,7 +934,7 @@ function computeGuidelines(html, acronymDB = {}) {
     guidelines.push({
       type: 'pronoun',
       anchor: item,
-      message: 'Précisez le référent du pronom pour éviter toute ambiguïté.'
+      message: pronounMessage
     });
   });
 
@@ -318,7 +944,7 @@ function computeGuidelines(html, acronymDB = {}) {
       guidelines.push({
         type: 'acronym',
         anchor: acronym,
-        message: "Documentez l'acronyme ou ajoutez-le à la base des acronymes."
+        message: acronymMessage
       });
     }
   });
@@ -336,25 +962,25 @@ function detectBlockingIssues(html, qaItems) {
   const warnings = [];
 
   if (emojiRegex.test(textContent) || emojiRegex.test(qaText)) {
-    warnings.push('Retirez les émojis pour respecter la charte éditoriale.');
+    warnings.push(translate('blocking.emoji'));
   }
 
   if (doc.querySelector('img')) {
-    warnings.push('Les images ne sont pas autorisées dans la procédure.');
+    warnings.push(translate('blocking.images'));
   }
 
   if (doc.querySelector('a[href]')) {
-    warnings.push('Les liens URL doivent être retirés avant export.');
+    warnings.push(translate('blocking.links'));
   }
 
   if (doc.querySelector('table')) {
-    warnings.push('Les tableaux ne peuvent pas être exportés dans ce format.');
+    warnings.push(translate('blocking.tables'));
   }
 
   const rawText = sanitizeHTML(html).replace(/<[^>]+>/g, '\n');
   const hasUnformattedList = /^\s*[-*]\s+.+/m.test(rawText);
   if (hasUnformattedList) {
-    warnings.push('Convertissez toutes les listes en listes formatées via la barre d’édition.');
+    warnings.push(translate('blocking.lists'));
   }
 
   return warnings;
@@ -435,7 +1061,8 @@ function convertBlock(node) {
   }
   const tag = node.tagName.toUpperCase();
   if (node.classList && node.classList.contains('rational-block')) {
-    const title = (node.querySelector('.rational-block-title') || { textContent: 'Rationnel' }).textContent.trim() || 'Rationnel';
+    const fallbackTitle = translate('rational.title', {}, 'Rationnel', state.language);
+    const title = (node.querySelector('.rational-block-title') || { textContent: fallbackTitle }).textContent.trim() || fallbackTitle;
     const paragraphs = Array.from(node.querySelectorAll('p'))
       .map((p) => convertInlineNodes(p).trim())
       .filter(Boolean);
@@ -646,12 +1273,14 @@ function markdownToHTML(markdown) {
   }
   return blocks.join('');
 }
-function parseMarkdownProcedure(markdown) {
+function parseMarkdownProcedure(markdown, language) {
+  const activeLanguage = language || (state && state.language) || currentLanguage;
+  const defaultContent = getInitialContentHTML(activeLanguage);
   const normalizedMetadata = createInitialMetadata();
   if (typeof markdown !== 'string') {
     return {
       metadata: normalizedMetadata,
-      contentHTML: INITIAL_CONTENT_HTML,
+      contentHTML: defaultContent,
       qaItems: createInitialQAItems()
     };
   }
@@ -798,12 +1427,17 @@ function persistSelectOptions(options) {
     console.warn('Impossible de sauvegarder les options personnalisées :', error);
   }
 }
+const initialQAItems = createInitialQAItems();
+const initialContentHTML = getInitialContentHTML(initialLanguage);
+
 const state = {
+  language: initialLanguage,
   metadata: createInitialMetadata(),
-  contentHTML: INITIAL_CONTENT_HTML,
-  qaItems: createInitialQAItems(),
-  guidelines: [],
-  blockingWarnings: [],
+  contentHTML: initialContentHTML,
+  initialContentHTML,
+  qaItems: initialQAItems,
+  guidelines: computeGuidelines(initialContentHTML, {}, initialLanguage),
+  blockingWarnings: detectBlockingIssues(initialContentHTML, initialQAItems),
   hasStarted: false,
   selectOptions: normalizeSelectOptions(DEFAULT_SELECT_OPTIONS),
   selectOptionDrafts: createEmptyOptionDrafts(),
@@ -820,6 +1454,9 @@ const state = {
 
 const elements = {
   startInfo: document.getElementById('start-info'),
+  startInfoTitle: document.getElementById('start-info-title'),
+  startInfoDescription: document.getElementById('start-info-description'),
+  startInfoList: document.getElementById('start-info-list'),
   metadataGroups: document.getElementById('metadata-groups'),
   editor: document.getElementById('procedure-editor'),
   toolbar: document.getElementById('editor-toolbar'),
@@ -837,6 +1474,8 @@ const elements = {
   backofficeOverlay: document.getElementById('backoffice-overlay'),
   backofficePanel: document.querySelector('.backoffice-panel'),
   backofficeSections: document.getElementById('backoffice-sections'),
+  backofficeDescription: document.querySelector('.backoffice-description'),
+  backofficeTitle: document.getElementById('backoffice-title'),
   closeBackofficeButton: document.getElementById('close-backoffice-btn'),
   backofficeButton: document.getElementById('backoffice-btn'),
   newProcedureButton: document.getElementById('new-procedure-btn'),
@@ -847,12 +1486,25 @@ const elements = {
   glossaryList: document.getElementById('glossary-list'),
   glossaryLoading: document.getElementById('glossary-loading'),
   glossaryError: document.getElementById('glossary-error'),
-  exportConfigButton: document.getElementById('export-config-btn')
+  exportConfigButton: document.getElementById('export-config-btn'),
+  languageSelect: document.getElementById('language-select'),
+  languageLabel: document.getElementById('language-label'),
+  headerTitle: document.getElementById('header-title'),
+  metadataCardTitle: document.getElementById('metadata-card-title'),
+  editorCardTitle: document.getElementById('editor-card-title'),
+  qaCardTitle: document.getElementById('qa-card-title'),
+  qaCardDescription: document.getElementById('qa-card-description'),
+  exportCardTitle: document.getElementById('export-card-title'),
+  blockingWarningText: document.getElementById('blocking-warning-text'),
+  guidelinesTitle: document.getElementById('guidelines-title'),
+  glossaryTitle: document.getElementById('glossary-title'),
+  previewTitle: document.getElementById('preview-title'),
+  appVersion: document.getElementById('app-version')
 };
 function synchronizeMetadataWithSelectOptions() {
   const nextMetadata = { ...state.metadata };
   let changed = false;
-  SELECT_FIELD_DEFINITIONS.forEach((field) => {
+  SELECT_FIELD_SCHEMAS.forEach((field) => {
     const optionsKey = field.optionsKey || field.key;
     const allowed = state.selectOptions[optionsKey] || [];
     const currentValue = nextMetadata[field.key];
@@ -879,7 +1531,8 @@ function getKeywordList() {
 
 function getIsFormDirty() {
   const metadataFilled = Object.values(state.metadata).some((value) => `${value || ''}`.trim().length > 0);
-  const isDefaultContent = state.contentHTML.trim() === INITIAL_CONTENT_HTML.trim();
+  const referenceContent = (state.initialContentHTML || '').trim();
+  const isDefaultContent = state.contentHTML.trim() === referenceContent;
   const contentFilled = !isDefaultContent && state.contentHTML
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
@@ -888,9 +1541,104 @@ function getIsFormDirty() {
   return metadataFilled || contentFilled || qaFilled;
 }
 
+function renderHeader() {
+  if (elements.headerTitle) {
+    elements.headerTitle.textContent = translate('header.title');
+  }
+  if (elements.importButton) {
+    elements.importButton.textContent = translate('header.import');
+  }
+  if (elements.backofficeButton) {
+    elements.backofficeButton.textContent = translate('header.backoffice');
+  }
+  if (elements.newProcedureButton) {
+    elements.newProcedureButton.textContent = translate('header.newProcedure');
+  }
+  if (elements.languageLabel) {
+    elements.languageLabel.textContent = translate('language.label');
+  }
+  if (elements.languageSelect) {
+    elements.languageSelect.setAttribute('aria-label', translate('language.aria'));
+    Array.from(elements.languageSelect.options).forEach((option) => {
+      const optionKey = `language.option.${option.value}`;
+      const fallback = SUPPORTED_LANGUAGES.find((entry) => entry.code === option.value)?.label
+        || option.textContent;
+      option.textContent = translate(optionKey, {}, fallback);
+    });
+    if (elements.languageSelect.value !== state.language) {
+      elements.languageSelect.value = state.language;
+    }
+  }
+  if (typeof document !== 'undefined') {
+    document.title = translate('page.title');
+    if (document.documentElement) {
+      document.documentElement.lang = state.language;
+    }
+  }
+  if (elements.appVersion) {
+    elements.appVersion.textContent = `${translate('version.label')} ${APP_VERSION}`;
+  }
+}
+
+function renderSectionTitles() {
+  if (elements.metadataCardTitle) {
+    elements.metadataCardTitle.textContent = translate('sections.metadata');
+  }
+  if (elements.editorCardTitle) {
+    elements.editorCardTitle.textContent = translate('sections.editor');
+  }
+  if (elements.qaCardTitle) {
+    elements.qaCardTitle.textContent = translate('sections.qa');
+  }
+  if (elements.qaCardDescription) {
+    elements.qaCardDescription.textContent = translate('qa.description');
+  }
+  if (elements.addQaButton) {
+    elements.addQaButton.textContent = translate('qa.addQuestion');
+  }
+  if (elements.exportCardTitle) {
+    elements.exportCardTitle.textContent = translate('sections.export');
+  }
+  if (elements.blockingWarningText) {
+    elements.blockingWarningText.textContent = translate('export.warning');
+  }
+  if (elements.guidelinesTitle) {
+    elements.guidelinesTitle.textContent = translate('guidelines.title');
+  }
+  if (elements.glossaryTitle) {
+    elements.glossaryTitle.textContent = translate('glossary.title');
+  }
+  if (elements.previewTitle) {
+    elements.previewTitle.textContent = translate('preview.title');
+  }
+  if (elements.closePreviewButton) {
+    elements.closePreviewButton.textContent = translate('preview.close');
+  }
+}
+
 function renderStartInfo() {
-  if (elements.startInfo) {
-    elements.startInfo.hidden = state.hasStarted;
+  if (!elements.startInfo) {
+    return;
+  }
+  elements.startInfo.hidden = state.hasStarted;
+  if (elements.startInfoTitle) {
+    elements.startInfoTitle.textContent = translate('startInfo.title');
+  }
+  if (elements.startInfoDescription) {
+    elements.startInfoDescription.textContent = translate('startInfo.description');
+  }
+  if (elements.startInfoList) {
+    const bullets = [
+      translate('startInfo.bullet1'),
+      translate('startInfo.bullet2'),
+      translate('startInfo.bullet3')
+    ];
+    elements.startInfoList.innerHTML = '';
+    bullets.forEach((text) => {
+      const item = document.createElement('li');
+      item.textContent = text;
+      elements.startInfoList.appendChild(item);
+    });
   }
 }
 
@@ -937,7 +1685,7 @@ function renderKeywordField(field, container) {
   if (keywords.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'keyword-empty';
-    empty.textContent = 'Ajoutez un mot clef puis validez avec Entrée.';
+    empty.textContent = translate('keywords.empty');
     tagsContainer.appendChild(empty);
   } else {
     keywords.forEach((keyword, index) => {
@@ -955,7 +1703,7 @@ function renderKeywordField(field, container) {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'keyword-remove';
-      remove.setAttribute('aria-label', `Retirer le mot clef ${keyword}`);
+      remove.setAttribute('aria-label', translate('keywords.removeLabel', { keyword }));
       remove.textContent = '×';
       remove.addEventListener('click', () => handleKeywordRemove(index));
       tag.appendChild(remove);
@@ -980,7 +1728,7 @@ function renderMetadataGroups() {
     return;
   }
   elements.metadataGroups.innerHTML = '';
-  const groups = createResolvedMetadataGroups(state.selectOptions, state.configDefaults);
+  const groups = createResolvedMetadataGroups(state.selectOptions, state.configDefaults, state.language);
   groups.forEach((group) => {
     const section = document.createElement('section');
     section.className = 'metadata-group';
@@ -1020,13 +1768,13 @@ function renderMetadataGroups() {
         if (!field.multiple) {
           const placeholderOption = document.createElement('option');
           placeholderOption.value = '';
-          placeholderOption.textContent = 'Sélectionnez une option';
+          placeholderOption.textContent = translate('select.placeholder');
           select.appendChild(placeholderOption);
         }
         availableOptions.forEach((option) => {
           const optionElement = document.createElement('option');
           optionElement.value = option;
-          optionElement.textContent = option;
+          optionElement.textContent = getSelectOptionLabel(field.optionsKey || field.key, option, state.language);
           if (field.multiple && Array.isArray(currentValue) && currentValue.includes(option)) {
             optionElement.selected = true;
           }
@@ -1096,10 +1844,10 @@ function renderQAList() {
     const questionWrapper = document.createElement('div');
     const questionLabel = document.createElement('label');
     questionLabel.htmlFor = `question-${index}`;
-    questionLabel.textContent = 'Question';
+    questionLabel.textContent = translate('qa.questionLabel');
     const questionTextarea = document.createElement('textarea');
     questionTextarea.id = `question-${index}`;
-    questionTextarea.placeholder = 'Formulez la question de manière explicite';
+    questionTextarea.placeholder = translate('qa.questionPlaceholder');
     questionTextarea.value = item.question;
     questionTextarea.addEventListener('input', (event) => handleQAChange(index, 'question', event.target.value));
     questionWrapper.appendChild(questionLabel);
@@ -1108,10 +1856,10 @@ function renderQAList() {
     const answerWrapper = document.createElement('div');
     const answerLabel = document.createElement('label');
     answerLabel.htmlFor = `answer-${index}`;
-    answerLabel.textContent = 'Réponse';
+    answerLabel.textContent = translate('qa.answerLabel');
     const answerTextarea = document.createElement('textarea');
     answerTextarea.id = `answer-${index}`;
-    answerTextarea.placeholder = 'Fournissez une réponse précise et contextualisée';
+    answerTextarea.placeholder = translate('qa.answerPlaceholder');
     answerTextarea.value = item.answer;
     answerTextarea.addEventListener('input', (event) => handleQAChange(index, 'answer', event.target.value));
     answerWrapper.appendChild(answerLabel);
@@ -1123,7 +1871,7 @@ function renderQAList() {
       const removeButton = document.createElement('button');
       removeButton.type = 'button';
       removeButton.className = 'remove-btn';
-      removeButton.textContent = 'Retirer';
+      removeButton.textContent = translate('qa.remove');
       removeButton.addEventListener('click', () => removeQAItem(index));
       actions.appendChild(removeButton);
     }
@@ -1141,6 +1889,7 @@ function renderGuidelines() {
     return;
   }
   elements.guidelinesList.innerHTML = '';
+  elements.guidelinesEmpty.textContent = translate('guidelines.empty');
   if (state.guidelines.length === 0) {
     elements.guidelinesEmpty.hidden = false;
   } else {
@@ -1152,7 +1901,7 @@ function renderGuidelines() {
 
       const anchor = document.createElement('span');
       anchor.className = 'comment-anchor';
-      anchor.textContent = item.anchor || 'Texte';
+      anchor.textContent = item.anchor || translate('guidelines.anchorFallback');
       wrapper.appendChild(anchor);
 
       const message = document.createElement('span');
@@ -1171,6 +1920,9 @@ function renderGlossary() {
     return;
   }
   elements.glossaryList.innerHTML = '';
+  if (elements.glossaryLoading) {
+    elements.glossaryLoading.textContent = translate('glossary.loading');
+  }
   if (state.isGlossaryLoading) {
     if (elements.glossaryLoading) {
       elements.glossaryLoading.hidden = false;
@@ -1194,7 +1946,7 @@ function renderGlossary() {
     const empty = document.createElement('p');
     empty.style.color = 'var(--muted)';
     empty.style.margin = '0';
-    empty.textContent = 'Aucune entrée disponible.';
+    empty.textContent = translate('glossary.empty');
     elements.glossaryList.appendChild(empty);
     return;
   }
@@ -1246,10 +1998,22 @@ function renderBackoffice() {
   }
   elements.backofficeOverlay.hidden = !state.isBackofficeOpen;
   elements.backofficeSections.innerHTML = '';
+  if (elements.backofficeTitle) {
+    elements.backofficeTitle.textContent = translate('backoffice.title');
+  }
+  if (elements.closeBackofficeButton) {
+    elements.closeBackofficeButton.textContent = translate('backoffice.close');
+  }
+  if (elements.backofficeDescription) {
+    elements.backofficeDescription.textContent = translate('backoffice.description');
+  }
+  if (elements.exportConfigButton) {
+    elements.exportConfigButton.textContent = translate('backoffice.exportConfig');
+  }
   if (!state.isBackofficeOpen) {
     return;
   }
-  SELECT_FIELD_DEFINITIONS.forEach((field) => {
+  SELECT_FIELD_SCHEMAS.forEach((field) => {
     const section = document.createElement('div');
     section.className = 'backoffice-section';
 
@@ -1262,7 +2026,7 @@ function renderBackoffice() {
     const resetButton = document.createElement('button');
     resetButton.type = 'button';
     resetButton.className = 'backoffice-reset-btn';
-    resetButton.textContent = 'Réinitialiser';
+    resetButton.textContent = translate('backoffice.reset');
     resetButton.addEventListener('click', () => handleResetSelectOptions(field.key));
     header.appendChild(resetButton);
 
@@ -1270,7 +2034,7 @@ function renderBackoffice() {
 
     const label = document.createElement('label');
     label.htmlFor = `${field.key}-new-option`;
-    label.textContent = 'Ajouter une option';
+    label.textContent = translate('backoffice.addOptionLabel');
     section.appendChild(label);
 
     const controls = document.createElement('div');
@@ -1279,7 +2043,7 @@ function renderBackoffice() {
     const input = document.createElement('input');
     input.id = `${field.key}-new-option`;
     input.type = 'text';
-    input.placeholder = 'Nouvelle option';
+    input.placeholder = translate('backoffice.newOptionPlaceholder');
     input.value = state.selectOptionDrafts[field.optionsKey || field.key] || '';
     input.addEventListener('input', (event) => handleSelectOptionDraftChange(field.key, event.target.value));
     input.addEventListener('keydown', (event) => {
@@ -1293,7 +2057,7 @@ function renderBackoffice() {
     const addButton = document.createElement('button');
     addButton.type = 'button';
     addButton.className = 'backoffice-add-btn';
-    addButton.textContent = 'Ajouter';
+    addButton.textContent = translate('backoffice.addOption');
     addButton.addEventListener('click', () => handleAddSelectOption(field.key));
     controls.appendChild(addButton);
 
@@ -1307,7 +2071,7 @@ function renderBackoffice() {
     if (options.length === 0) {
       const empty = document.createElement('span');
       empty.className = 'option-empty';
-      empty.textContent = 'Aucune option enregistrée pour le moment.';
+      empty.textContent = translate('backoffice.emptyOptions');
       optionList.appendChild(empty);
     } else {
       options.forEach((option) => {
@@ -1315,13 +2079,13 @@ function renderBackoffice() {
         pill.className = 'option-pill';
 
         const labelSpan = document.createElement('span');
-        labelSpan.textContent = option;
+        labelSpan.textContent = getSelectOptionLabel(field.optionsKey || field.key, option, state.language);
         pill.appendChild(labelSpan);
 
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'option-pill-remove';
-        remove.setAttribute('aria-label', `Supprimer l'option ${option}`);
+        remove.setAttribute('aria-label', translate('backoffice.removeOptionLabel', { option }));
         remove.textContent = '×';
         remove.addEventListener('click', () => handleRemoveSelectOption(field.key, option));
         pill.appendChild(remove);
@@ -1349,19 +2113,46 @@ function renderToolbar() {
   buttons.forEach((button) => {
     button.disabled = false;
   });
+  const boldButton = elements.toolbar.querySelector('button[data-command="bold"]');
+  if (boldButton) {
+    boldButton.textContent = translate('toolbar.bold');
+  }
+  const italicButton = elements.toolbar.querySelector('button[data-command="italic"]');
+  if (italicButton) {
+    italicButton.textContent = translate('toolbar.italic');
+  }
+  const unorderedButton = elements.toolbar.querySelector('button[data-command="insertUnorderedList"]');
+  if (unorderedButton) {
+    unorderedButton.textContent = translate('toolbar.unorderedList');
+  }
+  const orderedButton = elements.toolbar.querySelector('button[data-command="insertOrderedList"]');
+  if (orderedButton) {
+    orderedButton.textContent = translate('toolbar.orderedList');
+  }
+  if (elements.insertRationalButton) {
+    elements.insertRationalButton.textContent = translate('toolbar.rational');
+  }
 }
 
 function renderExportActions() {
+  if (elements.previewButton) {
+    elements.previewButton.textContent = translate('export.preview');
+  }
   if (elements.exportMarkdownButton) {
     elements.exportMarkdownButton.disabled = state.blockingWarnings.length > 0;
+    elements.exportMarkdownButton.textContent = translate('export.markdown');
   }
   if (elements.exportPDFButton) {
     elements.exportPDFButton.disabled = state.blockingWarnings.length > 0 || state.isExportingPDF;
-    elements.exportPDFButton.textContent = state.isExportingPDF ? 'Export PDF en cours…' : 'Exporter en PDF';
+    elements.exportPDFButton.textContent = state.isExportingPDF
+      ? translate('export.pdfInProgress')
+      : translate('export.pdf');
   }
 }
 
 function renderAll() {
+  renderHeader();
+  renderSectionTitles();
   renderStartInfo();
   renderMetadataGroups();
   renderQAList();
@@ -1375,8 +2166,42 @@ function renderAll() {
 }
 
 function updateGuidelinesAndWarnings() {
-  state.guidelines = computeGuidelines(state.contentHTML, state.glossary);
+  state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
   state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
+}
+
+function setLanguage(languageCode) {
+  const supported = SUPPORTED_LANGUAGES.some((entry) => entry.code === languageCode);
+  const targetLanguage = supported ? languageCode : DEFAULT_LANGUAGE;
+  if (state.language === targetLanguage) {
+    return;
+  }
+  state.language = targetLanguage;
+  currentLanguage = targetLanguage;
+  saveLanguagePreference(targetLanguage);
+  if (elements.languageSelect && elements.languageSelect.value !== targetLanguage) {
+    elements.languageSelect.value = targetLanguage;
+  }
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = targetLanguage;
+  }
+  if (state.glossaryError) {
+    state.glossaryError = translate('glossary.error');
+  }
+  const previousTemplate = (state.initialContentHTML || '').trim();
+  const newTemplate = getInitialContentHTML(targetLanguage);
+  if (!state.hasStarted || state.contentHTML.trim() === previousTemplate) {
+    state.contentHTML = newTemplate;
+    state.initialContentHTML = newTemplate;
+    if (elements.editor) {
+      elements.editor.innerHTML = newTemplate;
+    }
+  } else {
+    state.initialContentHTML = newTemplate;
+  }
+  state.guidelines = computeGuidelines(state.contentHTML, state.glossary, targetLanguage);
+  state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
+  renderAll();
 }
 function handleMetadataChange(fieldKey, value) {
   state.metadata = { ...state.metadata, [fieldKey]: value };
@@ -1452,10 +2277,12 @@ function insertRationalBlock() {
     return;
   }
   elements.editor.focus();
+  const title = translate('rational.title');
+  const description = translate('rational.description');
   const rationalHTML = `
 <section class="rational-block" data-block-type="rationnel">
-  <div class="rational-block-title">Rationnel</div>
-  <p>Expliquez ici le rationnel associé à cette section.</p>
+  <div class="rational-block-title">${title}</div>
+  <p>${description}</p>
 </section><p></p>`;
   document.execCommand('insertHTML', false, rationalHTML);
   state.hasStarted = true;
@@ -1485,36 +2312,45 @@ function handleExportMarkdown() {
   URL.revokeObjectURL(link.href);
 }
 
-function buildPrintableHTML(metadata, contentHTML, qaItems) {
+function buildPrintableHTML(metadata, contentHTML, qaItems, language = state.language || currentLanguage) {
   const metadataEntries = [
-    ['Titre', metadata.title],
-    ['Référence', metadata.reference],
-    ['Auteur', metadata.author],
-    ['Périmètre métier', formatMetadataValue(metadata.businessScope)],
-    ['Périmètre société', formatMetadataValue(metadata.companyScope)],
-    ['Périmètre géographique', formatMetadataValue(metadata.geoScope)],
-    ['Mots clefs', formatMetadataValue(metadata.keywords)],
-    ['Résumé', metadata.summary],
-    ['Procédure mère', metadata.parentProcedure],
-    ['Historique des modifications', metadata.changeHistory],
-    ["Date d'entrée en vigueur", metadata.effectiveDate]
+    ['metadata.field.title.label', metadata.title],
+    ['metadata.field.reference.label', metadata.reference],
+    ['metadata.field.author.label', metadata.author],
+    ['metadata.field.businessScope.label', formatMetadataValue(metadata.businessScope)],
+    ['metadata.field.companyScope.label', formatMetadataValue(metadata.companyScope)],
+    ['metadata.field.geoScope.label', formatMetadataValue(metadata.geoScope)],
+    ['metadata.field.keywords.label', formatMetadataValue(metadata.keywords)],
+    ['metadata.field.summary.label', metadata.summary],
+    ['metadata.field.parentProcedure.label', metadata.parentProcedure],
+    ['metadata.field.changeHistory.label', metadata.changeHistory],
+    ['metadata.field.effectiveDate.label', metadata.effectiveDate]
   ];
   const metadataRows = metadataEntries
-    .map(([label, value]) => `<tr><th>${escapeHTML(label)}</th><td>${escapeHTML(String(value || ''))}</td></tr>`)
+    .map(([key, value]) => {
+      const label = translate(key, {}, key, language);
+      return `<tr><th>${escapeHTML(label)}</th><td>${escapeHTML(String(value || ''))}</td></tr>`;
+    })
     .join('');
+  const questionLabel = translate('qa.questionLabel', {}, 'Question', language);
+  const answerLabel = translate('qa.answerLabel', {}, 'Réponse', language);
   const qaSections = qaItems
     .map(
       (item, index) => `
         <section class="print-qa">
-          <h3>Question ${index + 1}</h3>
-          <p><strong>Question :</strong> ${escapeHTML(item.question || '')}</p>
-          <p><strong>Réponse :</strong> ${escapeHTML(item.answer || '')}</p>
+          <h3>${escapeHTML(`${questionLabel} ${index + 1}`)}</h3>
+          <p><strong>${escapeHTML(`${questionLabel} :`)}</strong> ${escapeHTML(item.question || '')}</p>
+          <p><strong>${escapeHTML(`${answerLabel} :`)}</strong> ${escapeHTML(item.answer || '')}</p>
         </section>`
     )
     .join('');
 
+  const sectionTitle = translate('pdf.sectionTitle', {}, 'Questions & Réponses', language);
+  const noQuestionText = translate('pdf.noQuestions', {}, 'Aucune question enregistrée.', language);
+  const fallbackTitle = translate('pdf.fallbackTitle', {}, 'Procédure', language);
+
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${language}">
 <head>
   <meta charset="utf-8" />
   <title>Export PDF</title>
@@ -1531,13 +2367,13 @@ function buildPrintableHTML(metadata, contentHTML, qaItems) {
 </head>
 <body>
   <header>
-    <h1>${escapeHTML(metadata.title || 'Procédure')}</h1>
+    <h1>${escapeHTML(metadata.title || fallbackTitle)}</h1>
     <table>${metadataRows}</table>
   </header>
   <section class="content">${contentHTML}</section>
   <section class="qa-section">
-    <h2>Questions &amp; Réponses</h2>
-    ${qaSections || '<p>Aucune question enregistrée.</p>'}
+    <h2>${escapeHTML(sectionTitle)}</h2>
+    ${qaSections || `<p>${escapeHTML(noQuestionText)}</p>`}
   </section>
   <script>
     window.addEventListener('load', () => {
@@ -1559,17 +2395,17 @@ function handleExportPDF() {
   try {
     state.isExportingPDF = true;
     renderExportActions();
-    const printable = buildPrintableHTML(state.metadata, state.contentHTML, state.qaItems);
+    const printable = buildPrintableHTML(state.metadata, state.contentHTML, state.qaItems, state.language);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      throw new Error('Impossible d’ouvrir la fenêtre d’impression.');
+      throw new Error(translate('pdf.printWindowError'));
     }
     printWindow.document.open();
     printWindow.document.write(printable);
     printWindow.document.close();
   } catch (error) {
     console.error('Erreur lors de la préparation du PDF :', error);
-    window.alert("Le PDF n'a pas pu être préparé. Veuillez réessayer.");
+    window.alert(translate('pdf.exportError'));
   } finally {
     state.isExportingPDF = false;
     renderExportActions();
@@ -1577,28 +2413,28 @@ function handleExportPDF() {
 }
 function handleNewProcedure() {
   if (getIsFormDirty()) {
-    const confirmReset = window.confirm(
-      'Voulez-vous vraiment démarrer une nouvelle procédure ? Les informations en cours seront effacées.'
-    );
+    const confirmReset = window.confirm(translate('confirm.newProcedure'));
     if (!confirmReset) {
       return;
     }
   }
 
   const initialQAItems = createInitialQAItems();
+  const template = getInitialContentHTML(state.language);
   state.metadata = createInitialMetadata();
   state.qaItems = initialQAItems;
-  state.contentHTML = INITIAL_CONTENT_HTML;
-  state.guidelines = computeGuidelines(INITIAL_CONTENT_HTML, state.glossary);
-  state.blockingWarnings = detectBlockingIssues(INITIAL_CONTENT_HTML, initialQAItems);
+  state.contentHTML = template;
+  state.initialContentHTML = template;
+  state.guidelines = computeGuidelines(template, state.glossary, state.language);
+  state.blockingWarnings = detectBlockingIssues(template, initialQAItems);
   state.previewMarkdown = '';
   state.isPreviewOpen = false;
   state.hasStarted = true;
   state.keywordInput = '';
 
   if (elements.editor) {
-    elements.editor.innerHTML = INITIAL_CONTENT_HTML;
-    const firstField = document.getElementById(METADATA_FIELD_DEFINITIONS[0].key);
+    elements.editor.innerHTML = template;
+    const firstField = document.getElementById(METADATA_FIELD_SCHEMAS[0].key);
     if (firstField) {
       firstField.focus();
     }
@@ -1624,7 +2460,7 @@ async function handleImportMarkdown(event) {
 
   try {
     const text = await file.text();
-    const { metadata, contentHTML, qaItems } = parseMarkdownProcedure(text);
+    const { metadata, contentHTML, qaItems } = parseMarkdownProcedure(text, state.language);
     state.metadata = metadata;
     state.contentHTML = contentHTML;
     state.qaItems = qaItems;
@@ -1640,7 +2476,7 @@ async function handleImportMarkdown(event) {
     renderAll();
   } catch (error) {
     console.error("Erreur lors de l'import Markdown :", error);
-    window.alert("Le fichier Markdown n'a pas pu être importé. Vérifiez son format et réessayez.");
+    window.alert(translate('import.error'));
   } finally {
     if (input) {
       input.value = '';
@@ -1649,7 +2485,7 @@ async function handleImportMarkdown(event) {
 }
 
 function handleAddSelectOption(fieldKey) {
-  const optionsKey = SELECT_FIELD_DEFINITIONS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
+  const optionsKey = SELECT_FIELD_SCHEMAS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
   const draft = state.selectOptionDrafts[optionsKey] || '';
   const trimmed = draft.trim();
   if (!trimmed) {
@@ -1670,7 +2506,7 @@ function handleAddSelectOption(fieldKey) {
 }
 
 function handleRemoveSelectOption(fieldKey, option) {
-  const optionsKey = SELECT_FIELD_DEFINITIONS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
+  const optionsKey = SELECT_FIELD_SCHEMAS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
   const options = state.selectOptions[optionsKey] || [];
   const updatedOptions = options.filter((value) => value !== option);
   const next = { ...state.selectOptions, [optionsKey]: updatedOptions };
@@ -1681,7 +2517,7 @@ function handleRemoveSelectOption(fieldKey, option) {
 }
 
 function handleResetSelectOptions(fieldKey) {
-  const fieldDefinition = SELECT_FIELD_DEFINITIONS.find((field) => field.key === fieldKey);
+  const fieldDefinition = SELECT_FIELD_SCHEMAS.find((field) => field.key === fieldKey);
   const optionsKey = fieldDefinition?.optionsKey || fieldKey;
   const baseOptions = state.configDefaults[optionsKey] || DEFAULT_SELECT_OPTIONS[optionsKey] || [];
   const next = { ...state.selectOptions, [optionsKey]: [...baseOptions] };
@@ -1692,7 +2528,7 @@ function handleResetSelectOptions(fieldKey) {
 }
 
 function handleSelectOptionDraftChange(fieldKey, value) {
-  const optionsKey = SELECT_FIELD_DEFINITIONS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
+  const optionsKey = SELECT_FIELD_SCHEMAS.find((field) => field.key === fieldKey)?.optionsKey || fieldKey;
   state.selectOptionDrafts = { ...state.selectOptionDrafts, [optionsKey]: value };
 }
 
@@ -1710,7 +2546,7 @@ function handleExportConfig() {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Erreur lors de l'export de la configuration :", error);
-    window.alert("L'export de la configuration a échoué. Veuillez réessayer.");
+    window.alert(translate('export.configError'));
   }
 }
 
@@ -1748,7 +2584,11 @@ function registerEventListeners() {
   }
   if (elements.editor) {
     elements.editor.addEventListener('input', handleEditorInput);
-    elements.editor.innerHTML = INITIAL_CONTENT_HTML;
+    elements.editor.innerHTML = state.contentHTML;
+  }
+  if (elements.languageSelect) {
+    elements.languageSelect.value = state.language;
+    elements.languageSelect.addEventListener('change', (event) => setLanguage(event.target.value));
   }
   if (elements.addQaButton) {
     elements.addQaButton.addEventListener('click', addQAItem);
@@ -1822,7 +2662,7 @@ async function bootstrap() {
       state.glossaryError = null;
     } catch (error) {
       state.glossary = {};
-      state.glossaryError = "Le glossaire n'a pas pu être chargé.";
+      state.glossaryError = translate('glossary.error');
     } finally {
       state.isGlossaryLoading = false;
       renderGlossary();
