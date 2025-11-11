@@ -1985,6 +1985,9 @@ function renderPreview() {
     return;
   }
   elements.previewModal.hidden = !state.isPreviewOpen;
+  if (elements.previewModal.setAttribute) {
+    elements.previewModal.setAttribute('aria-hidden', String(!state.isPreviewOpen));
+  }
   if (state.isPreviewOpen) {
     elements.previewBody.textContent = state.previewMarkdown;
   } else {
