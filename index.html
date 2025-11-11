@@ -255,6 +255,124 @@
       color: var(--muted);
     }
 
+    .backoffice-card {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .backoffice-description {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .backoffice-section {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      background: #f7f8ff;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: inset 0 0 0 1px rgba(47, 79, 159, 0.08);
+    }
+
+    .backoffice-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .backoffice-section-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .backoffice-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .backoffice-controls input[type="text"] {
+      flex: 1 1 240px;
+      min-width: 200px;
+    }
+
+    .backoffice-add-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      box-shadow: 0 2px 6px rgba(47, 79, 159, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .backoffice-add-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(47, 79, 159, 0.25);
+    }
+
+    .backoffice-reset-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .option-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .option-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--primary);
+      border: 1px solid rgba(47, 79, 159, 0.25);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .option-pill-remove {
+      appearance: none;
+      border: none;
+      background: none;
+      color: var(--warning);
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      font-size: 14px;
+    }
+
+    .option-pill-remove:focus {
+      outline: none;
+      text-decoration: underline;
+    }
+
+    .option-empty {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
     .editor-card {
       display: flex;
       flex-direction: column;
@@ -557,7 +675,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.12
+    Version 1.1.13
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -685,6 +803,62 @@
       acc[field.key] = '';
       return acc;
     }, {});
+
+    const selectFieldDefinitions = metadataFields.filter((field) => field.type === 'select');
+    const SELECT_FIELD_KEYS = selectFieldDefinitions.map((field) => field.key);
+    const DEFAULT_SELECT_OPTIONS = selectFieldDefinitions.reduce((acc, field) => {
+      acc[field.key] = field.options ? [...field.options] : [];
+      return acc;
+    }, {});
+    const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
+
+    function normalizeSelectOptions(options) {
+      const normalized = {};
+      SELECT_FIELD_KEYS.forEach((key) => {
+        const defaults = DEFAULT_SELECT_OPTIONS[key] || [];
+        const rawValues = options && Array.isArray(options[key]) ? options[key] : defaults;
+        const sanitized = rawValues
+          .map((value) => (typeof value === 'string' ? value : String(value)))
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
+
+        const unique = [];
+        sanitized.forEach((value) => {
+          if (!unique.some((existing) => existing.toLowerCase() === value.toLowerCase())) {
+            unique.push(value);
+          }
+        });
+
+        normalized[key] = unique.length > 0 ? unique : [...defaults];
+      });
+      return normalized;
+    }
+
+    function loadInitialSelectOptions() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+      }
+
+      try {
+        const raw = window.localStorage.getItem(SELECT_OPTION_STORAGE_KEY);
+        if (!raw) {
+          return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+        }
+
+        const parsed = JSON.parse(raw);
+        return normalizeSelectOptions(parsed);
+      } catch (error) {
+        console.warn('Impossible de charger les options personnalisées :', error);
+        return normalizeSelectOptions(DEFAULT_SELECT_OPTIONS);
+      }
+    }
+
+    function createEmptyOptionDrafts() {
+      return SELECT_FIELD_KEYS.reduce((acc, key) => {
+        acc[key] = '';
+        return acc;
+      }, {});
+    }
 
     const createInitialQAItems = () => [{ question: '', answer: '' }];
 
@@ -1119,6 +1293,8 @@
       const [glossary, setGlossary] = useState({});
       const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
       const [glossaryError, setGlossaryError] = useState(null);
+      const [selectOptions, setSelectOptions] = useState(loadInitialSelectOptions);
+      const [selectOptionDrafts, setSelectOptionDrafts] = useState(createEmptyOptionDrafts);
       const editorRef = useRef(null);
       const fileInputRef = useRef(null);
       const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -1144,9 +1320,137 @@
         }
       }, []);
 
+      useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+
+        try {
+          window.localStorage.setItem(SELECT_OPTION_STORAGE_KEY, JSON.stringify(selectOptions));
+        } catch (error) {
+          console.warn('Impossible de sauvegarder les options personnalisées :', error);
+        }
+      }, [selectOptions]);
+
+      useEffect(() => {
+        let hasClearedValue = false;
+        setMetadata((prev) => {
+          let next = prev;
+          SELECT_FIELD_KEYS.forEach((key) => {
+            const allowed = selectOptions[key] || [];
+            if (prev[key] && !allowed.includes(prev[key])) {
+              if (next === prev) {
+                next = { ...prev };
+              }
+              next[key] = '';
+              hasClearedValue = true;
+            }
+          });
+          return next;
+        });
+
+        if (hasClearedValue) {
+          setHasStarted(true);
+        }
+      }, [selectOptions]);
+
       const handleMetadataChange = (key, value) => {
         setMetadata((prev) => ({ ...prev, [key]: value }));
         setHasStarted(true);
+      };
+
+      const handleSelectOptionDraftChange = (fieldKey, value) => {
+        setSelectOptionDrafts((prev) => ({ ...prev, [fieldKey]: value }));
+      };
+
+      const handleAddSelectOption = (fieldKey) => {
+        const draft = (selectOptionDrafts[fieldKey] || '').trim();
+        if (!draft) {
+          setSelectOptionDrafts((prev) => ({ ...prev, [fieldKey]: '' }));
+          return;
+        }
+
+        let hasAdded = false;
+        setSelectOptions((prev) => {
+          const existing = prev[fieldKey] || [];
+          if (existing.some((option) => option.toLowerCase() === draft.toLowerCase())) {
+            return prev;
+          }
+
+          hasAdded = true;
+          return {
+            ...prev,
+            [fieldKey]: [...existing, draft]
+          };
+        });
+
+        if (hasAdded) {
+          setSelectOptionDrafts((prev) => ({ ...prev, [fieldKey]: '' }));
+          setHasStarted(true);
+        }
+      };
+
+      const handleRemoveSelectOption = (fieldKey, option) => {
+        let hasRemoved = false;
+        setSelectOptions((prev) => {
+          const existing = prev[fieldKey] || [];
+          const filtered = existing.filter((value) => value !== option);
+          if (filtered.length === existing.length) {
+            return prev;
+          }
+
+          hasRemoved = true;
+          return {
+            ...prev,
+            [fieldKey]: filtered
+          };
+        });
+
+        if (!hasRemoved) {
+          return;
+        }
+
+        setMetadata((prev) => {
+          if (prev[fieldKey] !== option) {
+            return prev;
+          }
+          return { ...prev, [fieldKey]: '' };
+        });
+
+        setHasStarted(true);
+      };
+
+      const handleResetSelectOptions = (fieldKey) => {
+        const defaults = DEFAULT_SELECT_OPTIONS[fieldKey] || [];
+        let hasChanged = false;
+
+        setSelectOptions((prev) => {
+          const existing = prev[fieldKey] || [];
+          if (existing.length === defaults.length && existing.every((value, index) => value === defaults[index])) {
+            return prev;
+          }
+
+          hasChanged = true;
+          return {
+            ...prev,
+            [fieldKey]: [...defaults]
+          };
+        });
+
+        setSelectOptionDrafts((prev) => ({ ...prev, [fieldKey]: '' }));
+
+        setMetadata((prev) => {
+          if (prev[fieldKey] === '' || defaults.includes(prev[fieldKey])) {
+            return prev;
+          }
+
+          hasChanged = true;
+          return { ...prev, [fieldKey]: '' };
+        });
+
+        if (hasChanged) {
+          setHasStarted(true);
+        }
       };
 
       const handleKeywordAdd = (value) => {
@@ -1503,7 +1807,7 @@
                                   onChange={(event) => handleMetadataChange(field.key, event.target.value)}
                                 >
                                   <option value="">Sélectionnez une option</option>
-                                  {field.options.map((option) => (
+                                  {(selectOptions[field.key] || field.options || []).map((option) => (
                                     <option value={option} key={option}>
                                       {option}
                                     </option>
@@ -1580,6 +1884,68 @@
                     </section>
                   ))}
                 </div>
+              </section>
+
+              <section className="card backoffice-card">
+                <h2>Backoffice — Options des champs</h2>
+                <p className="backoffice-description">
+                  Personnalisez les listes de choix proposées dans les menus déroulants du formulaire.
+                </p>
+                {selectFieldDefinitions.map((field) => {
+                  const options = selectOptions[field.key] || [];
+                  return (
+                    <div className="backoffice-section" key={field.key}>
+                      <div className="backoffice-section-header">
+                        <h3>{field.label}</h3>
+                        <button
+                          type="button"
+                          className="backoffice-reset-btn"
+                          onClick={() => handleResetSelectOptions(field.key)}
+                        >
+                          Réinitialiser
+                        </button>
+                      </div>
+                      <label htmlFor={`${field.key}-new-option`}>Ajouter une option</label>
+                      <div className="backoffice-controls">
+                        <input
+                          id={`${field.key}-new-option`}
+                          type="text"
+                          value={selectOptionDrafts[field.key] || ''}
+                          placeholder="Nouvelle option"
+                          onChange={(event) => handleSelectOptionDraftChange(field.key, event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              handleAddSelectOption(field.key);
+                            }
+                          }}
+                        />
+                        <button type="button" className="backoffice-add-btn" onClick={() => handleAddSelectOption(field.key)}>
+                          Ajouter
+                        </button>
+                      </div>
+                      <div className="option-list" aria-live="polite">
+                        {options.length === 0 ? (
+                          <span className="option-empty">Aucune option enregistrée pour le moment.</span>
+                        ) : (
+                          options.map((option) => (
+                            <span className="option-pill" key={option}>
+                              <span>{option}</span>
+                              <button
+                                type="button"
+                                className="option-pill-remove"
+                                aria-label={`Supprimer l'option ${option}`}
+                                onClick={() => handleRemoveSelectOption(field.key, option)}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </section>
 
               <section className="card editor-card">
