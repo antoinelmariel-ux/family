@@ -284,6 +284,27 @@
       box-shadow: 0 4px 8px rgba(28, 34, 64, 0.12);
     }
 
+    .rational-block {
+      border: 1px dashed var(--primary);
+      background: rgba(47, 79, 159, 0.08);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 20px 0;
+    }
+
+    .rational-block-title {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 12px;
+      margin: 0 0 12px;
+      color: var(--primary);
+    }
+
+    .rational-block[data-block-type="rationnel"] p {
+      margin: 0;
+    }
+
     .editor {
       min-height: 320px;
       border: 1px solid var(--border);
@@ -536,7 +557,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.9
+    Version 1.1.10
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -1080,6 +1101,48 @@
         updateContent(event.currentTarget.innerHTML);
       };
 
+      const insertRationalBlock = () => {
+        if (!editorRef.current) {
+          return;
+        }
+
+        editorRef.current.focus();
+
+        const rationalHTML = `
+<section class="rational-block" data-block-type="rationnel">
+  <div class="rational-block-title">Rationnel</div>
+  <p>Expliquez ici le rationnel associé à cette section.</p>
+</section><p></p>`;
+
+        document.execCommand('insertHTML', false, rationalHTML);
+        setHasStarted(true);
+        updateContent(editorRef.current.innerHTML);
+
+        requestAnimationFrame(() => {
+          if (!editorRef.current) {
+            return;
+          }
+
+          const selection = window.getSelection();
+          const blocks = editorRef.current.querySelectorAll('.rational-block[data-block-type="rationnel"]');
+          if (!selection || blocks.length === 0) {
+            return;
+          }
+
+          const lastBlock = blocks[blocks.length - 1];
+          const paragraph = lastBlock.querySelector('p');
+          if (!paragraph) {
+            return;
+          }
+
+          const range = document.createRange();
+          range.selectNodeContents(paragraph);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        });
+      };
+
       const handleQAChange = (index, field, value) => {
         setQaItems((prev) => {
           const next = [...prev];
@@ -1373,6 +1436,7 @@
                   <button type="button" onClick={() => formatSelection('formatBlock', 'H4')}>H4</button>
                   <button type="button" onClick={() => formatSelection('bold')}>Gras</button>
                   <button type="button" onClick={() => formatSelection('italic')}>Italique</button>
+                  <button type="button" onClick={insertRationalBlock}>Rationnel</button>
                   <button type="button" onClick={() => formatSelection('insertUnorderedList')}>Liste à puces</button>
                   <button type="button" onClick={() => formatSelection('insertOrderedList')}>Liste numérotée</button>
                 </div>
