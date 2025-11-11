@@ -536,7 +536,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.7
+    Version 1.1.8
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -668,6 +668,45 @@
     function sanitizeHTML(html) {
       return html.replace(/\s+style="[^"]*"/g, '');
     }
+
+    const PROCEDURE_TEMPLATE = `
+<h2>Objectif</h2>
+<p>Précisez ici la finalité de la procédure et le résultat attendu.</p>
+
+<h2>Champ d'application</h2>
+<p>Décrivez le périmètre couvert : services, équipes, situations concernées.</p>
+
+<h2>Pré-requis</h2>
+<ul>
+  <li>Listez les conditions nécessaires (documents, accès, matériels, compétences).</li>
+  <li>Ajoutez toute information préalable indispensable.</li>
+</ul>
+
+<h2>Rôles et responsabilités</h2>
+<ul>
+  <li><strong>Acteur principal :</strong> Décrivez son rôle clé.</li>
+  <li><strong>Contributeurs :</strong> Mentionnez les soutiens et leurs actions.</li>
+  <li><strong>Référent :</strong> Indiquez la personne à contacter en cas de question.</li>
+</ul>
+
+<h2>Étapes détaillées</h2>
+<ol>
+  <li><strong>Étape 1 :</strong> Décrivez précisément la première action à mener.</li>
+  <li><strong>Étape 2 :</strong> Indiquez la suite logique en précisant les points de contrôle.</li>
+  <li><strong>Étape 3 :</strong> Complétez avec les actions restantes jusqu'à la finalisation.</li>
+</ol>
+
+<h2>Points de contrôle &amp; indicateurs</h2>
+<p>Précisez les vérifications à réaliser et la manière d'évaluer la conformité.</p>
+
+<h2>Gestion des écarts</h2>
+<p>Décrivez la marche à suivre en cas de non-conformité ou de situation imprévue.</p>
+
+<h2>Annexes &amp; documents associés</h2>
+<p>Référencez les formulaires, modèles ou ressources complémentaires.</p>
+`;
+
+    const INITIAL_CONTENT_HTML = sanitizeHTML(PROCEDURE_TEMPLATE);
 
     function computeGuidelines(html, acronymDB = {}) {
       const parser = new DOMParser();
@@ -949,7 +988,7 @@
 
     function App() {
       const [metadata, setMetadata] = useState(() => ({ ...initialMetadata }));
-      const [contentHTML, setContentHTML] = useState('');
+      const [contentHTML, setContentHTML] = useState(INITIAL_CONTENT_HTML);
       const [qaItems, setQaItems] = useState(createInitialQAItems);
       const [guidelines, setGuidelines] = useState([]);
       const [blockingWarnings, setBlockingWarnings] = useState([]);
@@ -965,7 +1004,8 @@
 
       const isFormDirty = useMemo(() => {
         const metadataFilled = Object.values(metadata).some((value) => `${value || ''}`.trim().length > 0);
-        const contentFilled = contentHTML
+        const isDefaultContent = contentHTML.trim() === INITIAL_CONTENT_HTML.trim();
+        const contentFilled = !isDefaultContent && contentHTML
           .replace(/<[^>]+>/g, ' ')
           .replace(/&nbsp;/g, ' ')
           .trim().length > 0;
@@ -974,6 +1014,12 @@
         );
         return metadataFilled || contentFilled || qaFilled;
       }, [metadata, contentHTML, qaItems]);
+
+      useEffect(() => {
+        if (editorRef.current) {
+          editorRef.current.innerHTML = INITIAL_CONTENT_HTML;
+        }
+      }, []);
 
       const handleMetadataChange = (key, value) => {
         setMetadata((prev) => ({ ...prev, [key]: value }));
@@ -1143,17 +1189,19 @@
           }
         }
 
+        const initialQAItems = createInitialQAItems();
+
         setMetadata(() => ({ ...initialMetadata }));
-        setQaItems(createInitialQAItems());
-        setContentHTML('');
-        setGuidelines([]);
-        setBlockingWarnings([]);
+        setQaItems(initialQAItems);
+        setContentHTML(INITIAL_CONTENT_HTML);
+        setGuidelines(computeGuidelines(INITIAL_CONTENT_HTML, glossary));
+        setBlockingWarnings(detectBlockingIssues(INITIAL_CONTENT_HTML, initialQAItems));
         setPreview({ open: false, markdown: '' });
         setHasStarted(true);
         setKeywordInput('');
 
         if (editorRef.current) {
-          editorRef.current.innerHTML = '';
+          editorRef.current.innerHTML = INITIAL_CONTENT_HTML;
         }
 
         const firstMetadataField = document.getElementById(metadataFields[0].key);
