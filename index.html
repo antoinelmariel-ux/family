@@ -675,7 +675,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.15
+    Version 1.1.16
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -1287,7 +1287,7 @@
     function App() {
       const [metadata, setMetadata] = useState(() => ({ ...initialMetadata }));
       const [contentHTML, setContentHTML] = useState(INITIAL_CONTENT_HTML);
-      const [qaItems, setQaItems] = useState(createInitialQAItems);
+      const [qaItems, setQaItems] = useState(() => createInitialQAItems());
       const [guidelines, setGuidelines] = useState([]);
       const [blockingWarnings, setBlockingWarnings] = useState([]);
       const [preview, setPreview] = useState({ open: false, markdown: '' });
@@ -1295,8 +1295,8 @@
       const [glossary, setGlossary] = useState({});
       const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
       const [glossaryError, setGlossaryError] = useState(null);
-      const [selectOptions, setSelectOptions] = useState(loadInitialSelectOptions);
-      const [selectOptionDrafts, setSelectOptionDrafts] = useState(createEmptyOptionDrafts);
+      const [selectOptions, setSelectOptions] = useState(() => loadInitialSelectOptions());
+      const [selectOptionDrafts, setSelectOptionDrafts] = useState(() => createEmptyOptionDrafts());
       const editorRef = useRef(null);
       const fileInputRef = useRef(null);
       const [isExportingPDF, setIsExportingPDF] = useState(false);
