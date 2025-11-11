@@ -1,0 +1,18 @@
+{
+  "businessScope": [
+    "Médical",
+    "Commercial",
+    "Neutre"
+  ],
+  "companyScope": [
+    "LFB Bio Médicament",
+    "LFB Biomanufacturing"
+  ],
+  "geoScope": [
+    "Monde",
+    "France",
+    "Europe hors France",
+    "USA",
+    "Mexique"
+  ]
+}
