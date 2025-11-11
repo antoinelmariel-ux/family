@@ -65,6 +65,20 @@
       gap: 12px;
     }
 
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.1em;
+      height: 1.1em;
+    }
+
+    .icon svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+
     .language-selector {
       display: flex;
       align-items: center;
@@ -97,6 +111,9 @@
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(47, 79, 159, 0.2);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .new-procedure-btn:hover {
@@ -337,6 +354,9 @@
       font-size: 13px;
       box-shadow: 0 2px 6px rgba(47, 79, 159, 0.25);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .backoffice-add-btn:hover {
@@ -353,6 +373,9 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .option-list {
@@ -418,6 +441,9 @@
       font-weight: 600;
       font-size: 13px;
       transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .toolbar button:hover {
@@ -514,6 +540,9 @@
     .insight-card h3 {
       margin: 0 0 8px;
       font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .insight-list {
@@ -574,6 +603,9 @@
       font-weight: 600;
       cursor: pointer;
       border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .primary-btn {
@@ -602,6 +634,9 @@
       background: transparent;
       color: var(--primary);
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .ghost-btn:hover,
@@ -811,15 +846,51 @@
             <option value="es">Español</option>
           </select>
         </div>
-        <button type="button" class="secondary-btn" id="import-btn">Importer un Markdown</button>
-        <button type="button" class="ghost-btn" id="backoffice-btn">Gérer le backoffice</button>
-        <button type="button" class="new-procedure-btn" id="new-procedure-btn">Nouvelle procédure</button>
+        <button type="button" class="secondary-btn" id="import-btn">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M7 4a1 1 0 00-1 1v4H4V5a3 3 0 013-3h10a3 3 0 013 3v4h-2V5a1 1 0 00-1-1H7z"></path>
+              <path d="M11 11.59V4h2v7.59l1.3-1.3 1.4 1.42-3 3a1 1 0 01-1.4 0l-3-3 1.4-1.42 1.3 1.3z"></path>
+              <path d="M6 16a2 2 0 012-2h8a2 2 0 012 2v4h-2v-4H8v4H6z"></path>
+            </svg>
+          </span>
+          <span class="label-text">Importer un Markdown</span>
+        </button>
+        <button type="button" class="ghost-btn" id="backoffice-btn">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="5" width="10" height="2" rx="1"></rect>
+              <circle cx="18" cy="6" r="2"></circle>
+              <rect x="4" y="11" width="7" height="2" rx="1"></rect>
+              <circle cx="14" cy="12" r="2"></circle>
+              <rect x="4" y="17" width="11" height="2" rx="1"></rect>
+              <circle cx="19" cy="18" r="2"></circle>
+            </svg>
+          </span>
+          <span class="label-text">Gérer le backoffice</span>
+        </button>
+        <button type="button" class="new-procedure-btn" id="new-procedure-btn">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 5a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H6a1 1 0 110-2h5V6a1 1 0 011-1z"></path>
+            </svg>
+          </span>
+          <span class="label-text">Nouvelle procédure</span>
+        </button>
       </div>
     </header>
     <div class="layout">
       <div class="content">
         <section class="card info-card" id="start-info">
-          <h2 id="start-info-title">Démarrer une nouvelle procédure</h2>
+          <h2 id="start-info-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2a10 10 0 110 20 10 10 0 010-20z"></path>
+                <path d="M12 6a1 1 0 100 2 1 1 0 000-2zm1 4a1 1 0 10-2 0v7a1 1 0 102 0z"></path>
+              </svg>
+            </span>
+            <span class="label-text">Démarrer une nouvelle procédure</span>
+          </h2>
           <p id="start-info-description">
             Pour créer un nouveau document, cliquez sur le bouton « Nouvelle procédure » situé dans l'entête.
             Un canevas vierge sera automatiquement préparé pour vous permettre de renseigner chaque section.
@@ -831,11 +902,27 @@
           </ul>
         </section>
         <section class="card" id="metadata-card">
-          <h2 id="metadata-card-title">1. Métadonnées</h2>
+          <h2 id="metadata-card-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7a3 3 0 013-3h3.17a2 2 0 001.41.59H19a3 3 0 013 3v8a3 3 0 01-3 3H8a3 3 0 01-3-3V7z"></path>
+                <path d="M5 9h16v6a1 1 0 01-1 1H8a1 1 0 01-1-1z"></path>
+              </svg>
+            </span>
+            <span class="label-text">1. Métadonnées</span>
+          </h2>
           <div class="metadata-grid" id="metadata-groups"></div>
         </section>
         <section class="card editor-card" id="editor-card">
-          <h2 id="editor-card-title">2. Contenu de la procédure</h2>
+          <h2 id="editor-card-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 15.5V20h4.5l9.9-9.9-4.5-4.5L4 15.5z"></path>
+                <path d="M20.2 7.3a1 1 0 000-1.4l-2.1-2.1a1 1 0 00-1.4 0l-1.4 1.4 4.5 4.5z"></path>
+              </svg>
+            </span>
+            <span class="label-text">2. Contenu de la procédure</span>
+          </h2>
           <div class="toolbar" id="editor-toolbar">
             <button type="button" data-command="formatBlock" data-value="H1">H1</button>
             <button type="button" data-command="formatBlock" data-value="H2">H2</button>
@@ -850,38 +937,97 @@
           <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
         </section>
         <section class="card" id="qa-card">
-          <h2 id="qa-card-title">3. Questions &amp; Réponses</h2>
+          <h2 id="qa-card-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 4a3 3 0 00-3 3v6a3 3 0 003 3h1v2.41L11.41 16H17a3 3 0 003-3V7a3 3 0 00-3-3H7z"></path>
+              </svg>
+            </span>
+            <span class="label-text">3. Questions &amp; Réponses</span>
+          </h2>
           <p id="qa-card-description" style="color: var(--muted); font-size: 14px; margin-top: 0;">
             Structurez la session de questions-réponses qui conclura la procédure.
           </p>
           <div class="qa-list" id="qa-list" style="display: flex; flex-direction: column; gap: 16px;"></div>
           <div class="export-actions" style="justify-content: flex-start; margin-top: 16px;">
-            <button type="button" class="secondary-btn" id="add-qa-btn">Ajouter une question</button>
+            <button type="button" class="secondary-btn" id="add-qa-btn">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 5a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H6a1 1 0 110-2h5V6a1 1 0 011-1z"></path>
+                </svg>
+              </span>
+              <span class="label-text">Ajouter une question</span>
+            </button>
           </div>
         </section>
         <section class="card" id="export-card">
-          <h2 id="export-card-title">Aperçu &amp; Export</h2>
+          <h2 id="export-card-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 4a3 3 0 013-3h4v2H9a1 1 0 00-1 1v14a1 1 0 001 1h8a1 1 0 001-1v-4h2v4a3 3 0 01-3 3H9a3 3 0 01-3-3V4z"></path>
+                <path d="M16 3l5 5-1.41 1.41L17 7.83V16h-2V7.83l-2.59 2.58L11 8l5-5z"></path>
+              </svg>
+            </span>
+            <span class="label-text">Aperçu &amp; Export</span>
+          </h2>
           <div class="warning" id="blocking-warning" hidden>
             <span id="blocking-warning-text">⚠️ Export impossible tant que les points suivants ne sont pas corrigés :</span>
             <ul class="insight-list" id="blocking-warning-list"></ul>
           </div>
           <div class="export-actions">
-            <button type="button" class="secondary-btn" id="preview-btn">Prévisualiser le Markdown</button>
-            <button type="button" class="primary-btn" id="export-md-btn">Exporter en Markdown</button>
-            <button type="button" class="primary-btn" id="export-pdf-btn">Exporter en PDF</button>
+            <button type="button" class="secondary-btn" id="preview-btn">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 5c-5.52 0-10 3.86-10 7s4.48 7 10 7 10-3.86 10-7-4.48-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"></path>
+                </svg>
+              </span>
+              <span class="label-text">Prévisualiser le Markdown</span>
+            </button>
+            <button type="button" class="primary-btn" id="export-md-btn">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 3a1 1 0 011 1v8.59l2.3-2.3 1.4 1.42-4 4a1 1 0 01-1.4 0l-4-4 1.4-1.42 2.3 2.3V4a1 1 0 011-1z"></path>
+                  <path d="M5 18a2 2 0 012-2h10a2 2 0 012 2v2H5z"></path>
+                </svg>
+              </span>
+              <span class="label-text">Exporter en Markdown</span>
+            </button>
+            <button type="button" class="primary-btn" id="export-pdf-btn">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 2a3 3 0 00-3 3v14a3 3 0 003 3h10a3 3 0 003-3V8.83a3 3 0 00-.88-2.12l-4.83-4.83A3 3 0 0013.17 1H7zm7 2.41L18.59 9H15a2 2 0 01-2-2z"></path>
+                </svg>
+              </span>
+              <span class="label-text">Exporter en PDF</span>
+            </button>
           </div>
         </section>
       </div>
       <aside class="insights">
         <div class="insight-card">
-          <h3 id="guidelines-title">Guidelines IA Friendly</h3>
+          <h3 id="guidelines-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l2.12 4.8 5.24.44-3.94 3.42 1.2 5.08L12 14.9l-4.62 1.84 1.2-5.08-3.94-3.42 5.24-.44z"></path>
+              </svg>
+            </span>
+            <span class="label-text">Guidelines IA Friendly</span>
+          </h3>
           <p id="guidelines-empty" style="color: var(--muted); margin: 0;">
             Commencez votre rédaction pour recevoir des recommandations.
           </p>
           <ul class="insight-list guideline-comment-list" id="guidelines-list"></ul>
         </div>
         <div class="insight-card">
-          <h3 id="glossary-title">Liste des acronymes</h3>
+          <h3 id="glossary-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M6.5 3A2.5 2.5 0 004 5.5v13A2.5 2.5 0 006.5 21H12V5.5A2.5 2.5 0 009.5 3z"></path>
+                <path d="M13.5 3H18a2 2 0 012 2v13.5a1 1 0 01-1.45.9L15 17.68l-3.55 1.72a1 1 0 01-1.45-.9V5.5A2.5 2.5 0 0113.5 3z"></path>
+              </svg>
+            </span>
+            <span class="label-text">Liste des acronymes</span>
+          </h3>
           <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement de la liste des acronymes…</p>
           <p class="warning" id="glossary-error" hidden></p>
           <ul class="insight-list" id="glossary-list"></ul>
@@ -889,11 +1035,19 @@
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.27</footer>
+  <footer id="app-version">Version 1.1.28</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
-        <h3 id="preview-title" style="margin: 0;">Aperçu Markdown</h3>
+        <h3 id="preview-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 3a2 2 0 012-2h7.17a2 2 0 011.41.59l4.83 4.83a2 2 0 01.59 1.41V19a3 3 0 01-3 3H7a3 3 0 01-3-3V5z"></path>
+              <path d="M15 3.83V7a2 2 0 002 2h3.17z"></path>
+            </svg>
+          </span>
+          <span class="label-text">Aperçu Markdown</span>
+        </h3>
         <button type="button" class="secondary-btn" id="close-preview-btn">Fermer</button>
       </div>
       <div class="preview-body">
@@ -904,7 +1058,19 @@
   <div class="backoffice-overlay" id="backoffice-overlay" role="dialog" aria-modal="true" aria-labelledby="backoffice-title" hidden>
     <div class="backoffice-panel" role="document" tabindex="-1">
       <div class="backoffice-panel-header">
-        <h2 id="backoffice-title">Backoffice — Options des champs</h2>
+        <h2 id="backoffice-title">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="5" width="10" height="2" rx="1"></rect>
+              <circle cx="18" cy="6" r="2"></circle>
+              <rect x="4" y="11" width="7" height="2" rx="1"></rect>
+              <circle cx="14" cy="12" r="2"></circle>
+              <rect x="4" y="17" width="11" height="2" rx="1"></rect>
+              <circle cx="19" cy="18" r="2"></circle>
+            </svg>
+          </span>
+          <span class="label-text">Backoffice — Options des champs</span>
+        </h2>
         <button type="button" class="secondary-btn" id="close-backoffice-btn">Fermer</button>
       </div>
       <p class="backoffice-description">
@@ -912,7 +1078,15 @@
       </p>
       <div id="backoffice-sections"></div>
       <div class="export-actions backoffice-actions">
-        <button type="button" class="secondary-btn" id="export-config-btn">Exporter la configuration JSON</button>
+        <button type="button" class="secondary-btn" id="export-config-btn">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v4h-2V5H7v14h10v-4h2v4a2 2 0 01-2 2H7a2 2 0 01-2-2z"></path>
+              <path d="M15.5 8.5l3.5 3.5-3.5 3.5-1.4-1.4L15.2 13H10v-2h5.2l-1.1-1.1z"></path>
+            </svg>
+          </span>
+          <span class="label-text">Exporter la configuration JSON</span>
+        </button>
       </div>
     </div>
   </div>
