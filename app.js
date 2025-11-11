@@ -590,7 +590,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.27';
+const APP_VERSION = '1.1.28';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1627,6 +1627,18 @@ const elements = {
   previewTitle: document.getElementById('preview-title'),
   appVersion: document.getElementById('app-version')
 };
+
+function setLabelText(element, text) {
+  if (!element) {
+    return;
+  }
+  const label = element.querySelector('.label-text');
+  if (label) {
+    label.textContent = text;
+  } else {
+    element.textContent = text;
+  }
+}
 function synchronizeMetadataWithSelectOptions() {
   const nextMetadata = { ...state.metadata };
   let changed = false;
@@ -1668,21 +1680,11 @@ function getIsFormDirty() {
 }
 
 function renderHeader() {
-  if (elements.headerTitle) {
-    elements.headerTitle.textContent = translate('header.title');
-  }
-  if (elements.importButton) {
-    elements.importButton.textContent = translate('header.import');
-  }
-  if (elements.backofficeButton) {
-    elements.backofficeButton.textContent = translate('header.backoffice');
-  }
-  if (elements.newProcedureButton) {
-    elements.newProcedureButton.textContent = translate('header.newProcedure');
-  }
-  if (elements.languageLabel) {
-    elements.languageLabel.textContent = translate('language.label');
-  }
+  setLabelText(elements.headerTitle, translate('header.title'));
+  setLabelText(elements.importButton, translate('header.import'));
+  setLabelText(elements.backofficeButton, translate('header.backoffice'));
+  setLabelText(elements.newProcedureButton, translate('header.newProcedure'));
+  setLabelText(elements.languageLabel, translate('language.label'));
   if (elements.languageSelect) {
     elements.languageSelect.setAttribute('aria-label', translate('language.aria'));
     Array.from(elements.languageSelect.options).forEach((option) => {
@@ -1707,39 +1709,17 @@ function renderHeader() {
 }
 
 function renderSectionTitles() {
-  if (elements.metadataCardTitle) {
-    elements.metadataCardTitle.textContent = translate('sections.metadata');
-  }
-  if (elements.editorCardTitle) {
-    elements.editorCardTitle.textContent = translate('sections.editor');
-  }
-  if (elements.qaCardTitle) {
-    elements.qaCardTitle.textContent = translate('sections.qa');
-  }
-  if (elements.qaCardDescription) {
-    elements.qaCardDescription.textContent = translate('qa.description');
-  }
-  if (elements.addQaButton) {
-    elements.addQaButton.textContent = translate('qa.addQuestion');
-  }
-  if (elements.exportCardTitle) {
-    elements.exportCardTitle.textContent = translate('sections.export');
-  }
-  if (elements.blockingWarningText) {
-    elements.blockingWarningText.textContent = translate('export.warning');
-  }
-  if (elements.guidelinesTitle) {
-    elements.guidelinesTitle.textContent = translate('guidelines.title');
-  }
-  if (elements.glossaryTitle) {
-    elements.glossaryTitle.textContent = translate('glossary.title');
-  }
-  if (elements.previewTitle) {
-    elements.previewTitle.textContent = translate('preview.title');
-  }
-  if (elements.closePreviewButton) {
-    elements.closePreviewButton.textContent = translate('preview.close');
-  }
+  setLabelText(elements.metadataCardTitle, translate('sections.metadata'));
+  setLabelText(elements.editorCardTitle, translate('sections.editor'));
+  setLabelText(elements.qaCardTitle, translate('sections.qa'));
+  setLabelText(elements.qaCardDescription, translate('qa.description'));
+  setLabelText(elements.addQaButton, translate('qa.addQuestion'));
+  setLabelText(elements.exportCardTitle, translate('sections.export'));
+  setLabelText(elements.blockingWarningText, translate('export.warning'));
+  setLabelText(elements.guidelinesTitle, translate('guidelines.title'));
+  setLabelText(elements.glossaryTitle, translate('glossary.title'));
+  setLabelText(elements.previewTitle, translate('preview.title'));
+  setLabelText(elements.closePreviewButton, translate('preview.close'));
 }
 
 function renderStartInfo() {
@@ -1747,9 +1727,7 @@ function renderStartInfo() {
     return;
   }
   elements.startInfo.hidden = state.hasStarted;
-  if (elements.startInfoTitle) {
-    elements.startInfoTitle.textContent = translate('startInfo.title');
-  }
+  setLabelText(elements.startInfoTitle, translate('startInfo.title'));
   if (elements.startInfoDescription) {
     elements.startInfoDescription.textContent = translate('startInfo.description');
   }
@@ -2127,18 +2105,10 @@ function renderBackoffice() {
   }
   elements.backofficeOverlay.hidden = !state.isBackofficeOpen;
   elements.backofficeSections.innerHTML = '';
-  if (elements.backofficeTitle) {
-    elements.backofficeTitle.textContent = translate('backoffice.title');
-  }
-  if (elements.closeBackofficeButton) {
-    elements.closeBackofficeButton.textContent = translate('backoffice.close');
-  }
-  if (elements.backofficeDescription) {
-    elements.backofficeDescription.textContent = translate('backoffice.description');
-  }
-  if (elements.exportConfigButton) {
-    elements.exportConfigButton.textContent = translate('backoffice.exportConfig');
-  }
+  setLabelText(elements.backofficeTitle, translate('backoffice.title'));
+  setLabelText(elements.closeBackofficeButton, translate('backoffice.close'));
+  setLabelText(elements.backofficeDescription, translate('backoffice.description'));
+  setLabelText(elements.exportConfigButton, translate('backoffice.exportConfig'));
   if (!state.isBackofficeOpen) {
     return;
   }
@@ -2264,18 +2234,17 @@ function renderToolbar() {
 }
 
 function renderExportActions() {
-  if (elements.previewButton) {
-    elements.previewButton.textContent = translate('export.preview');
-  }
+  setLabelText(elements.previewButton, translate('export.preview'));
   if (elements.exportMarkdownButton) {
     elements.exportMarkdownButton.disabled = state.blockingWarnings.length > 0;
-    elements.exportMarkdownButton.textContent = translate('export.markdown');
+    setLabelText(elements.exportMarkdownButton, translate('export.markdown'));
   }
   if (elements.exportPDFButton) {
     elements.exportPDFButton.disabled = state.blockingWarnings.length > 0 || state.isExportingPDF;
-    elements.exportPDFButton.textContent = state.isExportingPDF
-      ? translate('export.pdfInProgress')
-      : translate('export.pdf');
+    setLabelText(
+      elements.exportPDFButton,
+      state.isExportingPDF ? translate('export.pdfInProgress') : translate('export.pdf')
+    );
   }
 }
 
