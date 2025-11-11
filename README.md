@@ -6,7 +6,7 @@ Afin d’éviter des coûts de retraitement des nouvelles SOP le jour où le LFB
 - Éviter tout flou (jargon et acronyme non défini, pronom) ou ambiguïté (incohérence entre SOP/Definition)
 - Proche des demandes qui seront faites au bot IA (présence d’un Q&A)
 
-Pour ce faire, nous mettont en place un mini outil facilitant pour :
+Pour ce faire, nous mettons en place un mini outil facilitant pour :
 - créer, via un éditeur simple, la SOP au format markdown (facilement lisible par l’IA) et au format pdf (facilement lisible par l’humain) ;
 - Gérer les meta données permettent de préciser le périmètre de la SOP ;
 - Détecter le respect des règles pré-citées pour des SOP AI et Human Friendly.
