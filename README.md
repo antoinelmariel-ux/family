@@ -1,43 +1,22 @@
-# Procédure IA Friendly
+# Outil d'aide à la redaction de SOP AI Friendly
+Afin d’éviter des coûts de retraitement des nouvelles SOP le jour où le LFB souhaitera développer un bot IA permettant aux opérationnels d’obtenir des responses immédiates et personnalisées, les nouvelles SOP devraient respecter les règles suivantes :
+- Etre dans un format structuré (format markdown et non pdf, titre et sous-titre, liste, meta données)
+- Avoir des informations facilement interprétables par l’IA (pas de capture d’écran, pas de liste à plusieurs niveaux, pas de tableau, introduction en début de section et de liste, transitions)
+- Aller droit au but sans informations parasites / consommatrices de ressources (pas d’image, picto, pas d’en-tête ou de pied de page, pas de liens url, pas d’espaces surnuméraires)
+- Éviter tout flou (jargon et acronyme non défini, pronom) ou ambiguïté (incohérence entre SOP/Definition)
+- Proche des demandes qui seront faites au bot IA (présence d’un Q&A)
 
-Ce document décrit les règles à respecter dans la webapp pour permettre la création d'une procédure compatible avec l'assistance IA. Ces lignes directrices garantissent une structure cohérente, des informations complètes et des données exploitables par l'application.
+Pour ce faire, nous mettont en place un mini outil facilitant pour :
+- créer, via un éditeur simple, la SOP au format markdown (facilement lisible par l’IA) et au format pdf (facilement lisible par l’humain) ;
+- Gérer les meta données permettent de préciser le périmètre de la SOP ;
+- Détecter le respect des règles pré-citées pour des SOP AI et Human Friendly.
 
-## Structure générale de la procédure
-
-1. **Définir le contexte** : chaque procédure doit commencer par un résumé précisant l'objectif, le public cible et les prérequis nécessaires.
-2. **Lister les acteurs** : identifier toutes les parties prenantes (rôles, équipes ou services) et décrire leurs responsabilités.
-3. **Organiser les étapes** : ordonner les actions dans une suite d'étapes numérotées. Chaque étape doit contenir :
-   - une description concise de l'action,
-   - les conditions de déclenchement ou dépendances,
-   - le résultat attendu.
-4. **Ajouter des points de contrôle** : mentionner les validations, revues ou jalons essentiels.
-5. **Inclure les exceptions** : décrire les cas particuliers et les mesures correctives associées.
-
-## Règles de rédaction
-
-- Utiliser un vocabulaire clair et sans ambiguïté.
-- Préférer des phrases courtes et structurées.
-- Introduire les acronymes en toutes lettres lors de leur première occurrence.
-- Indiquer les ressources nécessaires (documents, outils, liens) sous forme de listes à puces.
-- Spécifier le propriétaire de chaque étape ou livrable.
-
-## Métadonnées obligatoires
-
-Pour que la webapp puisse exploiter la procédure, renseigner les champs suivants :
-
-- **Titre** : nom explicite de la procédure.
-- **Version** : numéro incrémental suivant le format `MAJEUR.MINEUR.CORRECTIF`.
-- **Auteur** : personne ou équipe responsable de la rédaction.
-- **Date de mise à jour** : format ISO `AAAA-MM-JJ`.
-- **Statut** : par exemple `Draft`, `Validé`, `Archivé`.
-- **Tags** : mots-clés permettant le classement et la recherche.
-
-## Bonnes pratiques complémentaires
-
-- Centraliser les références externes (lien vers politiques, guides, formulaires) dans une section dédiée.
-- Fournir des exemples ou scénarios d'usage lorsque c'est pertinent.
-- Utiliser des tableaux pour synthétiser les responsabilités ou les jalons.
-- Vérifier la cohérence entre les données saisies dans la webapp et celles du document de référence.
-- Mettre à jour la procédure à chaque évolution de processus et notifier les parties prenantes.
+# Sources
+Pour aller plus loin, quelques ressources particulièrement pertinentes : 
+- AWS Prescriptive Guidance: Writing best practices to optimize RAG
+applications : https://docs.aws.amazon.com/pdfs/prescriptive-guidance/latest/writing-best-practices-rag/writing-best-practices-rag.pdf#introduction
+- DGE - Guide de la génération augmentée par récupération (RAG) : https://www.entreprises.gouv.fr/files/files/Publications/2024/Guides/20241127-bro-guide-ragv4-interactif.pdf
+- Boosting RAG Performance through Glossary Integration ― A LlamaIndex Hands-On Tutorial : https://itnext.io/boosting-rag-performance-through-glossary-integration-a-llamaindex-hands-on-tutorial-d8a4bd568345
+- AI Course | How to Optimize your Files for RAG : https://m.youtube.com/playlist?list=PLlJHGGklthGkngxStUO54MevanrpqKHg5
 
 _Version : 1.1.25_
