@@ -590,7 +590,18 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.24';
+const APP_VERSION = '1.1.27';
+
+function createInitialMetadata() {
+  return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
+    if (field.type === 'select' && field.multiple) {
+      acc[field.key] = [];
+    } else {
+      acc[field.key] = '';
+    }
+    return acc;
+  }, {});
+}
 
 let currentLanguage = DEFAULT_LANGUAGE;
 
