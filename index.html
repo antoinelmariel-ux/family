@@ -675,7 +675,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.13
+    Version 1.1.14
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -944,7 +944,9 @@
       });
 
       const textContent = doc.body.textContent || '';
-      const pronounMatches = Array.from(new Set(textContent.match(/\b(?:il|elle|ils|elles|lui|leur|leurs|son|sa|ses|eux)\b/gi)));
+      const pronounMatches = Array.from(
+        new Set(textContent.match(/\b(?:il|elle|ils|elles|lui|leur|leurs|son|sa|ses|eux)\b/gi) || [])
+      );
       pronounMatches.forEach((item) => {
         guidelines.push({
           type: 'pronoun',
