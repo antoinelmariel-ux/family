@@ -557,7 +557,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.10
+    Version 1.1.11
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -631,6 +631,13 @@
             type: 'text',
             placeholder: 'Référence ou titre',
             hint: 'Mentionnez la procédure qui encadre ou complète celle-ci, si applicable.'
+          },
+          {
+            key: 'changeHistory',
+            label: 'Historique des modifications',
+            type: 'textarea',
+            placeholder: 'Consignez les évolutions majeures et leurs dates',
+            hint: 'Décrivez les principales modifications apportées et leur contexte.'
           }
         ]
       },
@@ -851,6 +858,7 @@
         `Mots clefs: ${metadata.keywords}`,
         `Résumé: ${metadata.summary}`,
         `Procédure mère: ${metadata.parentProcedure}`,
+        `Historique des modifications: ${metadata.changeHistory}`,
         `Date d'entrée en vigueur: ${metadata.effectiveDate}`,
         '---',
         '',
