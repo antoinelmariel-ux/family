@@ -135,17 +135,21 @@ const TEXT = {
   },
   'guidelines.bulletListLabel': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'guidelines.numberedListLabel': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
-  'glossary.title': { fr: 'Glossaire', en: 'Glossary', es: 'Glosario' },
+  'glossary.title': {
+    fr: 'Liste des acronymes',
+    en: 'Acronym list',
+    es: 'Lista de acrónimos'
+  },
   'glossary.loading': {
-    fr: 'Chargement du glossaire…',
-    en: 'Loading glossary…',
-    es: 'Cargando el glosario…'
+    fr: 'Chargement de la liste des acronymes…',
+    en: 'Loading acronym list…',
+    es: 'Cargando la lista de acrónimos…'
   },
   'glossary.empty': { fr: 'Aucune entrée disponible.', en: 'No entry available.', es: 'No hay entradas disponibles.' },
   'glossary.error': {
-    fr: "Le glossaire n'a pas pu être chargé.",
-    en: 'The glossary could not be loaded.',
-    es: 'No se pudo cargar el glosario.'
+    fr: "La liste des acronymes n'a pas pu être chargée.",
+    en: 'The acronym list could not be loaded.',
+    es: 'No se pudo cargar la lista de acrónimos.'
   },
   'preview.title': { fr: 'Aperçu Markdown', en: 'Markdown preview', es: 'Vista previa de Markdown' },
   'preview.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
@@ -1412,7 +1416,7 @@ async function loadGlossaryData() {
     }
     return {};
   } catch (error) {
-    console.error('Erreur lors du chargement du glossaire :', error);
+    console.error('Erreur lors du chargement de la liste des acronymes :', error);
     throw error;
   }
 }
