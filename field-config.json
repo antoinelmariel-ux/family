@@ -8,6 +8,11 @@
     "LFB Bio Médicament",
     "LFB Biomanufacturing"
   ],
+  "procedureLanguage": [
+    "English",
+    "French",
+    "Spanish"
+  ],
   "geoScope": [
     "Monde",
     "France",

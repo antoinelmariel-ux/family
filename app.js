@@ -36,6 +36,14 @@ const METADATA_GROUP_DEFINITIONS = [
         hint: 'Indiquez la personne responsable de la rédaction ou de la validation.'
       },
       {
+        key: 'procedureLanguage',
+        label: 'Langue de la procédure',
+        type: 'select',
+        optionsKey: 'procedureLanguage',
+        defaultOptions: ['English', 'French', 'Spanish'],
+        hint: 'Sélectionnez la langue principale dans laquelle la procédure est rédigée.'
+      },
+      {
         key: 'effectiveDate',
         label: "Date d'entrée en vigueur",
         type: 'date',
