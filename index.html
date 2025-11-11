@@ -775,7 +775,7 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.18
+    Version 1.1.19
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -869,25 +869,28 @@
             key: 'businessScope',
             label: 'Périmètre métier',
             type: 'select',
+            multiple: true,
             optionsKey: 'businessScope',
             defaultOptions: ['Médical', 'Commercial', 'Neutre'],
-            hint: 'Sélectionnez le domaine métier principalement concerné.'
+            hint: 'Sélectionnez un ou plusieurs domaines métiers concernés.'
           },
           {
             key: 'companyScope',
             label: 'Périmètre société',
             type: 'select',
+            multiple: true,
             optionsKey: 'companyScope',
             defaultOptions: ['LFB Bio Médicament', 'LFB Biomanufacturing'],
-            hint: 'Choisissez l’entité juridique ou la filiale de diffusion.'
+            hint: 'Choisissez une ou plusieurs entités juridiques ou filiales de diffusion.'
           },
           {
             key: 'geoScope',
             label: 'Périmètre géographique',
             type: 'select',
+            multiple: true,
             optionsKey: 'geoScope',
             defaultOptions: ['Monde', 'France', 'Europe hors France', 'USA', 'Mexique'],
-            hint: 'Zone géographique de validité de la procédure.'
+            hint: 'Sélectionnez une ou plusieurs zones géographiques de validité.'
           },
           {
             key: 'keywords',
@@ -901,11 +904,23 @@
     ];
 
     const METADATA_FIELD_DEFINITIONS = METADATA_GROUP_DEFINITIONS.flatMap((group) => group.fields);
+    const MULTI_SELECT_FIELD_DEFINITIONS = METADATA_FIELD_DEFINITIONS.filter(
+      (field) => field.type === 'select' && field.multiple
+    );
+    const MULTI_SELECT_METADATA_KEYS = MULTI_SELECT_FIELD_DEFINITIONS.map((field) => field.key);
 
-    const initialMetadata = METADATA_FIELD_DEFINITIONS.reduce((acc, field) => {
-      acc[field.key] = '';
-      return acc;
-    }, {});
+    function createInitialMetadata() {
+      return METADATA_FIELD_DEFINITIONS.reduce((acc, field) => {
+        if (field.type === 'select' && field.multiple) {
+          acc[field.key] = [];
+        } else {
+          acc[field.key] = '';
+        }
+        return acc;
+      }, {});
+    }
+
+    const initialMetadata = createInitialMetadata();
 
     const SELECT_FIELD_DEFINITIONS = METADATA_FIELD_DEFINITIONS.filter((field) => field.type === 'select');
     const SELECT_FIELD_KEYS = Array.from(
@@ -1155,6 +1170,13 @@
         .filter(Boolean);
     }
 
+    function formatMetadataValue(value) {
+      if (Array.isArray(value)) {
+        return value.join(', ');
+      }
+      return value || '';
+    }
+
     function buildMarkdown(metadata, contentHTML, qaItems) {
       const td = new TurndownService({ headingStyle: 'atx' });
       td.addRule('removeStyles', {
@@ -1171,17 +1193,17 @@
 
       const lines = [
         '---',
-        `Titre: ${metadata.title}`,
-        `Référence: ${metadata.reference}`,
-        `Auteur: ${metadata.author}`,
-        `Périmètre métier: ${metadata.businessScope}`,
-        `Périmètre société: ${metadata.companyScope}`,
-        `Périmètre géographique: ${metadata.geoScope}`,
-        `Mots clefs: ${metadata.keywords}`,
-        `Résumé: ${metadata.summary}`,
-        `Procédure mère: ${metadata.parentProcedure}`,
-        `Historique des modifications: ${metadata.changeHistory}`,
-        `Date d'entrée en vigueur: ${metadata.effectiveDate}`,
+        `Titre: ${formatMetadataValue(metadata.title)}`,
+        `Référence: ${formatMetadataValue(metadata.reference)}`,
+        `Auteur: ${formatMetadataValue(metadata.author)}`,
+        `Périmètre métier: ${formatMetadataValue(metadata.businessScope)}`,
+        `Périmètre société: ${formatMetadataValue(metadata.companyScope)}`,
+        `Périmètre géographique: ${formatMetadataValue(metadata.geoScope)}`,
+        `Mots clefs: ${formatMetadataValue(metadata.keywords)}`,
+        `Résumé: ${formatMetadataValue(metadata.summary)}`,
+        `Procédure mère: ${formatMetadataValue(metadata.parentProcedure)}`,
+        `Historique des modifications: ${formatMetadataValue(metadata.changeHistory)}`,
+        `Date d'entrée en vigueur: ${formatMetadataValue(metadata.effectiveDate)}`,
         '---',
         '',
         cleanContent
@@ -1214,7 +1236,7 @@
     };
 
     function parseMarkdownProcedure(markdown) {
-      const normalizedMetadata = { ...initialMetadata };
+      const normalizedMetadata = createInitialMetadata();
       if (typeof markdown !== 'string') {
         return {
           metadata: normalizedMetadata,
@@ -1249,7 +1271,15 @@
           const metadataKey = FRONTMATTER_KEY_MAP[key];
 
           if (metadataKey) {
-            normalizedMetadata[metadataKey] = value;
+            if (MULTI_SELECT_METADATA_KEYS.includes(metadataKey)) {
+              const values = value
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean);
+              normalizedMetadata[metadataKey] = values;
+            } else {
+              normalizedMetadata[metadataKey] = value;
+            }
           }
         });
       }
@@ -1435,7 +1465,7 @@
         [initialSelectOptions]
       );
       const configDefaultsRef = useRef(normalizedInitialSelectOptions);
-      const [metadata, setMetadata] = useState(() => ({ ...initialMetadata }));
+      const [metadata, setMetadata] = useState(() => createInitialMetadata());
       const [contentHTML, setContentHTML] = useState(INITIAL_CONTENT_HTML);
       const [qaItems, setQaItems] = useState(() => createInitialQAItems());
       const [guidelines, setGuidelines] = useState([]);
@@ -1533,7 +1563,18 @@
           let next = prev;
           SELECT_FIELD_KEYS.forEach((key) => {
             const allowed = selectOptions[key] || [];
-            if (prev[key] && !allowed.includes(prev[key])) {
+            const currentValue = prev[key];
+
+            if (Array.isArray(currentValue)) {
+              const filtered = currentValue.filter((value) => allowed.includes(value));
+              if (filtered.length !== currentValue.length) {
+                if (next === prev) {
+                  next = { ...prev };
+                }
+                next[key] = filtered;
+                hasClearedValue = true;
+              }
+            } else if (currentValue && !allowed.includes(currentValue)) {
               if (next === prev) {
                 next = { ...prev };
               }
@@ -1606,7 +1647,16 @@
         }
 
         setMetadata((prev) => {
-          if (prev[fieldKey] !== option) {
+          const currentValue = prev[fieldKey];
+          if (Array.isArray(currentValue)) {
+            const filtered = currentValue.filter((value) => value !== option);
+            if (filtered.length === currentValue.length) {
+              return prev;
+            }
+            return { ...prev, [fieldKey]: filtered };
+          }
+
+          if (currentValue !== option) {
             return prev;
           }
           return { ...prev, [fieldKey]: '' };
@@ -1635,7 +1685,18 @@
         setSelectOptionDrafts((prev) => ({ ...prev, [fieldKey]: '' }));
 
         setMetadata((prev) => {
-          if (prev[fieldKey] === '' || defaults.includes(prev[fieldKey])) {
+          const currentValue = prev[fieldKey];
+
+          if (Array.isArray(currentValue)) {
+            const filtered = currentValue.filter((value) => defaults.includes(value));
+            if (filtered.length === currentValue.length) {
+              return prev;
+            }
+            hasChanged = true;
+            return { ...prev, [fieldKey]: filtered };
+          }
+
+          if (currentValue === '' || defaults.includes(currentValue)) {
             return prev;
           }
 
@@ -1926,7 +1987,7 @@
 
         const initialQAItems = createInitialQAItems();
 
-        setMetadata(() => ({ ...initialMetadata }));
+        setMetadata(createInitialMetadata());
         setQaItems(initialQAItems);
         setContentHTML(INITIAL_CONTENT_HTML);
         setGuidelines(computeGuidelines(INITIAL_CONTENT_HTML, glossary));
@@ -2031,18 +2092,41 @@
                             <label htmlFor={field.key}>{field.label}</label>
                             {field.type === 'select' ? (
                               <>
-                                <select
-                                  id={field.key}
-                                  value={metadata[field.key]}
-                                  onChange={(event) => handleMetadataChange(field.key, event.target.value)}
-                                >
-                                  <option value="">Sélectionnez une option</option>
-                                  {(selectOptions[field.key] || field.options || []).map((option) => (
-                                    <option value={option} key={option}>
-                                      {option}
-                                    </option>
-                                  ))}
-                                </select>
+                                {(() => {
+                                  const availableOptions = selectOptions[field.key] || field.options || [];
+                                  const selectValue = Array.isArray(metadata[field.key])
+                                    ? metadata[field.key]
+                                    : metadata[field.key] || '';
+                                  const size = field.multiple
+                                    ? Math.min(6, Math.max(3, availableOptions.length))
+                                    : undefined;
+
+                                  return (
+                                    <select
+                                      id={field.key}
+                                      multiple={field.multiple}
+                                      value={selectValue}
+                                      size={size}
+                                      onChange={(event) => {
+                                        if (field.multiple) {
+                                          const selectedValues = Array.from(event.target.selectedOptions)
+                                            .map((option) => option.value)
+                                            .filter((value) => value !== '');
+                                          handleMetadataChange(field.key, selectedValues);
+                                        } else {
+                                          handleMetadataChange(field.key, event.target.value);
+                                        }
+                                      }}
+                                    >
+                                      {!field.multiple && <option value="">Sélectionnez une option</option>}
+                                      {availableOptions.map((option) => (
+                                        <option value={option} key={option}>
+                                          {option}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  );
+                                })()}
                                 {field.hint && <p className="field-hint">{field.hint}</p>}
                               </>
                             ) : field.key === 'keywords' ? (
