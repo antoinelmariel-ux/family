@@ -557,13 +557,14 @@
 <body>
   <div id="root"></div>
   <footer>
-    Version 1.1.11
+    Version 1.1.12
   </footer>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.2/dist/turndown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
     const { useState, useMemo, useRef, useEffect } = React;
@@ -877,6 +878,98 @@
       return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
     }
 
+    const FRONTMATTER_KEY_MAP = {
+      Titre: 'title',
+      'Référence': 'reference',
+      Auteur: 'author',
+      'Périmètre métier': 'businessScope',
+      'Périmètre société': 'companyScope',
+      'Périmètre géographique': 'geoScope',
+      'Mots clefs': 'keywords',
+      'Résumé': 'summary',
+      'Procédure mère': 'parentProcedure',
+      'Historique des modifications': 'changeHistory',
+      "Date d'entrée en vigueur": 'effectiveDate'
+    };
+
+    function parseMarkdownProcedure(markdown) {
+      const normalizedMetadata = { ...initialMetadata };
+      if (typeof markdown !== 'string') {
+        return {
+          metadata: normalizedMetadata,
+          contentHTML: INITIAL_CONTENT_HTML,
+          qaItems: createInitialQAItems()
+        };
+      }
+
+      if (typeof marked === 'undefined' || typeof marked.parse !== 'function') {
+        throw new Error('Le moteur de conversion Markdown est indisponible.');
+      }
+
+      let body = markdown;
+      const frontMatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---\s*/);
+
+      if (frontMatterMatch) {
+        const frontMatterContent = frontMatterMatch[1];
+        body = markdown.slice(frontMatterMatch[0].length);
+
+        frontMatterContent.split(/\r?\n/).forEach((line) => {
+          if (!line.includes(':')) {
+            return;
+          }
+
+          const [rawKey, ...rawValueParts] = line.split(':');
+          if (!rawKey || rawValueParts.length === 0) {
+            return;
+          }
+
+          const key = rawKey.trim();
+          const value = rawValueParts.join(':').trim();
+          const metadataKey = FRONTMATTER_KEY_MAP[key];
+
+          if (metadataKey) {
+            normalizedMetadata[metadataKey] = value;
+          }
+        });
+      }
+
+      let qaMarkdown = '';
+      const qaHeadingRegex = /##\s+Questions\s*&\s*Réponses/i;
+      const qaIndex = body.search(qaHeadingRegex);
+
+      if (qaIndex !== -1) {
+        qaMarkdown = body.slice(qaIndex);
+        body = body.slice(0, qaIndex);
+      }
+
+      const qaItems = [];
+      if (qaMarkdown) {
+        const qaItemRegex = /###\s+Question\s+\d+\s*[\r\n]+(?:\*\*Question\s*:\*\*\s*)([\s\S]*?)(?:\r?\n)+(?:\*\*Réponse\s*:\*\*\s*)([\s\S]*?)(?=(?:\r?\n###\s+Question|\r?\n##\s+|$))/gi;
+        let match;
+
+        while ((match = qaItemRegex.exec(qaMarkdown)) !== null) {
+          const question = (match[1] || '').replace(/\r\n/g, '\n').trim();
+          const answer = (match[2] || '').replace(/\r\n/g, '\n').trim();
+          qaItems.push({ question, answer });
+        }
+      }
+
+      const contentMarkdown = body.trim();
+      let htmlContent = contentMarkdown ? marked.parse(contentMarkdown) : '';
+      if (typeof htmlContent !== 'string' || htmlContent.trim().length === 0) {
+        htmlContent = '<p></p>';
+      }
+
+      const sanitizedHTML = sanitizeHTML(htmlContent);
+      const normalizedQAItems = qaItems.length > 0 ? qaItems : createInitialQAItems();
+
+      return {
+        metadata: normalizedMetadata,
+        contentHTML: sanitizedHTML,
+        qaItems: normalizedQAItems
+      };
+    }
+
     let logoAssetCache = null;
     let logoAssetPromise = null;
 
@@ -1027,6 +1120,7 @@
       const [isGlossaryLoading, setIsGlossaryLoading] = useState(true);
       const [glossaryError, setGlossaryError] = useState(null);
       const editorRef = useRef(null);
+      const fileInputRef = useRef(null);
       const [isExportingPDF, setIsExportingPDF] = useState(false);
       const keywordList = useMemo(() => parseKeywords(metadata.keywords), [metadata.keywords]);
       const [keywordInput, setKeywordInput] = useState('');
@@ -1094,6 +1188,49 @@
           }
           event.preventDefault();
           handleKeywordRemove(keywordList.length - 1);
+        }
+      };
+
+      const handleImportClick = () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+          fileInputRef.current.click();
+        }
+      };
+
+      const handleImportMarkdown = async (event) => {
+        const input = event.target;
+        const file = input && input.files ? input.files[0] : null;
+
+        if (!file) {
+          return;
+        }
+
+        try {
+          const text = await file.text();
+          const { metadata: importedMetadata, contentHTML: importedContentHTML, qaItems: importedQAItems } = parseMarkdownProcedure(text);
+          const nextGuidelines = computeGuidelines(importedContentHTML, glossary);
+          const nextBlockingWarnings = detectBlockingIssues(importedContentHTML, importedQAItems);
+
+          setMetadata(importedMetadata);
+          setContentHTML(importedContentHTML);
+          setQaItems(importedQAItems);
+          setGuidelines(nextGuidelines);
+          setBlockingWarnings(nextBlockingWarnings);
+          setPreview({ open: false, markdown: '' });
+          setHasStarted(true);
+          setKeywordInput('');
+
+          if (editorRef.current) {
+            editorRef.current.innerHTML = importedContentHTML;
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'import Markdown :", error);
+          window.alert("Le fichier Markdown n'a pas pu être importé. Vérifiez son format et réessayez.");
+        } finally {
+          if (input) {
+            input.value = '';
+          }
         }
       };
 
@@ -1314,6 +1451,16 @@
               <h1>Studio de Procédures IA Friendly</h1>
             </div>
             <div className="header-actions">
+              <input
+                type="file"
+                accept=".md,.markdown,text/markdown"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleImportMarkdown}
+              />
+              <button type="button" className="secondary-btn" onClick={handleImportClick}>
+                Importer un Markdown
+              </button>
               <button type="button" className="new-procedure-btn" onClick={handleNewProcedure}>
                 Nouvelle procédure
               </button>
