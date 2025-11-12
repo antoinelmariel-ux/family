@@ -69,14 +69,86 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.1em;
-      height: 1.1em;
+      width: 1.25em;
+      height: 1.25em;
+      color: var(--primary);
     }
 
     .icon svg {
       width: 100%;
       height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon svg .icon-accent {
       fill: currentColor;
+      opacity: 0.14;
+      stroke: none;
+    }
+
+    .icon svg .icon-dot {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .icon--import {
+      color: #2563eb;
+    }
+
+    .icon--backoffice {
+      color: #6366f1;
+    }
+
+    .icon--new {
+      color: #16a34a;
+    }
+
+    .icon--info {
+      color: #0ea5e9;
+    }
+
+    .icon--metadata {
+      color: #f97316;
+    }
+
+    .icon--editor {
+      color: #f43f5e;
+    }
+
+    .icon--qa {
+      color: #3b82f6;
+    }
+
+    .icon--export {
+      color: #0ea5e9;
+    }
+
+    .icon--preview {
+      color: #8b5cf6;
+    }
+
+    .icon--markdown {
+      color: #14b8a6;
+    }
+
+    .icon--pdf {
+      color: #ef4444;
+    }
+
+    .icon--guidelines {
+      color: #f59e0b;
+    }
+
+    .icon--glossary {
+      color: #6366f1;
+    }
+
+    .icon--config {
+      color: #10b981;
     }
 
     .language-selector {
@@ -847,32 +919,36 @@
           </select>
         </div>
         <button type="button" class="secondary-btn" id="import-btn">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--import" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M7 4a1 1 0 00-1 1v4H4V5a3 3 0 013-3h10a3 3 0 013 3v4h-2V5a1 1 0 00-1-1H7z"></path>
-              <path d="M11 11.59V4h2v7.59l1.3-1.3 1.4 1.42-3 3a1 1 0 01-1.4 0l-3-3 1.4-1.42 1.3 1.3z"></path>
-              <path d="M6 16a2 2 0 012-2h8a2 2 0 012 2v4h-2v-4H8v4H6z"></path>
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <path d="M12 5v9"></path>
+              <polyline points="8.5 10.5 12 14 15.5 10.5"></polyline>
+              <path d="M6.5 16.5H17.5a1.5 1.5 0 001.5-1.5V13"></path>
             </svg>
           </span>
           <span class="label-text">Importer un Markdown</span>
         </button>
         <button type="button" class="ghost-btn" id="backoffice-btn">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--backoffice" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <rect x="4" y="5" width="10" height="2" rx="1"></rect>
-              <circle cx="18" cy="6" r="2"></circle>
-              <rect x="4" y="11" width="7" height="2" rx="1"></rect>
-              <circle cx="14" cy="12" r="2"></circle>
-              <rect x="4" y="17" width="11" height="2" rx="1"></rect>
-              <circle cx="19" cy="18" r="2"></circle>
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <path d="M8 8.5h9.5"></path>
+              <path d="M8 12h6.5"></path>
+              <path d="M8 15.5h10"></path>
+              <circle class="icon-dot" cx="6" cy="8.5" r="1"></circle>
+              <circle class="icon-dot" cx="6" cy="12" r="1"></circle>
+              <circle class="icon-dot" cx="6" cy="15.5" r="1"></circle>
             </svg>
           </span>
           <span class="label-text">Gérer le backoffice</span>
         </button>
         <button type="button" class="new-procedure-btn" id="new-procedure-btn">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--new" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M12 5a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H6a1 1 0 110-2h5V6a1 1 0 011-1z"></path>
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <path d="M12 7.5v9"></path>
+              <path d="M7.5 12h9"></path>
             </svg>
           </span>
           <span class="label-text">Nouvelle procédure</span>
@@ -883,10 +959,12 @@
       <div class="content">
         <section class="card info-card" id="start-info">
           <h2 id="start-info-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--info" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M12 2a10 10 0 110 20 10 10 0 010-20z"></path>
-                <path d="M12 6a1 1 0 100 2 1 1 0 000-2zm1 4a1 1 0 10-2 0v7a1 1 0 102 0z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <circle class="icon-dot" cx="12" cy="8.25" r="1"></circle>
+                <path d="M12 11v5.5"></path>
+                <path d="M11.25 16.5h1.5"></path>
               </svg>
             </span>
             <span class="label-text">Démarrer une nouvelle procédure</span>
@@ -903,10 +981,12 @@
         </section>
         <section class="card" id="metadata-card">
           <h2 id="metadata-card-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--metadata" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M4 7a3 3 0 013-3h3.17a2 2 0 001.41.59H19a3 3 0 013 3v8a3 3 0 01-3 3H8a3 3 0 01-3-3V7z"></path>
-                <path d="M5 9h16v6a1 1 0 01-1 1H8a1 1 0 01-1-1z"></path>
+                <rect x="6.5" y="8" width="11" height="9.5" rx="2"></rect>
+                <path d="M6.5 10.75h11"></path>
+                <path d="M9 6.75h3l1 1h4.5"></path>
+                <path d="M9 13.5h5"></path>
               </svg>
             </span>
             <span class="label-text">1. Métadonnées</span>
@@ -915,10 +995,12 @@
         </section>
         <section class="card editor-card" id="editor-card">
           <h2 id="editor-card-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--editor" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M4 15.5V20h4.5l9.9-9.9-4.5-4.5L4 15.5z"></path>
-                <path d="M20.2 7.3a1 1 0 000-1.4l-2.1-2.1a1 1 0 00-1.4 0l-1.4 1.4 4.5 4.5z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <path d="M9 15.5l7-7"></path>
+                <path d="M14.75 6.75l2.5 2.5"></path>
+                <path d="M8.5 16.5h3.75"></path>
               </svg>
             </span>
             <span class="label-text">2. Contenu de la procédure</span>
@@ -938,9 +1020,10 @@
         </section>
         <section class="card" id="qa-card">
           <h2 id="qa-card-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--qa" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M7 4a3 3 0 00-3 3v6a3 3 0 003 3h1v2.41L11.41 16H17a3 3 0 003-3V7a3 3 0 00-3-3H7z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <path d="M7.5 8.5h9a2 2 0 012 2v2.5a2 2 0 01-2 2H13l-2 2v-2H7.5a2 2 0 01-2-2v-2.5a2 2 0 012-2z"></path>
               </svg>
             </span>
             <span class="label-text">3. Questions &amp; Réponses</span>
@@ -951,9 +1034,11 @@
           <div class="qa-list" id="qa-list" style="display: flex; flex-direction: column; gap: 16px;"></div>
           <div class="export-actions" style="justify-content: flex-start; margin-top: 16px;">
             <button type="button" class="secondary-btn" id="add-qa-btn">
-              <span class="icon" aria-hidden="true">
+              <span class="icon icon--qa" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
-                  <path d="M12 5a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H6a1 1 0 110-2h5V6a1 1 0 011-1z"></path>
+                  <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                  <path d="M12 7.5v9"></path>
+                  <path d="M7.5 12h9"></path>
                 </svg>
               </span>
               <span class="label-text">Ajouter une question</span>
@@ -962,10 +1047,12 @@
         </section>
         <section class="card" id="export-card">
           <h2 id="export-card-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--export" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M6 4a3 3 0 013-3h4v2H9a1 1 0 00-1 1v14a1 1 0 001 1h8a1 1 0 001-1v-4h2v4a3 3 0 01-3 3H9a3 3 0 01-3-3V4z"></path>
-                <path d="M16 3l5 5-1.41 1.41L17 7.83V16h-2V7.83l-2.59 2.58L11 8l5-5z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <rect x="6.5" y="9" width="11" height="8.5" rx="2"></rect>
+                <path d="M12 6.5V14"></path>
+                <polyline points="8.75 10.5 12 7.25 15.25 10.5"></polyline>
               </svg>
             </span>
             <span class="label-text">Aperçu &amp; Export</span>
@@ -976,26 +1063,34 @@
           </div>
           <div class="export-actions">
             <button type="button" class="secondary-btn" id="preview-btn">
-              <span class="icon" aria-hidden="true">
+              <span class="icon icon--preview" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
-                  <path d="M12 5c-5.52 0-10 3.86-10 7s4.48 7 10 7 10-3.86 10-7-4.48-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"></path>
+                  <path d="M3.5 12c2.3-3.7 5.2-5.5 8.5-5.5s6.2 1.8 8.5 5.5c-2.3 3.7-5.2 5.5-8.5 5.5s-6.2-1.8-8.5-5.5z"></path>
+                  <circle class="icon-dot" cx="12" cy="12" r="2"></circle>
+                  <circle cx="12" cy="12" r="4.5"></circle>
                 </svg>
               </span>
               <span class="label-text">Prévisualiser le Markdown</span>
             </button>
             <button type="button" class="primary-btn" id="export-md-btn">
-              <span class="icon" aria-hidden="true">
+              <span class="icon icon--markdown" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
-                  <path d="M12 3a1 1 0 011 1v8.59l2.3-2.3 1.4 1.42-4 4a1 1 0 01-1.4 0l-4-4 1.4-1.42 2.3 2.3V4a1 1 0 011-1z"></path>
-                  <path d="M5 18a2 2 0 012-2h10a2 2 0 012 2v2H5z"></path>
+                  <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                  <path d="M7 8.5h10a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5H7A1.5 1.5 0 015.5 16V10a1.5 1.5 0 011.5-1.5z"></path>
+                  <path d="M12 6.5v7"></path>
+                  <polyline points="9 12 12 15 15 12"></polyline>
                 </svg>
               </span>
               <span class="label-text">Exporter en Markdown</span>
             </button>
             <button type="button" class="primary-btn" id="export-pdf-btn">
-              <span class="icon" aria-hidden="true">
+              <span class="icon icon--pdf" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
-                  <path d="M7 2a3 3 0 00-3 3v14a3 3 0 003 3h10a3 3 0 003-3V8.83a3 3 0 00-.88-2.12l-4.83-4.83A3 3 0 0013.17 1H7zm7 2.41L18.59 9H15a2 2 0 01-2-2z"></path>
+                  <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                  <path d="M9 6.5h4.5l3 3V17a2 2 0 01-2 2H9a2 2 0 01-2-2V8.5a2 2 0 012-2z"></path>
+                  <path d="M13.5 6.5V9h2.5"></path>
+                  <path d="M9.5 12.75h5"></path>
+                  <path d="M9.5 15.25h5"></path>
                 </svg>
               </span>
               <span class="label-text">Exporter en PDF</span>
@@ -1006,9 +1101,10 @@
       <aside class="insights">
         <div class="insight-card">
           <h3 id="guidelines-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--guidelines" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M12 3l2.12 4.8 5.24.44-3.94 3.42 1.2 5.08L12 14.9l-4.62 1.84 1.2-5.08-3.94-3.42 5.24-.44z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <path d="M12 7.2l1.6 3.2 3.5.3-2.7 2.3.8 3.5-3.2-1.7-3.2 1.7.8-3.5-2.7-2.3 3.5-.3z"></path>
               </svg>
             </span>
             <span class="label-text">Guidelines IA Friendly</span>
@@ -1020,10 +1116,12 @@
         </div>
         <div class="insight-card">
           <h3 id="glossary-title">
-            <span class="icon" aria-hidden="true">
+            <span class="icon icon--glossary" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path d="M6.5 3A2.5 2.5 0 004 5.5v13A2.5 2.5 0 006.5 21H12V5.5A2.5 2.5 0 009.5 3z"></path>
-                <path d="M13.5 3H18a2 2 0 012 2v13.5a1 1 0 01-1.45.9L15 17.68l-3.55 1.72a1 1 0 01-1.45-.9V5.5A2.5 2.5 0 0113.5 3z"></path>
+                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                <path d="M11.8 7.5h-3a2 2 0 00-2 2v10.5a2 2 0 012-2h3"></path>
+                <path d="M12.2 7.5h3a2 2 0 012 2v10.5a2 2 0 00-2-2h-3"></path>
+                <path d="M12 9.5v8.5"></path>
               </svg>
             </span>
             <span class="label-text">Liste des acronymes</span>
@@ -1035,15 +1133,16 @@
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.28</footer>
+  <footer id="app-version">Version 1.1.29</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
         <h3 id="preview-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--preview" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M5 3a2 2 0 012-2h7.17a2 2 0 011.41.59l4.83 4.83a2 2 0 01.59 1.41V19a3 3 0 01-3 3H7a3 3 0 01-3-3V5z"></path>
-              <path d="M15 3.83V7a2 2 0 002 2h3.17z"></path>
+              <path d="M3.5 12c2.3-3.7 5.2-5.5 8.5-5.5s6.2 1.8 8.5 5.5c-2.3 3.7-5.2 5.5-8.5 5.5s-6.2-1.8-8.5-5.5z"></path>
+              <circle class="icon-dot" cx="12" cy="12" r="2"></circle>
+              <circle cx="12" cy="12" r="4.5"></circle>
             </svg>
           </span>
           <span class="label-text">Aperçu Markdown</span>
@@ -1059,14 +1158,15 @@
     <div class="backoffice-panel" role="document" tabindex="-1">
       <div class="backoffice-panel-header">
         <h2 id="backoffice-title">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--backoffice" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <rect x="4" y="5" width="10" height="2" rx="1"></rect>
-              <circle cx="18" cy="6" r="2"></circle>
-              <rect x="4" y="11" width="7" height="2" rx="1"></rect>
-              <circle cx="14" cy="12" r="2"></circle>
-              <rect x="4" y="17" width="11" height="2" rx="1"></rect>
-              <circle cx="19" cy="18" r="2"></circle>
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <path d="M8 8.5h9.5"></path>
+              <path d="M8 12h6.5"></path>
+              <path d="M8 15.5h10"></path>
+              <circle class="icon-dot" cx="6" cy="8.5" r="1"></circle>
+              <circle class="icon-dot" cx="6" cy="12" r="1"></circle>
+              <circle class="icon-dot" cx="6" cy="15.5" r="1"></circle>
             </svg>
           </span>
           <span class="label-text">Backoffice — Options des champs</span>
@@ -1079,10 +1179,12 @@
       <div id="backoffice-sections"></div>
       <div class="export-actions backoffice-actions">
         <button type="button" class="secondary-btn" id="export-config-btn">
-          <span class="icon" aria-hidden="true">
+          <span class="icon icon--config" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v4h-2V5H7v14h10v-4h2v4a2 2 0 01-2 2H7a2 2 0 01-2-2z"></path>
-              <path d="M15.5 8.5l3.5 3.5-3.5 3.5-1.4-1.4L15.2 13H10v-2h5.2l-1.1-1.1z"></path>
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <rect x="6.5" y="7.5" width="11" height="11" rx="2"></rect>
+              <path d="M8.5 12.5h7"></path>
+              <polyline points="12 9.5 15.5 12.5 12 15.5"></polyline>
             </svg>
           </span>
           <span class="label-text">Exporter la configuration JSON</span>
