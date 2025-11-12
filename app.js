@@ -301,6 +301,19 @@ const TEXT = {
     en: 'No question recorded.',
     es: 'No hay preguntas registradas.'
   },
+  'pdf.footer.titleLabel': { fr: 'Titre', en: 'Title', es: 'Título' },
+  'pdf.footer.referenceLabel': { fr: 'Réf.', en: 'Ref.', es: 'Ref.' },
+  'pdf.footer.effectiveDateLabel': {
+    fr: "Date d'entrée en vigueur",
+    en: 'Effective date',
+    es: 'Fecha de entrada en vigor'
+  },
+  'pdf.footer.pageLabel': { fr: 'Page', en: 'Page', es: 'Página' },
+  'pdf.footer.confidential': {
+    fr: 'Confidential - LFB Proprietary - Reproduction prohibited',
+    en: 'Confidential - LFB Proprietary - Reproduction prohibited',
+    es: 'Confidential - LFB Proprietary - Reproduction prohibited'
+  },
   'pdf.printWindowError': {
     fr: 'Impossible d’ouvrir la fenêtre d’impression.',
     en: 'The print window could not be opened.',
@@ -682,7 +695,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.11';
+const APP_VERSION = '1.2.12';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -3197,6 +3210,41 @@ async function handleExportPDF() {
     const metadataEntries = buildPDFMetadataEntries(state.metadata, selectOptions, configDefaults, language);
     const contentBlocks = extractPDFContentBlocks(state.contentHTML);
     const qaItems = normalizePDFQAItems(state.qaItems);
+    const resolvedGroups = createResolvedMetadataGroups(selectOptions, configDefaults, language);
+    const metadataFieldsByKey = resolvedGroups.reduce((acc, group) => {
+      group.fields.forEach((field) => {
+        if (field && field.key) {
+          acc[field.key] = field;
+        }
+      });
+      return acc;
+    }, {});
+    const footerTitle = (state.metadata.title && state.metadata.title.trim()) || fallbackTitle;
+    const footerReference =
+      formatMetadataValueForPDF(metadataFieldsByKey.reference, state.metadata.reference, language) || '';
+    const footerEffectiveDate =
+      formatMetadataValueForPDF(
+        metadataFieldsByKey.effectiveDate,
+        state.metadata.effectiveDate,
+        language
+      ) || '';
+    const footerLabels = {
+      titleLabel: translate('pdf.footer.titleLabel', {}, 'Titre', language),
+      referenceLabel: translate('pdf.footer.referenceLabel', {}, 'Réf.', language),
+      effectiveDateLabel: translate(
+        'pdf.footer.effectiveDateLabel',
+        {},
+        "Date d'entrée en vigueur",
+        language
+      ),
+      pageLabel: translate('pdf.footer.pageLabel', {}, 'Page', language),
+    };
+    const footerConfidential = translate(
+      'pdf.footer.confidential',
+      {},
+      'Confidential - LFB Proprietary - Reproduction prohibited',
+      language
+    );
     const pdfData = {
       title: (state.metadata.title && state.metadata.title.trim()) || fallbackTitle,
       metadata: metadataEntries,
@@ -3207,6 +3255,16 @@ async function handleExportPDF() {
         noQuestionText: translate('pdf.noQuestions', {}, 'Aucune question enregistrée.', language),
         questionLabel: translate('qa.questionLabel', {}, 'Question', language),
         answerLabel: translate('qa.answerLabel', {}, 'Réponse', language),
+      },
+      branding: {
+        showLogo: true,
+      },
+      footer: {
+        title: footerTitle,
+        reference: footerReference,
+        effectiveDate: footerEffectiveDate,
+        labels: footerLabels,
+        confidentialityText: footerConfidential,
       },
     };
     const blob = await Promise.resolve(window.ReactPDF.generatePDF(pdfData));
