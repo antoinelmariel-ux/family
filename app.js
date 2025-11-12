@@ -2504,23 +2504,41 @@ function renderGuidelines() {
       }
       header.appendChild(lineBadge);
 
-      const lineText = document.createElement('span');
-      lineText.className = 'guideline-line-text';
-      lineText.textContent = item.anchor || translate('guidelines.anchorFallback');
-      header.appendChild(lineText);
+      const messageId = `guideline-comment-${itemId}`;
 
-      const hideButton = document.createElement('button');
-      hideButton.type = 'button';
-      hideButton.className = 'guideline-hide-btn';
+      const lineButton = document.createElement('button');
+      lineButton.type = 'button';
+      lineButton.className = 'guideline-line-text';
+      lineButton.textContent = item.anchor || translate('guidelines.anchorFallback');
+      lineButton.setAttribute('aria-expanded', String(state.activeGuidelineId === itemId));
+      lineButton.setAttribute('aria-controls', messageId);
+      lineButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = state.activeGuidelineId === itemId;
+        state.activeGuidelineId = isOpen ? null : itemId;
+        renderGuidelines();
+      });
+      header.appendChild(lineButton);
+
+      const toggleButton = document.createElement('button');
+      toggleButton.type = 'button';
+      toggleButton.className = 'guideline-comment-toggle';
       const hideKey = isHidden ? 'guidelines.restoreEntry' : 'guidelines.hideEntry';
       const hideFallback = isHidden
         ? 'Show this recommendation again'
         : 'Hide this recommendation';
       const hideLabel = translate(hideKey, {}, hideFallback);
-      hideButton.textContent = hideLabel;
-      hideButton.setAttribute('aria-label', hideLabel);
-      hideButton.title = hideLabel;
-      hideButton.addEventListener('click', () => {
+      toggleButton.setAttribute('aria-label', hideLabel);
+      toggleButton.title = hideLabel;
+      toggleButton.setAttribute('aria-pressed', String(isHidden));
+      const eyeIcon = document.createElement('span');
+      eyeIcon.className = `icon-eye${isHidden ? '' : ' is-off'}`;
+      eyeIcon.setAttribute('aria-hidden', 'true');
+      const eyePupil = document.createElement('span');
+      eyePupil.className = 'icon-eye__pupil';
+      eyeIcon.appendChild(eyePupil);
+      toggleButton.appendChild(eyeIcon);
+      toggleButton.addEventListener('click', () => {
         const currentHiddenSet = ensureHiddenGuidelineSet();
         const nextHiddenSet = new Set(currentHiddenSet);
         const currentlyHidden = currentHiddenSet.has(itemId);
@@ -2538,23 +2556,26 @@ function renderGuidelines() {
         }
         renderGuidelines();
       });
-      header.appendChild(hideButton);
+      toggleButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+      header.appendChild(toggleButton);
 
-      const toggleButton = document.createElement('button');
-      toggleButton.type = 'button';
-      toggleButton.className = 'guideline-comment-toggle';
-      toggleButton.setAttribute('aria-expanded', String(state.activeGuidelineId === itemId));
-      toggleButton.setAttribute('aria-label', translate('guidelines.toggleComment'));
-      toggleButton.textContent = String(index + 1);
-      toggleButton.addEventListener('click', () => {
+      header.addEventListener('click', (event) => {
+        if (event.target instanceof HTMLElement && event.target.closest('.guideline-line-text')) {
+          return;
+        }
+        if (event.target instanceof HTMLElement && event.target.closest('.guideline-comment-toggle')) {
+          return;
+        }
         const isOpen = state.activeGuidelineId === itemId;
         state.activeGuidelineId = isOpen ? null : itemId;
         renderGuidelines();
       });
-      header.appendChild(toggleButton);
 
       const message = document.createElement('div');
       message.className = 'guideline-comment-panel';
+      message.id = messageId;
       message.textContent = item.message;
       message.hidden = state.activeGuidelineId !== itemId;
 

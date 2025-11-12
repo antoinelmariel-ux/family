@@ -887,22 +887,39 @@
       font-size: 13px;
       color: var(--text);
       min-width: 0;
+      background: none;
+      border: none;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .guideline-line-text:hover,
+    .guideline-line-text:focus-visible {
+      color: var(--primary);
+    }
+
+    .guideline-line-text:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(47, 79, 159, 0.25);
+      border-radius: 8px;
     }
 
     .guideline-comment-toggle {
-      min-width: 28px;
+      width: 28px;
       height: 28px;
       border-radius: 999px;
       border: none;
       background: var(--primary);
       color: white;
-      font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       transition: background 0.2s ease, transform 0.2s ease;
-      padding: 0 10px;
+      padding: 0;
+      flex-shrink: 0;
     }
 
     .guideline-comment-toggle:hover,
@@ -916,30 +933,48 @@
       box-shadow: 0 0 0 3px rgba(47, 79, 159, 0.25);
     }
 
-    .guideline-comment-toggle[aria-expanded="true"] {
+    .guideline-comment-toggle[aria-pressed="true"] {
       background: var(--accent);
       color: var(--primary);
     }
 
-    .guideline-hide-btn {
-      border: none;
-      background: none;
-      color: var(--muted);
-      font-size: 12px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 6px;
-      border-radius: 6px;
-      transition: color 0.2s ease, background 0.2s ease;
+    .icon-eye {
+      position: relative;
+      width: 14px;
+      height: 10px;
+      display: inline-block;
     }
 
-    .guideline-hide-btn:hover,
-    .guideline-hide-btn:focus-visible {
-      color: var(--primary);
-      background: rgba(47, 79, 159, 0.12);
-      outline: none;
+    .icon-eye::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50% / 70%;
+      border: 2px solid currentColor;
+    }
+
+    .icon-eye__pupil {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      margin-left: -2px;
+      margin-top: -2px;
+      background: currentColor;
+      border-radius: 50%;
+    }
+
+    .icon-eye.is-off::after {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 16px;
+      top: -3px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      background: currentColor;
+      border-radius: 1px;
     }
 
     .guideline-hidden-toggle {
@@ -1541,7 +1576,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.14</footer>
+  <footer id="app-version">Version 1.2.15</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
