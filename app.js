@@ -225,6 +225,38 @@ const TEXT = {
     en: 'Review the shared acronym repository to keep terminology consistent.',
     es: 'Consulta la base de acrónimos compartida para mantener una terminología coherente.'
   },
+  'glossary.form.title': {
+    fr: 'Ajouter un acronyme',
+    en: 'Add an acronym',
+    es: 'Agregar un acrónimo'
+  },
+  'glossary.form.termLabel': { fr: 'Acronyme', en: 'Acronym', es: 'Acrónimo' },
+  'glossary.form.termPlaceholder': {
+    fr: 'Ex. LFB',
+    en: 'e.g. LFB',
+    es: 'Ej. LFB'
+  },
+  'glossary.form.definitionLabel': {
+    fr: 'Définition',
+    en: 'Definition',
+    es: 'Definición'
+  },
+  'glossary.form.definitionPlaceholder': {
+    fr: "Décrivez la signification de l'acronyme",
+    en: 'Describe what the acronym stands for',
+    es: 'Describe el significado del acrónimo'
+  },
+  'glossary.form.submit': { fr: 'Ajouter', en: 'Add', es: 'Agregar' },
+  'glossary.form.error.missing': {
+    fr: 'Renseignez un acronyme et sa définition.',
+    en: 'Provide an acronym and its definition.',
+    es: 'Indica un acrónimo y su definición.'
+  },
+  'glossary.form.error.duplicate': {
+    fr: 'Cet acronyme existe déjà : {{term}}.',
+    en: 'This acronym already exists: {{term}}.',
+    es: 'Este acrónimo ya existe: {{term}}.'
+  },
   'insights.tabs.aria': {
     fr: 'Onglets des ressources complémentaires',
     en: 'Complementary resources tabs',
@@ -720,7 +752,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.14';
+const APP_VERSION = '1.2.16';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1944,6 +1976,9 @@ const state = {
   glossaryError: null,
   isGlossaryLoading: true,
   isGlossaryOpen: false,
+  glossaryForm: { term: '', definition: '' },
+  glossaryFormErrorKey: null,
+  glossaryFormErrorParams: null,
   keywordInput: '',
   isBackofficeOpen: false,
   isPreviewOpen: false,
@@ -1994,6 +2029,15 @@ const elements = {
   glossaryLoading: document.getElementById('glossary-loading'),
   glossaryError: document.getElementById('glossary-error'),
   glossaryDescription: document.getElementById('glossary-description'),
+  glossaryFormContainer: document.getElementById('glossary-form-container'),
+  glossaryForm: document.getElementById('glossary-form'),
+  glossaryFormTitle: document.getElementById('glossary-form-title'),
+  glossaryTermLabel: document.getElementById('glossary-term-label'),
+  glossaryDefinitionLabel: document.getElementById('glossary-definition-label'),
+  glossaryTermInput: document.getElementById('glossary-term'),
+  glossaryDefinitionInput: document.getElementById('glossary-definition'),
+  addGlossaryEntryButton: document.getElementById('add-glossary-entry-btn'),
+  glossaryFormError: document.getElementById('glossary-form-error'),
   closeGlossaryButton: document.getElementById('close-glossary-btn'),
   exportConfigButton: document.getElementById('export-config-btn'),
   languageSelect: document.getElementById('language-select'),
@@ -2695,6 +2739,57 @@ function renderGlossary() {
     elements.glossaryOverlay.classList.toggle('open', isOpen);
     elements.glossaryOverlay.setAttribute('aria-hidden', String(!isOpen));
   }
+  const formState = state.glossaryForm || { term: '', definition: '' };
+  if (elements.glossaryFormTitle) {
+    elements.glossaryFormTitle.textContent = translate('glossary.form.title');
+  }
+  if (elements.glossaryTermLabel) {
+    elements.glossaryTermLabel.textContent = translate('glossary.form.termLabel');
+  }
+  if (elements.glossaryDefinitionLabel) {
+    elements.glossaryDefinitionLabel.textContent = translate('glossary.form.definitionLabel');
+  }
+  if (elements.glossaryTermInput) {
+    const placeholder = translate(
+      'glossary.form.termPlaceholder',
+      {},
+      elements.glossaryTermInput.placeholder || ''
+    );
+    elements.glossaryTermInput.placeholder = placeholder;
+    elements.glossaryTermInput.value = formState.term || '';
+    elements.glossaryTermInput.disabled = Boolean(state.isGlossaryLoading);
+  }
+  if (elements.glossaryDefinitionInput) {
+    const placeholder = translate(
+      'glossary.form.definitionPlaceholder',
+      {},
+      elements.glossaryDefinitionInput.placeholder || ''
+    );
+    elements.glossaryDefinitionInput.placeholder = placeholder;
+    elements.glossaryDefinitionInput.value = formState.definition || '';
+    elements.glossaryDefinitionInput.disabled = Boolean(state.isGlossaryLoading);
+  }
+  if (elements.addGlossaryEntryButton) {
+    setLabelText(elements.addGlossaryEntryButton, translate('glossary.form.submit'));
+    elements.addGlossaryEntryButton.disabled = Boolean(state.isGlossaryLoading);
+  }
+  if (elements.glossaryFormError) {
+    if (state.glossaryFormErrorKey) {
+      const message = translate(
+        state.glossaryFormErrorKey,
+        state.glossaryFormErrorParams || {},
+        ''
+      );
+      elements.glossaryFormError.textContent = message;
+      elements.glossaryFormError.hidden = !message;
+    } else {
+      elements.glossaryFormError.hidden = true;
+      elements.glossaryFormError.textContent = '';
+    }
+  }
+  if (elements.glossaryFormContainer) {
+    elements.glossaryFormContainer.setAttribute('aria-busy', String(Boolean(state.isGlossaryLoading)));
+  }
   elements.glossaryList.innerHTML = '';
   if (elements.glossaryLoading) {
     elements.glossaryLoading.textContent = translate('glossary.loading');
@@ -2712,7 +2807,10 @@ function renderGlossary() {
       elements.glossaryError.textContent = state.glossaryError;
     }
   }
-  const entries = Object.entries(state.glossary);
+  const sortLocale = state.language || DEFAULT_LANGUAGE;
+  const entries = Object.entries(state.glossary).sort(([termA], [termB]) => (
+    termA.localeCompare(termB, sortLocale, { sensitivity: 'base' })
+  ));
   if (entries.length === 0) {
     const empty = document.createElement('p');
     empty.style.color = 'var(--muted)';
@@ -3117,6 +3215,74 @@ function handleKeywordRemove(index) {
   state.metadata = { ...state.metadata, keywords: updated.join(', ') };
   state.hasStarted = true;
   renderAll();
+}
+
+function clearGlossaryFormError() {
+  state.glossaryFormErrorKey = null;
+  state.glossaryFormErrorParams = null;
+}
+
+function hasGlossaryEntry(term) {
+  const normalized = (term || '').toUpperCase();
+  return Object.keys(state.glossary || {}).some((key) => key.toUpperCase() === normalized);
+}
+
+function handleGlossaryTermInput(event) {
+  const inputValue = event?.target?.value ?? '';
+  const nextValue = inputValue.toUpperCase();
+  if (event?.target && event.target.value !== nextValue) {
+    event.target.value = nextValue;
+  }
+  state.glossaryForm = { ...(state.glossaryForm || {}), term: nextValue };
+  if (state.glossaryFormErrorKey) {
+    clearGlossaryFormError();
+    renderGlossary();
+  }
+}
+
+function handleGlossaryDefinitionInput(event) {
+  const nextValue = event?.target?.value ?? '';
+  state.glossaryForm = { ...(state.glossaryForm || {}), definition: nextValue };
+  if (state.glossaryFormErrorKey) {
+    clearGlossaryFormError();
+    renderGlossary();
+  }
+}
+
+function handleGlossaryFormSubmit(event) {
+  if (event) {
+    event.preventDefault();
+  }
+  if (state.isGlossaryLoading) {
+    return;
+  }
+  const formState = state.glossaryForm || { term: '', definition: '' };
+  const rawTerm = (formState.term || '').trim();
+  const rawDefinition = (formState.definition || '').trim();
+  if (!rawTerm || !rawDefinition) {
+    state.glossaryFormErrorKey = 'glossary.form.error.missing';
+    state.glossaryFormErrorParams = null;
+    renderGlossary();
+    return;
+  }
+  const normalizedTerm = rawTerm.toUpperCase();
+  if (hasGlossaryEntry(normalizedTerm)) {
+    state.glossaryFormErrorKey = 'glossary.form.error.duplicate';
+    state.glossaryFormErrorParams = { term: normalizedTerm };
+    renderGlossary();
+    return;
+  }
+  const sanitizedDefinition = rawDefinition.replace(/\s+/g, ' ').trim();
+  state.glossary = { ...state.glossary, [normalizedTerm]: sanitizedDefinition };
+  state.glossaryForm = { term: '', definition: '' };
+  clearGlossaryFormError();
+  state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+  pruneHiddenGuidelines();
+  renderGlossary();
+  renderGuidelines();
+  if (elements.glossaryTermInput && typeof elements.glossaryTermInput.focus === 'function') {
+    elements.glossaryTermInput.focus();
+  }
 }
 
 function handleQAChange(index, field, value) {
@@ -3667,6 +3833,9 @@ function handleBackofficeOverlayClick(event) {
 function openGlossary() {
   state.isGlossaryOpen = true;
   renderGlossary();
+  if (elements.glossaryTermInput && typeof elements.glossaryTermInput.focus === 'function') {
+    elements.glossaryTermInput.focus();
+  }
 }
 
 function closeGlossary() {
@@ -3759,6 +3928,15 @@ function registerEventListeners() {
   }
   if (elements.glossaryOverlay) {
     elements.glossaryOverlay.addEventListener('click', handleGlossaryOverlayClick);
+  }
+  if (elements.glossaryForm) {
+    elements.glossaryForm.addEventListener('submit', handleGlossaryFormSubmit);
+  }
+  if (elements.glossaryTermInput) {
+    elements.glossaryTermInput.addEventListener('input', handleGlossaryTermInput);
+  }
+  if (elements.glossaryDefinitionInput) {
+    elements.glossaryDefinitionInput.addEventListener('input', handleGlossaryDefinitionInput);
   }
   if (elements.exportConfigButton) {
     elements.exportConfigButton.addEventListener('click', handleExportConfig);

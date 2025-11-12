@@ -1175,6 +1175,45 @@
       line-height: 1.5;
     }
 
+    .glossary-form {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: var(--accent);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .glossary-form h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .glossary-form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .glossary-form-field label {
+      margin: 0;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .glossary-form-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .glossary-form-error {
+      margin: 0;
+      color: var(--warning);
+      font-size: 13px;
+    }
+
     .backoffice-panel {
       background: #fff;
       border-radius: 18px;
@@ -1576,7 +1615,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.15</footer>
+  <footer id="app-version">Version 1.2.16</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
@@ -1656,6 +1695,37 @@
       </p>
       <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement de la liste des acronymes…</p>
       <p class="warning" id="glossary-error" hidden></p>
+      <div class="glossary-form" id="glossary-form-container">
+        <h3 id="glossary-form-title">Ajouter un acronyme</h3>
+        <form id="glossary-form" class="glossary-form-body" novalidate>
+          <div class="glossary-form-field">
+            <label for="glossary-term" id="glossary-term-label">Acronyme</label>
+            <input
+              type="text"
+              id="glossary-term"
+              name="glossary-term"
+              maxlength="16"
+              autocomplete="off"
+              placeholder="Ex. LFB"
+            />
+          </div>
+          <div class="glossary-form-field">
+            <label for="glossary-definition" id="glossary-definition-label">Définition</label>
+            <textarea
+              id="glossary-definition"
+              name="glossary-definition"
+              rows="3"
+              placeholder="Décrivez la signification de l'acronyme"
+            ></textarea>
+          </div>
+          <p class="glossary-form-error" id="glossary-form-error" hidden></p>
+          <div class="glossary-form-actions">
+            <button type="submit" class="primary-btn" id="add-glossary-entry-btn">
+              <span class="label-text">Ajouter</span>
+            </button>
+          </div>
+        </form>
+      </div>
       <ul class="glossary-list" id="glossary-list"></ul>
     </div>
   </div>
