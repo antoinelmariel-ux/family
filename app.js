@@ -138,6 +138,36 @@ const TEXT = {
     en: 'Make sure this term is defined in the “Definition” section.',
     es: 'Asegúrese de que este término esté definido en la sección «Definición».'
   },
+  'guidelines.category.heading': {
+    fr: 'Titre de section',
+    en: 'Section heading',
+    es: 'Título de sección'
+  },
+  'guidelines.category.listTransition': {
+    fr: 'Transition de liste',
+    en: 'List transition',
+    es: 'Transición de lista'
+  },
+  'guidelines.category.listIntro': {
+    fr: 'Introduction de liste',
+    en: 'List introduction',
+    es: 'Introducción de lista'
+  },
+  'guidelines.category.pronoun': {
+    fr: 'Pronom ambigu',
+    en: 'Ambiguous pronoun',
+    es: 'Pronombre ambiguo'
+  },
+  'guidelines.category.acronym': {
+    fr: 'Acronyme non documenté',
+    en: 'Undocumented acronym',
+    es: 'Acrónimo sin documentar'
+  },
+  'guidelines.category.definitionCheck': {
+    fr: 'Terme non défini',
+    en: 'Term not defined',
+    es: 'Término no definido'
+  },
   'guidelines.toggleComment': {
     fr: 'Afficher ou masquer le commentaire',
     en: 'Show or hide the comment',
@@ -2303,6 +2333,23 @@ function renderGuidelines() {
   elements.guidelinesList.innerHTML = '';
   elements.guidelinesList.hidden = state.guidelines.length === 0;
   elements.guidelinesEmpty.textContent = translate('guidelines.empty');
+  const categoryTranslationKeys = {
+    heading: 'guidelines.category.heading',
+    'list-transition': 'guidelines.category.listTransition',
+    'list-intro': 'guidelines.category.listIntro',
+    pronoun: 'guidelines.category.pronoun',
+    acronym: 'guidelines.category.acronym',
+    'definition-check': 'guidelines.category.definitionCheck'
+  };
+  const formatCategoryFallback = (type) => {
+    if (!type) {
+      return 'Guideline';
+    }
+    return type
+      .split(/[-_]/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
   if (state.guidelines.length === 0) {
     elements.guidelinesEmpty.hidden = false;
     state.activeGuidelineId = null;
@@ -2321,12 +2368,19 @@ function renderGuidelines() {
       const header = document.createElement('div');
       header.className = 'guideline-entry-header';
 
+      const lineBadge = document.createElement('span');
+      lineBadge.className = 'comment-line';
+      const categoryKey = categoryTranslationKeys[item.type];
+      const fallbackCategory = formatCategoryFallback(item.type);
+      lineBadge.textContent = categoryKey ? translate(categoryKey, {}, fallbackCategory) : fallbackCategory;
       if (typeof item.line === 'number' && Number.isFinite(item.line)) {
-        const lineBadge = document.createElement('span');
-        lineBadge.className = 'comment-line';
-        lineBadge.textContent = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
-        header.appendChild(lineBadge);
+        lineBadge.setAttribute(
+          'aria-label',
+          translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`)
+        );
+        lineBadge.title = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
       }
+      header.appendChild(lineBadge);
 
       const lineText = document.createElement('span');
       lineText.className = 'guideline-line-text';
