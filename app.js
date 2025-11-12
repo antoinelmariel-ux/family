@@ -137,6 +137,11 @@ const TEXT = {
     en: 'Make sure this term is defined in the “Definition” section.',
     es: 'Asegúrese de que este término esté definido en la sección «Definición».'
   },
+  'guidelines.lineLabel': {
+    fr: 'Ligne {{line}}',
+    en: 'Line {{line}}',
+    es: 'Línea {{line}}'
+  },
   'guidelines.bulletListLabel': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'guidelines.numberedListLabel': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
   'glossary.title': {
@@ -589,7 +594,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.30';
+const APP_VERSION = '1.1.31';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -980,10 +985,122 @@ function getInitialContentHTML(language = currentLanguage) {
   return sanitizeHTML(template);
 }
 
+function normalizeForComparison(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .replace(/[\s\u00A0]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function stripMarkdownFormatting(line) {
+  if (typeof line !== 'string') {
+    return '';
+  }
+  return line
+    .replace(/`[^`]*`/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/\[(.*?)\]\([^)]*\)/g, '$1')
+    .replace(/^>+\s*/, '')
+    .replace(/^#{1,6}\s+/, '')
+    .replace(/^[-*+]\s+/, '')
+    .replace(/^\d+\.\s+/, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\\([*_`])/g, '$1')
+    .replace(/[\s\u00A0]+/g, ' ')
+    .trim();
+}
+
+function detectMarkdownLineType(line) {
+  if (typeof line !== 'string') {
+    return 'text';
+  }
+  if (/^#{1,6}\s+/.test(line)) {
+    return 'heading';
+  }
+  if (/^[-*+]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+    return 'list';
+  }
+  if (/^>+\s*/.test(line)) {
+    return 'blockquote';
+  }
+  return 'text';
+}
+
+function buildLineLookup(entries) {
+  const lookup = new Map();
+  entries.forEach((entry) => {
+    if (!entry || typeof entry.normalized !== 'string' || !entry.normalized) {
+      return;
+    }
+    const values = lookup.get(entry.normalized) || [];
+    values.push(entry.lineNumber);
+    lookup.set(entry.normalized, values);
+  });
+  return lookup;
+}
+
+function takeLineFromLookup(lookup, value) {
+  if (!lookup || typeof value !== 'string') {
+    return null;
+  }
+  const normalized = normalizeForComparison(value);
+  if (!normalized || !lookup.has(normalized)) {
+    return null;
+  }
+  const values = lookup.get(normalized);
+  if (!values || values.length === 0) {
+    return null;
+  }
+  const lineNumber = values.shift();
+  if (values.length === 0) {
+    lookup.delete(normalized);
+  } else {
+    lookup.set(normalized, values);
+  }
+  return typeof lineNumber === 'number' ? lineNumber : null;
+}
+
+function buildMarkdownLineData(html, language = currentLanguage) {
+  const markdown = htmlToMarkdown(html || '', language);
+  if (typeof markdown !== 'string' || markdown.trim().length === 0) {
+    return {
+      entries: [],
+      headingLookup: new Map(),
+      listLookup: new Map(),
+      textLookup: new Map()
+    };
+  }
+  const lines = markdown.split('\n');
+  const entries = lines.map((line, index) => {
+    const plainText = stripMarkdownFormatting(line);
+    return {
+      lineNumber: index + 1,
+      raw: line,
+      plainText,
+      normalized: normalizeForComparison(plainText),
+      type: detectMarkdownLineType(line)
+    };
+  });
+  return {
+    entries,
+    headingLookup: buildLineLookup(entries.filter((entry) => entry.type === 'heading')),
+    listLookup: buildLineLookup(entries.filter((entry) => entry.type === 'list')),
+    textLookup: buildLineLookup(entries.filter((entry) => entry.normalized))
+  };
+}
+
 function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
   const guidelines = [];
+
+  const { entries: markdownEntries, headingLookup, listLookup, textLookup } = buildMarkdownLineData(html, language);
 
   const { nodes: definitionNodes, terms: definitionTerms } = extractDefinitionContext(doc, language);
   const headingMessage = translate('guidelines.headingMessage', {}, '', language);
@@ -996,53 +1113,93 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
   const headingFallback = translate('guidelines.headingFallback', {}, '(untitled)', language);
   const definitionMessage = translate('guidelines.definitionCheck', {}, '', language);
 
+  let guidelineOrder = 0;
+  const addGuideline = (payload) => {
+    guidelines.push({ ...payload, order: guidelineOrder++ });
+  };
+
   doc.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
     const text = heading.textContent.trim() || headingFallback;
-    guidelines.push({
+    const lineNumber = takeLineFromLookup(headingLookup, text) ?? takeLineFromLookup(textLookup, text);
+    addGuideline({
       type: 'heading',
       anchor: text,
-      message: headingMessage
+      message: headingMessage,
+      line: lineNumber
     });
   });
 
   doc.querySelectorAll('ul, ol').forEach((list) => {
     const label = list.tagName === 'UL' ? bulletLabel : numberedLabel;
-    guidelines.push({
+    let listLineNumber = null;
+    const firstItem = list.querySelector('li');
+    if (firstItem) {
+      const firstText = (firstItem.textContent || '').replace(/[\s\u00A0]+/g, ' ').trim();
+      if (firstText) {
+        listLineNumber =
+          takeLineFromLookup(listLookup, firstText) ?? takeLineFromLookup(textLookup, firstText) ?? null;
+      }
+    }
+
+    addGuideline({
       type: 'list-transition',
       anchor: label,
-      message: listTransitionMessage
+      message: listTransitionMessage,
+      line: listLineNumber
     });
     const previous = list.previousElementSibling;
     const hasIntro = previous && previous.textContent.trim().length > 0 && previous.textContent.trim().endsWith(':');
     if (!hasIntro) {
-      guidelines.push({
+      addGuideline({
         type: 'list-intro',
         anchor: label,
-        message: listIntroMessage
+        message: listIntroMessage,
+        line: listLineNumber
       });
     }
   });
 
-  const textContent = doc.body.textContent || '';
-  const pronounMatches = Array.from(
-    new Set(textContent.match(/\b(?:il|elle|ils|elles|lui|leur|leurs|son|sa|ses|eux)\b/gi) || [])
-  );
-  pronounMatches.forEach((item) => {
-    guidelines.push({
-      type: 'pronoun',
-      anchor: item,
-      message: pronounMessage
-    });
-  });
-
-  const acronymMatches = Array.from(new Set(textContent.match(/\b[A-Z]{2,}\b/g))) || [];
-  acronymMatches.forEach((acronym) => {
-    if (!acronymDB[acronym]) {
-      guidelines.push({
-        type: 'acronym',
-        anchor: acronym,
-        message: acronymMessage
+  const pronounPattern = `\\b(?:${pronouns.join('|')})\\b`;
+  markdownEntries.forEach(({ lineNumber, plainText }) => {
+    if (!plainText) {
+      return;
+    }
+    const pronounRegex = new RegExp(pronounPattern, 'gi');
+    const pronounSeen = new Set();
+    let pronounMatch;
+    while ((pronounMatch = pronounRegex.exec(plainText)) !== null) {
+      const value = pronounMatch[0];
+      const normalized = normalizeForComparison(value);
+      if (pronounSeen.has(normalized)) {
+        continue;
+      }
+      pronounSeen.add(normalized);
+      addGuideline({
+        type: 'pronoun',
+        anchor: value,
+        message: pronounMessage,
+        line: lineNumber
       });
+    }
+
+    const acronymRegex = /\b[A-Z]{2,}\b/g;
+    const acronymSeen = new Set();
+    let acronymMatch;
+    while ((acronymMatch = acronymRegex.exec(plainText)) !== null) {
+      const acronym = acronymMatch[0];
+      const normalizedAcronym = acronym.toUpperCase();
+      if (acronymSeen.has(normalizedAcronym)) {
+        continue;
+      }
+      acronymSeen.add(normalizedAcronym);
+      if (!acronymDB[normalizedAcronym]) {
+        addGuideline({
+          type: 'acronym',
+          anchor: acronym,
+          message: acronymMessage,
+          line: lineNumber
+        });
+      }
     }
   });
 
@@ -1052,11 +1209,6 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
     italicElements.forEach((element) => {
       const text = element.textContent || '';
       const normalized = normalizeDefinitionTerm(text);
-      if (!normalized || italicSeen.has(normalized)) {
-        return;
-      }
-      italicSeen.add(normalized);
-
       if (definitionNodes.some((node) => node.contains(element))) {
         return;
       }
@@ -1065,16 +1217,34 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
         return;
       }
 
-      const anchor = text.trim() || translate('guidelines.anchorFallback', {}, 'Texte', language);
-      guidelines.push({
+      const trimmed = text.replace(/[\s\u00A0]+/g, ' ').trim();
+      const anchor = trimmed || translate('guidelines.anchorFallback', {}, 'Texte', language);
+      const lineNumber = trimmed ? takeLineFromLookup(textLookup, trimmed) : null;
+      const dedupKey = lineNumber !== null ? `${normalized}::${lineNumber}` : normalized;
+      if (!normalized || italicSeen.has(dedupKey)) {
+        return;
+      }
+      italicSeen.add(dedupKey);
+
+      addGuideline({
         type: 'definition-check',
         anchor,
-        message: definitionMessage
+        message: definitionMessage,
+        line: lineNumber
       });
     });
   }
 
-  return guidelines;
+  return guidelines
+    .sort((a, b) => {
+      const lineA = typeof a.line === 'number' ? a.line : Number.POSITIVE_INFINITY;
+      const lineB = typeof b.line === 'number' ? b.line : Number.POSITIVE_INFINITY;
+      if (lineA !== lineB) {
+        return lineA - lineB;
+      }
+      return a.order - b.order;
+    })
+    .map(({ order, ...rest }) => rest);
 }
 
 function detectBlockingIssues(html, qaItems) {
@@ -1149,7 +1319,7 @@ function convertInlineNodes(node) {
   return Array.from(node.childNodes).map(convertInlineNodes).join('');
 }
 
-function convertList(node, ordered = false) {
+function convertList(node, ordered = false, language = (state && state.language) || currentLanguage) {
   const items = [];
   let index = 1;
   node.childNodes.forEach((child) => {
@@ -1158,7 +1328,7 @@ function convertList(node, ordered = false) {
       const nestedBlocks = [];
       child.childNodes.forEach((liChild) => {
         if (liChild.nodeType === Node.ELEMENT_NODE && (liChild.tagName.toUpperCase() === 'UL' || liChild.tagName.toUpperCase() === 'OL')) {
-          nestedBlocks.push(convertList(liChild, liChild.tagName.toUpperCase() === 'OL'));
+          nestedBlocks.push(convertList(liChild, liChild.tagName.toUpperCase() === 'OL', language));
         } else {
           inlineParts.push(convertInlineNodes(liChild));
         }
@@ -1176,7 +1346,7 @@ function convertList(node, ordered = false) {
   return items.join('\n');
 }
 
-function convertBlock(node) {
+function convertBlock(node, language = (state && state.language) || currentLanguage) {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent.trim();
     return text;
@@ -1186,7 +1356,7 @@ function convertBlock(node) {
   }
   const tag = node.tagName.toUpperCase();
   if (node.classList && node.classList.contains('rational-block')) {
-    const fallbackTitle = translate('rational.title', {}, 'Rationnel', state.language);
+    const fallbackTitle = translate('rational.title', {}, 'Rationnel', language);
     const title = (node.querySelector('.rational-block-title') || { textContent: fallbackTitle }).textContent.trim() || fallbackTitle;
     const paragraphs = Array.from(node.querySelectorAll('p'))
       .map((p) => convertInlineNodes(p).trim())
@@ -1212,9 +1382,9 @@ function convertBlock(node) {
     case 'P':
       return convertInlineNodes(node).trim();
     case 'UL':
-      return convertList(node, false);
+      return convertList(node, false, language);
     case 'OL':
-      return convertList(node, true);
+      return convertList(node, true, language);
     case 'BLOCKQUOTE':
       return node.textContent
         .split(/\r?\n/)
@@ -1224,18 +1394,18 @@ function convertBlock(node) {
       return '---';
     default:
       return Array.from(node.childNodes)
-        .map((child) => convertBlock(child))
+        .map((child) => convertBlock(child, language))
         .filter(Boolean)
         .join('\n');
   }
 }
 
-function htmlToMarkdown(html) {
+function htmlToMarkdown(html, language = (state && state.language) || currentLanguage) {
   const container = document.createElement('div');
   container.innerHTML = html;
   const blocks = [];
   container.childNodes.forEach((node) => {
-    const block = convertBlock(node);
+    const block = convertBlock(node, language);
     if (block && block.trim().length > 0) {
       blocks.push(block.trim());
     }
@@ -1244,7 +1414,8 @@ function htmlToMarkdown(html) {
 }
 
 function buildMarkdown(metadata, contentHTML, qaItems) {
-  const contentMarkdown = htmlToMarkdown(contentHTML || '');
+  const activeLanguage = (state && state.language) || currentLanguage;
+  const contentMarkdown = htmlToMarkdown(contentHTML || '', activeLanguage);
   const cleanContent = contentMarkdown
     .replace(/[ \t]+/g, ' ')
     .replace(/\s+\n/g, '\n')
@@ -1999,6 +2170,14 @@ function renderGuidelines() {
       const listItem = document.createElement('li');
       const wrapper = document.createElement('div');
       wrapper.className = 'insight-comment';
+
+      if (typeof item.line === 'number' && Number.isFinite(item.line)) {
+        const lineBadge = document.createElement('span');
+        lineBadge.className = 'comment-line';
+        lineBadge.textContent = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
+        wrapper.appendChild(lineBadge);
+        listItem.dataset.lineNumber = String(item.line);
+      }
 
       const anchor = document.createElement('span');
       anchor.className = 'comment-anchor';
