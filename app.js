@@ -682,7 +682,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.7';
+const APP_VERSION = '1.2.9';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -3007,97 +3007,206 @@ function handleExportMarkdown() {
   URL.revokeObjectURL(link.href);
 }
 
-function buildPrintableHTML(metadata, contentHTML, qaItems, language = state.language || currentLanguage) {
-  const metadataEntries = [
-    ['metadata.field.title.label', metadata.title],
-    ['metadata.field.reference.label', metadata.reference],
-    ['metadata.field.author.label', metadata.author],
-    ['metadata.field.businessScope.label', formatMetadataValue(metadata.businessScope)],
-    ['metadata.field.companyScope.label', formatMetadataValue(metadata.companyScope)],
-    ['metadata.field.geoScope.label', formatMetadataValue(metadata.geoScope)],
-    ['metadata.field.keywords.label', formatMetadataValue(metadata.keywords)],
-    ['metadata.field.summary.label', metadata.summary],
-    ['metadata.field.parentProcedure.label', metadata.parentProcedure],
-    ['metadata.field.changeHistory.label', metadata.changeHistory],
-    ['metadata.field.effectiveDate.label', metadata.effectiveDate]
-  ];
-  const metadataRows = metadataEntries
-    .map(([key, value]) => {
-      const label = translate(key, {}, key, language);
-      return `<tr><th>${escapeHTML(label)}</th><td>${escapeHTML(String(value || ''))}</td></tr>`;
-    })
-    .join('');
-  const questionLabel = translate('qa.questionLabel', {}, 'Question', language);
-  const answerLabel = translate('qa.answerLabel', {}, 'Réponse', language);
-  const qaSections = qaItems
-    .map(
-      (item, index) => `
-        <section class="print-qa">
-          <h3>${escapeHTML(`${questionLabel} ${index + 1}`)}</h3>
-          <p><strong>${escapeHTML(`${questionLabel} :`)}</strong> ${escapeHTML(item.question || '')}</p>
-          <p><strong>${escapeHTML(`${answerLabel} :`)}</strong> ${escapeHTML(item.answer || '')}</p>
-        </section>`
-    )
-    .join('');
-
-  const sectionTitle = translate('pdf.sectionTitle', {}, 'Questions & Réponses', language);
-  const noQuestionText = translate('pdf.noQuestions', {}, 'Aucune question enregistrée.', language);
-  const fallbackTitle = translate('pdf.fallbackTitle', {}, 'Procédure', language);
-
-  return `<!DOCTYPE html>
-<html lang="${language}">
-<head>
-  <meta charset="utf-8" />
-  <title>Export PDF</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1c2240; }
-    h1 { margin-top: 0; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
-    th { text-align: left; padding: 6px 12px; background: #f0f2ff; width: 220px; }
-    td { padding: 6px 12px; border-bottom: 1px solid #dce0f3; }
-    .content { margin-bottom: 32px; }
-    .print-qa { margin-bottom: 20px; }
-    .print-qa h3 { margin-bottom: 8px; }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>${escapeHTML(metadata.title || fallbackTitle)}</h1>
-    <table>${metadataRows}</table>
-  </header>
-  <section class="content">${contentHTML}</section>
-  <section class="qa-section">
-    <h2>${escapeHTML(sectionTitle)}</h2>
-    ${qaSections || `<p>${escapeHTML(noQuestionText)}</p>`}
-  </section>
-  <script>
-    window.addEventListener('load', () => {
-      window.focus();
-      window.print();
-    });
-    window.addEventListener('afterprint', () => {
-      window.close();
-    });
-  </script>
-</body>
-</html>`;
+function formatMetadataValueForPDF(field, value, language = currentLanguage) {
+  if (!field) {
+    return '';
+  }
+  if (field.key === 'keywords') {
+    const keywords = Array.isArray(value) ? value : parseKeywords(value || '');
+    return keywords.join(', ');
+  }
+  if (field.type === 'select') {
+    const optionsKey = field.optionsKey || field.key;
+    if (field.multiple) {
+      const values = Array.isArray(value) ? value : [];
+      return values
+        .map((item) => getSelectOptionLabel(optionsKey, item, language))
+        .filter(Boolean)
+        .join(', ');
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      return getSelectOptionLabel(optionsKey, value, language);
+    }
+    return '';
+  }
+  return formatMetadataValue(value);
 }
 
-function handleExportPDF() {
+function buildPDFMetadataEntries(metadata, selectOptions, configDefaults, language = currentLanguage) {
+  if (!metadata) {
+    return [];
+  }
+  const groups = createResolvedMetadataGroups(selectOptions, configDefaults, language);
+  const entries = [];
+  groups.forEach((group) => {
+    group.fields.forEach((field) => {
+      if (!field || !field.label) {
+        return;
+      }
+      const rawValue = metadata[field.key];
+      if (field.key === 'keywords') {
+        const keywords = parseKeywords(rawValue || '');
+        if (keywords.length > 0) {
+          entries.push({ label: field.label, value: keywords.join(', ') });
+        }
+        return;
+      }
+      const value = formatMetadataValueForPDF(field, rawValue, language);
+      if (value) {
+        entries.push({ label: field.label, value });
+      }
+    });
+  });
+  return entries;
+}
+
+function extractPDFContentBlocks(html) {
+  if (!html) {
+    return [];
+  }
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const blocks = [];
+  const headingTags = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+
+  const visit = (node) => {
+    if (!node) {
+      return;
+    }
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const tag = node.tagName.toUpperCase();
+      if (headingTags.has(tag)) {
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text) {
+          const level = parseInt(tag.slice(1), 10) || 1;
+          blocks.push({ type: 'heading', level, text });
+        }
+        return;
+      }
+      if (tag === 'P') {
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text) {
+          blocks.push({ type: 'paragraph', text });
+        }
+        return;
+      }
+      if (tag === 'LI') {
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text) {
+          blocks.push({ type: 'list-item', text });
+        }
+        return;
+      }
+      if (tag === 'BR') {
+        blocks.push({ type: 'break' });
+        return;
+      }
+      if (tag === 'UL' || tag === 'OL') {
+        let index = 1;
+        node.childNodes.forEach((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toUpperCase() === 'LI') {
+            const text = (child.textContent || '').replace(/\s+/g, ' ').trim();
+            if (text) {
+              blocks.push({ type: 'list-item', text, index: tag === 'OL' ? index : null });
+            }
+            index += 1;
+          }
+        });
+        blocks.push({ type: 'break' });
+        return;
+      }
+      node.childNodes.forEach(visit);
+      return;
+    }
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent.replace(/\s+/g, ' ').trim();
+      if (text) {
+        blocks.push({ type: 'paragraph', text });
+      }
+    }
+  };
+
+  container.childNodes.forEach((child) => visit(child));
+
+  const cleaned = [];
+  blocks.forEach((block) => {
+    if (block.type === 'break') {
+      if (cleaned.length === 0 || cleaned[cleaned.length - 1].type === 'break') {
+        return;
+      }
+    }
+    cleaned.push(block);
+  });
+  if (cleaned.length > 0 && cleaned[cleaned.length - 1].type === 'break') {
+    cleaned.pop();
+  }
+  return cleaned;
+}
+
+function normalizePDFQAItems(qaItems = []) {
+  return qaItems
+    .map((item) => ({
+      question: ((item && item.question) || '').trim(),
+      answer: ((item && item.answer) || '').trim(),
+    }))
+    .filter((item) => item.question || item.answer);
+}
+
+function createPDFFileName(title, fallbackTitle) {
+  const raw = (title && title.trim()) || fallbackTitle || 'document';
+  let normalized = raw;
+  if (normalized && typeof normalized.normalize === 'function') {
+    normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  const sanitized = normalized
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
+  const base = sanitized || 'document';
+  return `${base}.pdf`;
+}
+
+async function handleExportPDF() {
   if (state.blockingWarnings.length > 0) {
     return;
   }
   try {
     state.isExportingPDF = true;
     renderExportActions();
-    const printable = buildPrintableHTML(state.metadata, state.contentHTML, state.qaItems, state.language);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      throw new Error(translate('pdf.printWindowError'));
+    if (!window.ReactPDF || typeof window.ReactPDF.generatePDF !== 'function') {
+      throw new Error('ReactPDF library unavailable');
     }
-    printWindow.document.open();
-    printWindow.document.write(printable);
-    printWindow.document.close();
+    const language = state.language || currentLanguage;
+    const fallbackTitle = translate('pdf.fallbackTitle', {}, 'Procédure', language);
+    const selectOptions = state.selectOptions || DEFAULT_SELECT_OPTIONS;
+    const configDefaults = state.configDefaults || DEFAULT_SELECT_OPTIONS;
+    const metadataEntries = buildPDFMetadataEntries(state.metadata, selectOptions, configDefaults, language);
+    const contentBlocks = extractPDFContentBlocks(state.contentHTML);
+    const qaItems = normalizePDFQAItems(state.qaItems);
+    const pdfData = {
+      title: (state.metadata.title && state.metadata.title.trim()) || fallbackTitle,
+      metadata: metadataEntries,
+      content: contentBlocks,
+      qaItems,
+      strings: {
+        sectionTitle: translate('pdf.sectionTitle', {}, 'Questions & Réponses', language),
+        noQuestionText: translate('pdf.noQuestions', {}, 'Aucune question enregistrée.', language),
+        questionLabel: translate('qa.questionLabel', {}, 'Question', language),
+        answerLabel: translate('qa.answerLabel', {}, 'Réponse', language),
+      },
+    };
+    const blob = await Promise.resolve(window.ReactPDF.generatePDF(pdfData));
+    if (!(blob instanceof Blob)) {
+      throw new Error('Invalid PDF blob');
+    }
+    const fileName = createPDFFileName(state.metadata.title, fallbackTitle);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Erreur lors de la préparation du PDF :', error);
     window.alert(translate('pdf.exportError'));
