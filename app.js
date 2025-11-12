@@ -173,11 +173,6 @@ const TEXT = {
     en: 'Show or hide the comment',
     es: 'Mostrar u ocultar el comentario'
   },
-  'guidelines.lineLabel': {
-    fr: 'Ligne {{line}}',
-    en: 'Line {{line}}',
-    es: 'Línea {{line}}'
-  },
   'guidelines.markerLabel': {
     fr: '⚠️',
     en: '⚠️',
@@ -682,7 +677,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.7';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2373,13 +2368,6 @@ function renderGuidelines() {
       const categoryKey = categoryTranslationKeys[item.type];
       const fallbackCategory = formatCategoryFallback(item.type);
       lineBadge.textContent = categoryKey ? translate(categoryKey, {}, fallbackCategory) : fallbackCategory;
-      if (typeof item.line === 'number' && Number.isFinite(item.line)) {
-        lineBadge.setAttribute(
-          'aria-label',
-          translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`)
-        );
-        lineBadge.title = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
-      }
       header.appendChild(lineBadge);
 
       const lineText = document.createElement('span');
