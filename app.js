@@ -1,21 +1,20 @@
 const LANGUAGE_STORAGE_KEY = 'procedureBuilderLanguage';
 const DEFAULT_LANGUAGE = 'fr';
 const SUPPORTED_LANGUAGES = [
-  { code: 'fr', label: 'Français' },
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' }
+  { code: 'fr', label: 'FR' },
+  { code: 'en', label: 'EN' },
+  { code: 'es', label: 'ES' }
 ];
 
 const TEXT = {
-  'language.label': { fr: 'Langue', en: 'Language', es: 'Idioma' },
   'language.aria': {
     fr: 'Langue de l’interface',
     en: 'Interface language',
     es: 'Idioma de la interfaz'
   },
-  'language.option.fr': { fr: 'Français', en: 'French', es: 'Francés' },
-  'language.option.en': { fr: 'Anglais', en: 'English', es: 'Inglés' },
-  'language.option.es': { fr: 'Espagnol', en: 'Spanish', es: 'Español' },
+  'language.option.fr': { fr: 'FR', en: 'FR', es: 'FR' },
+  'language.option.en': { fr: 'EN', en: 'EN', es: 'EN' },
+  'language.option.es': { fr: 'ES', en: 'ES', es: 'ES' },
   'page.title': {
     fr: 'Éditeur de Procédures IA Friendly',
     en: 'AI-Friendly Procedure Editor',
@@ -590,7 +589,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.28';
+const APP_VERSION = '1.1.29';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1614,7 +1613,6 @@ const elements = {
   glossaryError: document.getElementById('glossary-error'),
   exportConfigButton: document.getElementById('export-config-btn'),
   languageSelect: document.getElementById('language-select'),
-  languageLabel: document.getElementById('language-label'),
   headerTitle: document.getElementById('header-title'),
   metadataCardTitle: document.getElementById('metadata-card-title'),
   editorCardTitle: document.getElementById('editor-card-title'),
@@ -1684,7 +1682,6 @@ function renderHeader() {
   setLabelText(elements.importButton, translate('header.import'));
   setLabelText(elements.backofficeButton, translate('header.backoffice'));
   setLabelText(elements.newProcedureButton, translate('header.newProcedure'));
-  setLabelText(elements.languageLabel, translate('language.label'));
   if (elements.languageSelect) {
     elements.languageSelect.setAttribute('aria-label', translate('language.aria'));
     Array.from(elements.languageSelect.options).forEach((option) => {

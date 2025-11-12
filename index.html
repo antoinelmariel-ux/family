@@ -157,12 +157,6 @@
       gap: 8px;
     }
 
-    .language-select-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
     .language-select {
       padding: 8px 12px;
       border-radius: 8px;
@@ -911,11 +905,10 @@
       </div>
       <div class="header-actions">
         <div class="language-selector">
-          <label for="language-select" class="language-select-label" id="language-label">Langue</label>
-          <select id="language-select" class="language-select" aria-labelledby="language-label">
-            <option value="fr">Français</option>
-            <option value="en">English</option>
-            <option value="es">Español</option>
+          <select id="language-select" class="language-select" aria-label="Langue de l'interface">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
           </select>
         </div>
         <button type="button" class="secondary-btn" id="import-btn">
