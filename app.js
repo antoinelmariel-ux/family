@@ -2175,6 +2175,7 @@ function renderGuidelines() {
     return;
   }
   elements.guidelinesList.innerHTML = '';
+  elements.guidelinesList.hidden = state.guidelines.length === 0;
   elements.guidelinesEmpty.textContent = translate('guidelines.empty');
   if (state.guidelines.length === 0) {
     elements.guidelinesEmpty.hidden = false;
