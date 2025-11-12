@@ -19,4 +19,4 @@ applications : https://docs.aws.amazon.com/pdfs/prescriptive-guidance/latest/wri
 - Boosting RAG Performance through Glossary Integration ― A LlamaIndex Hands-On Tutorial : https://itnext.io/boosting-rag-performance-through-glossary-integration-a-llamaindex-hands-on-tutorial-d8a4bd568345
 - AI Course | How to Optimize your Files for RAG : https://m.youtube.com/playlist?list=PLlJHGGklthGkngxStUO54MevanrpqKHg5
 
-_Version : 1.1.25_
+_Version : 1.1.31_
