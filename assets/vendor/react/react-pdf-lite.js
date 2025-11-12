@@ -6,10 +6,41 @@
   const PAGE_WIDTH = 595.28; // A4 width in points
   const PAGE_HEIGHT = 841.89; // A4 height in points
   const DEFAULT_MARGIN = 48;
+  const HEADER_HEIGHT = 72;
+  const FOOTER_HEIGHT = 72;
+  const LOGO_WIDTH = 120;
+  const LOGO_HEIGHT = 36;
+  const LOGO_TEXT = 'LFB';
+  const LOGO_COLOR_HEX = '#2f4f9f';
   const REGULAR_FONT = 'F1';
   const BOLD_FONT = 'F2';
 
   const encoder = new TextEncoder();
+
+  function hexToRgbFraction(hex) {
+    if (!hex || typeof hex !== 'string') {
+      return [0, 0, 0];
+    }
+    const sanitized = hex.replace('#', '');
+    if (sanitized.length !== 6) {
+      return [0, 0, 0];
+    }
+    const r = parseInt(sanitized.slice(0, 2), 16) / 255;
+    const g = parseInt(sanitized.slice(2, 4), 16) / 255;
+    const b = parseInt(sanitized.slice(4, 6), 16) / 255;
+    return [r, g, b];
+  }
+
+  const LOGO_COLOR = hexToRgbFraction(LOGO_COLOR_HEX);
+  const WHITE_COLOR = [1, 1, 1];
+
+  function estimateTextWidth(text, fontSize) {
+    if (!text) {
+      return 0;
+    }
+    const averageCharWidth = fontSize * 0.55;
+    return text.length * averageCharWidth;
+  }
 
   function toFixedNumber(value) {
     return Number.isFinite(value) ? value.toFixed(2) : '0';
@@ -162,19 +193,33 @@
     return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
   }
 
-  function createLine(text, options = {}) {
+  function createTextItem(text, options = {}) {
     const {
       fontSize = 12,
       bold = false,
       x = DEFAULT_MARGIN,
       y = DEFAULT_MARGIN,
+      color = [0, 0, 0],
     } = options;
     return {
+      type: 'text',
       text,
       fontSize,
       fontName: bold ? BOLD_FONT : REGULAR_FONT,
       x,
       y,
+      color,
+    };
+  }
+
+  function createRectangleItem({ x = 0, y = 0, width = 0, height = 0, color = [0, 0, 0] } = {}) {
+    return {
+      type: 'rect',
+      x,
+      y,
+      width,
+      height,
+      color,
     };
   }
 
@@ -214,19 +259,144 @@
     return lines;
   }
 
+  function createLogoItems(branding = {}) {
+    if (branding.showLogo === false) {
+      return [];
+    }
+    const items = [];
+    const logoX = DEFAULT_MARGIN;
+    const logoY = PAGE_HEIGHT - DEFAULT_MARGIN - LOGO_HEIGHT;
+    items.push(
+      createRectangleItem({
+        x: logoX,
+        y: logoY,
+        width: LOGO_WIDTH,
+        height: LOGO_HEIGHT,
+        color: LOGO_COLOR,
+      })
+    );
+    const fontSize = 20;
+    const textWidth = estimateTextWidth(LOGO_TEXT, fontSize);
+    const textX = logoX + (LOGO_WIDTH - textWidth) / 2;
+    const baselineOffset = fontSize * 0.35;
+    const textY = logoY + LOGO_HEIGHT / 2 - baselineOffset;
+    items.push(
+      createTextItem(LOGO_TEXT, {
+        fontSize,
+        bold: true,
+        color: WHITE_COLOR,
+        x: textX,
+        y: textY,
+      })
+    );
+    return items;
+  }
+
+  function createFooterItems(footer = {}, pageNumber = 1, pageCount = 1) {
+    const items = [];
+    const labels = footer.labels || {};
+    const titleLabel = labels.titleLabel || '';
+    const referenceLabel = labels.referenceLabel || '';
+    const effectiveDateLabel = labels.effectiveDateLabel || '';
+    const pageLabel = labels.pageLabel || 'Page';
+    const titleValue = footer.title || '';
+    const referenceValue = footer.reference || '';
+    const effectiveDateValue = footer.effectiveDate || '';
+    const confidentialityText = footer.confidentialityText || '';
+
+    const titleLineY = DEFAULT_MARGIN + FOOTER_HEIGHT - 26;
+    const infoLineY = DEFAULT_MARGIN + FOOTER_HEIGHT - 42;
+
+    if (titleValue) {
+      const titleText = titleLabel ? `${titleLabel} : ${titleValue}` : titleValue;
+      items.push(
+        createTextItem(titleText, {
+          fontSize: 11,
+          bold: true,
+          x: DEFAULT_MARGIN,
+          y: titleLineY,
+        })
+      );
+    }
+
+    const infoParts = [];
+    if (referenceValue) {
+      infoParts.push(referenceLabel ? `${referenceLabel} : ${referenceValue}` : referenceValue);
+    }
+    if (effectiveDateValue) {
+      infoParts.push(
+        effectiveDateLabel ? `${effectiveDateLabel} : ${effectiveDateValue}` : effectiveDateValue
+      );
+    }
+    if (infoParts.length > 0) {
+      items.push(
+        createTextItem(infoParts.join('    '), {
+          fontSize: 10,
+          x: DEFAULT_MARGIN,
+          y: infoLineY,
+        })
+      );
+    }
+
+    const pageFontSize = 10;
+    const pageText = `${pageLabel} ${pageNumber} / ${pageCount}`;
+    const pageTextWidth = estimateTextWidth(pageText, pageFontSize);
+    const pageX = PAGE_WIDTH - DEFAULT_MARGIN - pageTextWidth;
+    items.push(
+      createTextItem(pageText, {
+        fontSize: pageFontSize,
+        x: pageX,
+        y: infoLineY,
+      })
+    );
+
+    if (confidentialityText) {
+      const confidentialityFontSize = 8;
+      const confidentialityWidth = estimateTextWidth(confidentialityText, confidentialityFontSize);
+      const confidentialityX = (PAGE_WIDTH - confidentialityWidth) / 2;
+      const confidentialityY = DEFAULT_MARGIN + 12;
+      items.push(
+        createTextItem(confidentialityText, {
+          fontSize: confidentialityFontSize,
+          x: confidentialityX,
+          y: confidentialityY,
+        })
+      );
+    }
+
+    return items;
+  }
+
+  function decoratePagesWithBranding(pages, branding, footer) {
+    if (!Array.isArray(pages) || pages.length === 0) {
+      return;
+    }
+    const pageCount = pages.length;
+    pages.forEach((page, index) => {
+      const headerItems = createLogoItems(branding);
+      if (headerItems.length > 0) {
+        page.unshift(...headerItems);
+      }
+      const footerItems = createFooterItems(footer, index + 1, pageCount);
+      if (footerItems.length > 0) {
+        page.push(...footerItems);
+      }
+    });
+  }
+
   function createLayout() {
     const pages = [[]];
     let currentPage = pages[0];
-    let currentY = PAGE_HEIGHT - DEFAULT_MARGIN;
+    let currentY = PAGE_HEIGHT - DEFAULT_MARGIN - HEADER_HEIGHT;
 
     function startNewPage() {
       currentPage = [];
       pages.push(currentPage);
-      currentY = PAGE_HEIGHT - DEFAULT_MARGIN;
+      currentY = PAGE_HEIGHT - DEFAULT_MARGIN - HEADER_HEIGHT;
     }
 
     function ensureSpace(height) {
-      if (currentY - height < DEFAULT_MARGIN) {
+      if (currentY - height < DEFAULT_MARGIN + FOOTER_HEIGHT) {
         startNewPage();
       }
     }
@@ -236,7 +406,7 @@
       const lineHeight = fontSize + (options.extraSpacing || 4);
       ensureSpace(lineHeight);
       currentY -= lineHeight;
-      const line = createLine(text, {
+      const line = createTextItem(text, {
         fontSize,
         bold,
         x: DEFAULT_MARGIN + indent,
@@ -293,14 +463,40 @@
     };
   }
 
-  function buildContentStream(lines) {
-    const parts = ['BT'];
-    lines.forEach((line) => {
-      parts.push(`/${line.fontName} ${toFixedNumber(line.fontSize)} Tf`);
-      parts.push(`1 0 0 1 ${toFixedNumber(line.x)} ${toFixedNumber(line.y)} Tm`);
-      parts.push(`<${textToHex(line.text)}> Tj`);
+  function buildContentStream(items) {
+    const parts = [];
+    items.forEach((item) => {
+      if (!item) {
+        return;
+      }
+      if (item.type === 'rect') {
+        const color = Array.isArray(item.color) && item.color.length === 3 ? item.color : [0, 0, 0];
+        parts.push('q');
+        parts.push(
+          `${toFixedNumber(color[0])} ${toFixedNumber(color[1])} ${toFixedNumber(color[2])} rg`
+        );
+        parts.push(
+          `${toFixedNumber(item.x)} ${toFixedNumber(item.y)} ${toFixedNumber(item.width)} ${toFixedNumber(item.height)} re`
+        );
+        parts.push('f');
+        parts.push('Q');
+        return;
+      }
+      if (item.type === 'text') {
+        const color = Array.isArray(item.color) && item.color.length === 3 ? item.color : [0, 0, 0];
+        parts.push('BT');
+        parts.push(`/${item.fontName} ${toFixedNumber(item.fontSize)} Tf`);
+        parts.push(
+          `${toFixedNumber(color[0])} ${toFixedNumber(color[1])} ${toFixedNumber(color[2])} rg`
+        );
+        parts.push(`1 0 0 1 ${toFixedNumber(item.x)} ${toFixedNumber(item.y)} Tm`);
+        parts.push(`<${textToHex(item.text)}> Tj`);
+        parts.push('ET');
+      }
     });
-    parts.push('ET');
+    if (parts.length === 0) {
+      parts.push('BT', 'ET');
+    }
     const content = parts.join('\n');
     const length = encoder.encode(content).length;
     return `<< /Length ${length} >>\nstream\n${content}\nendstream`;
@@ -400,6 +596,8 @@
       content = [],
       qaItems = [],
       strings = {},
+      branding = {},
+      footer = {},
     } = data;
 
     const layout = createLayout();
@@ -473,7 +671,7 @@
         pages.push(fallbackPage);
       }
       fallbackPage.push(
-        createLine(title, {
+        createTextItem(title, {
           fontSize: 16,
           bold: true,
           x: DEFAULT_MARGIN,
@@ -481,6 +679,15 @@
         })
       );
     }
+
+    const footerData = {
+      ...footer,
+    };
+    if (!footerData.title) {
+      footerData.title = title;
+    }
+
+    decoratePagesWithBranding(pages, branding, footerData);
 
     const pdfBuffer = buildPDFDocument(pages);
     return new Blob([pdfBuffer], { type: 'application/pdf' });
