@@ -311,7 +311,7 @@
       const titleText = titleLabel ? `${titleLabel} : ${titleValue}` : titleValue;
       items.push(
         createTextItem(titleText, {
-          fontSize: 11,
+          fontSize: 8,
           bold: true,
           x: DEFAULT_MARGIN,
           y: titleLineY,
@@ -331,14 +331,14 @@
     if (infoParts.length > 0) {
       items.push(
         createTextItem(infoParts.join('    '), {
-          fontSize: 10,
+          fontSize: 8,
           x: DEFAULT_MARGIN,
           y: infoLineY,
         })
       );
     }
 
-    const pageFontSize = 10;
+    const pageFontSize = 8;
     const pageText = `${pageLabel} ${pageNumber} / ${pageCount}`;
     const pageTextWidth = estimateTextWidth(pageText, pageFontSize);
     const pageX = PAGE_WIDTH - DEFAULT_MARGIN - pageTextWidth;
@@ -608,9 +608,9 @@
       if (!entry || !entry.label) {
         return;
       }
-      layout.addLine(`${entry.label} :`, 11, { bold: true });
+      layout.addLine(`${entry.label} :`, 10, { bold: true });
       if (entry.value) {
-        layout.addParagraph(entry.value, 11, { indent: 16, spacingAfter: 6 });
+        layout.addParagraph(entry.value, 10, { indent: 16, spacingAfter: 6 });
       } else {
         layout.addSpacer(6);
       }
@@ -625,12 +625,19 @@
         return;
       }
       if (block.type === 'heading') {
-        const fontSize = Math.max(14, 22 - (block.level || 1) * 2);
+        const headingLevel = Math.min(Math.max(block.level || 1, 1), 4);
+        const headingFontSizes = {
+          1: 20,
+          2: 14,
+          3: 12,
+          4: 10,
+        };
+        const fontSize = headingFontSizes[headingLevel] || 10;
         layout.addLine(block.text, fontSize, { bold: true, spacingAfter: 8 });
       } else if (block.type === 'list-item') {
-        layout.addParagraph(block.text, 12, { indent: 12, bullet: true });
+        layout.addParagraph(block.text, 10, { indent: 12, bullet: true });
       } else {
-        layout.addParagraph(block.text, 12);
+        layout.addParagraph(block.text, 10);
       }
     });
 
@@ -639,26 +646,26 @@
     }
 
     const sectionTitle = strings.sectionTitle || 'Questions & Réponses';
-    layout.addLine(sectionTitle, 16, { bold: true, spacingAfter: 8 });
+    layout.addLine(sectionTitle, 14, { bold: true, spacingAfter: 8 });
 
     if (!qaItems || qaItems.length === 0) {
       const noQuestionText = strings.noQuestionText || '';
       if (noQuestionText) {
-        layout.addParagraph(noQuestionText, 12);
+        layout.addParagraph(noQuestionText, 10);
       }
     } else {
       const questionLabel = strings.questionLabel || 'Question';
       const answerLabel = strings.answerLabel || 'Réponse';
       qaItems.forEach((item, index) => {
         const questionTitle = `${questionLabel} ${index + 1}`;
-        layout.addLine(questionTitle, 13, { bold: true });
+        layout.addLine(questionTitle, 10, { bold: true });
         if (item.question) {
-          layout.addLine(`${questionLabel} :`, 11, { bold: true });
-          layout.addParagraph(item.question, 11, { indent: 14 });
+          layout.addLine(`${questionLabel} :`, 10, { bold: true });
+          layout.addParagraph(item.question, 10, { indent: 14 });
         }
         if (item.answer) {
-          layout.addLine(`${answerLabel} :`, 11, { bold: true });
-          layout.addParagraph(item.answer, 11, { indent: 14 });
+          layout.addLine(`${answerLabel} :`, 10, { bold: true });
+          layout.addParagraph(item.answer, 10, { indent: 14 });
         }
         layout.addSpacer(10);
       });
@@ -672,7 +679,7 @@
       }
       fallbackPage.push(
         createTextItem(title, {
-          fontSize: 16,
+          fontSize: 14,
           bold: true,
           x: DEFAULT_MARGIN,
           y: PAGE_HEIGHT - DEFAULT_MARGIN - 40,
