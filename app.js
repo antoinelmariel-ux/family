@@ -173,11 +173,6 @@ const TEXT = {
     en: 'Show or hide the comment',
     es: 'Mostrar u ocultar el comentario'
   },
-  'guidelines.lineLabel': {
-    fr: 'Ligne {{line}}',
-    en: 'Line {{line}}',
-    es: 'Línea {{line}}'
-  },
   'guidelines.markerLabel': {
     fr: '⚠️',
     en: '⚠️',
@@ -2373,13 +2368,6 @@ function renderGuidelines() {
       const categoryKey = categoryTranslationKeys[item.type];
       const fallbackCategory = formatCategoryFallback(item.type);
       lineBadge.textContent = categoryKey ? translate(categoryKey, {}, fallbackCategory) : fallbackCategory;
-      if (typeof item.line === 'number' && Number.isFinite(item.line)) {
-        lineBadge.setAttribute(
-          'aria-label',
-          translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`)
-        );
-        lineBadge.title = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
-      }
       header.appendChild(lineBadge);
 
       const lineText = document.createElement('span');
