@@ -173,6 +173,31 @@ const TEXT = {
     en: 'Show or hide the comment',
     es: 'Mostrar u ocultar el comentario'
   },
+  'guidelines.hideEntry': {
+    fr: 'Masquer cette recommandation',
+    en: 'Hide this recommendation',
+    es: 'Ocultar esta recomendación'
+  },
+  'guidelines.restoreEntry': {
+    fr: 'Réafficher cette recommandation',
+    en: 'Show this recommendation again',
+    es: 'Mostrar de nuevo esta recomendación'
+  },
+  'guidelines.hiddenToggle.show': {
+    fr: 'Afficher les recommandations masquées ({{count}})',
+    en: 'Show hidden recommendations ({{count}})',
+    es: 'Mostrar las recomendaciones ocultas ({{count}})'
+  },
+  'guidelines.hiddenToggle.hide': {
+    fr: 'Masquer les recommandations cachées',
+    en: 'Hide hidden recommendations',
+    es: 'Ocultar las recomendaciones ocultas'
+  },
+  'guidelines.hiddenEmpty': {
+    fr: 'Toutes les recommandations sont masquées.',
+    en: 'All recommendations are hidden.',
+    es: 'Todas las recomendaciones están ocultas.'
+  },
   'guidelines.lineLabel': {
     fr: 'Ligne {{line}}',
     en: 'Line {{line}}',
@@ -695,7 +720,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.13';
+const APP_VERSION = '1.2.14';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1924,7 +1949,9 @@ const state = {
   isPreviewOpen: false,
   previewMarkdown: '',
   isExportingPDF: false,
-  activeGuidelineId: null
+  activeGuidelineId: null,
+  hiddenGuidelineIds: new Set(),
+  showHiddenGuidelines: false
 };
 
 const elements = {
@@ -1961,6 +1988,7 @@ const elements = {
   importInput: document.getElementById('import-input'),
   guidelinesList: document.getElementById('guidelines-list'),
   guidelinesEmpty: document.getElementById('guidelines-empty'),
+  guidelinesHiddenToggle: document.getElementById('guidelines-hidden-toggle'),
   glossaryOverlay: document.getElementById('glossary-overlay'),
   glossaryList: document.getElementById('glossary-list'),
   glossaryLoading: document.getElementById('glossary-loading'),
@@ -2354,13 +2382,81 @@ function getGuidelineId(item) {
   return `${linePart}-${item.order}`;
 }
 
+function ensureHiddenGuidelineSet() {
+  if (!(state.hiddenGuidelineIds instanceof Set)) {
+    const previous = Array.isArray(state.hiddenGuidelineIds) ? state.hiddenGuidelineIds : [];
+    state.hiddenGuidelineIds = new Set(previous);
+  }
+  return state.hiddenGuidelineIds;
+}
+
+function pruneHiddenGuidelines() {
+  const hiddenSet = ensureHiddenGuidelineSet();
+  const availableIds = new Set((state.guidelines || []).map((item) => getGuidelineId(item)));
+  const nextHidden = new Set();
+  hiddenSet.forEach((id) => {
+    if (availableIds.has(id)) {
+      nextHidden.add(id);
+    }
+  });
+  state.hiddenGuidelineIds = nextHidden;
+  if (!availableIds.has(state.activeGuidelineId)) {
+    state.activeGuidelineId = null;
+  }
+  if (state.hiddenGuidelineIds.size === 0) {
+    state.showHiddenGuidelines = false;
+  }
+}
+
 function renderGuidelines() {
   if (!elements.guidelinesList || !elements.guidelinesEmpty) {
     return;
   }
+  const hiddenSet = ensureHiddenGuidelineSet();
+  const shouldShowHidden = Boolean(state.showHiddenGuidelines);
+  if (!shouldShowHidden && state.activeGuidelineId && hiddenSet.has(state.activeGuidelineId)) {
+    state.activeGuidelineId = null;
+  }
+  const itemsToRender = (state.guidelines || []).filter((item) => {
+    const itemId = getGuidelineId(item);
+    return shouldShowHidden || !hiddenSet.has(itemId);
+  });
+  const hiddenCount = hiddenSet.size;
+  const hasGuidelines = Array.isArray(state.guidelines) && state.guidelines.length > 0;
+  const hasVisibleItems = itemsToRender.length > 0;
+  if (!hasGuidelines) {
+    state.activeGuidelineId = null;
+  }
+
+  if (elements.guidelinesHiddenToggle) {
+    if (hiddenCount === 0) {
+      elements.guidelinesHiddenToggle.hidden = true;
+      elements.guidelinesHiddenToggle.setAttribute('aria-pressed', 'false');
+    } else {
+      elements.guidelinesHiddenToggle.hidden = false;
+      elements.guidelinesHiddenToggle.setAttribute('aria-pressed', String(shouldShowHidden));
+      const toggleKey = shouldShowHidden ? 'guidelines.hiddenToggle.hide' : 'guidelines.hiddenToggle.show';
+      const toggleParams = shouldShowHidden ? {} : { count: hiddenCount };
+      const toggleFallback = shouldShowHidden
+        ? 'Hide hidden recommendations'
+        : `Show hidden recommendations (${hiddenCount})`;
+      elements.guidelinesHiddenToggle.textContent = translate(toggleKey, toggleParams, toggleFallback);
+    }
+  }
+
   elements.guidelinesList.innerHTML = '';
-  elements.guidelinesList.hidden = state.guidelines.length === 0;
-  elements.guidelinesEmpty.textContent = translate('guidelines.empty');
+  elements.guidelinesList.hidden = !hasVisibleItems;
+  if (!hasVisibleItems) {
+    const emptyKey = hasGuidelines ? 'guidelines.hiddenEmpty' : 'guidelines.empty';
+    const fallback = hasGuidelines
+      ? 'All recommendations are hidden.'
+      : 'Start writing to receive recommendations.';
+    elements.guidelinesEmpty.hidden = false;
+    elements.guidelinesEmpty.textContent = translate(emptyKey, {}, fallback);
+  } else {
+    elements.guidelinesEmpty.hidden = true;
+  }
+
   const categoryTranslationKeys = {
     heading: 'guidelines.category.heading',
     'list-transition': 'guidelines.category.listTransition',
@@ -2378,17 +2474,15 @@ function renderGuidelines() {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
   };
-  if (state.guidelines.length === 0) {
-    elements.guidelinesEmpty.hidden = false;
-    state.activeGuidelineId = null;
-  } else {
-    elements.guidelinesEmpty.hidden = true;
-    state.guidelines.forEach((item, index) => {
+  if (hasVisibleItems) {
+    itemsToRender.forEach((item, index) => {
       const listItem = document.createElement('li');
       listItem.className = 'guideline-entry';
       const itemId = getGuidelineId(item);
       listItem.dataset.guidelineId = itemId;
       listItem.classList.toggle('is-active', state.activeGuidelineId === itemId);
+      const isHidden = hiddenSet.has(itemId);
+      listItem.classList.toggle('is-hidden', isHidden);
       if (item.line != null) {
         listItem.dataset.lineNumber = String(item.line);
       }
@@ -2414,6 +2508,37 @@ function renderGuidelines() {
       lineText.className = 'guideline-line-text';
       lineText.textContent = item.anchor || translate('guidelines.anchorFallback');
       header.appendChild(lineText);
+
+      const hideButton = document.createElement('button');
+      hideButton.type = 'button';
+      hideButton.className = 'guideline-hide-btn';
+      const hideKey = isHidden ? 'guidelines.restoreEntry' : 'guidelines.hideEntry';
+      const hideFallback = isHidden
+        ? 'Show this recommendation again'
+        : 'Hide this recommendation';
+      const hideLabel = translate(hideKey, {}, hideFallback);
+      hideButton.textContent = hideLabel;
+      hideButton.setAttribute('aria-label', hideLabel);
+      hideButton.title = hideLabel;
+      hideButton.addEventListener('click', () => {
+        const currentHiddenSet = ensureHiddenGuidelineSet();
+        const nextHiddenSet = new Set(currentHiddenSet);
+        const currentlyHidden = currentHiddenSet.has(itemId);
+        if (currentlyHidden) {
+          nextHiddenSet.delete(itemId);
+        } else {
+          nextHiddenSet.add(itemId);
+        }
+        state.hiddenGuidelineIds = nextHiddenSet;
+        if (!state.showHiddenGuidelines && !currentlyHidden && state.activeGuidelineId === itemId) {
+          state.activeGuidelineId = null;
+        }
+        if (state.hiddenGuidelineIds.size === 0) {
+          state.showHiddenGuidelines = false;
+        }
+        renderGuidelines();
+      });
+      header.appendChild(hideButton);
 
       const toggleButton = document.createElement('button');
       toggleButton.type = 'button';
@@ -2471,7 +2596,13 @@ function renderGuidelineMarkers() {
   }
   const overlay = elements.editorMarkerLayer;
   overlay.innerHTML = '';
-  if (!state.guidelines || state.guidelines.length === 0) {
+  const hiddenSet = ensureHiddenGuidelineSet();
+  const shouldShowHidden = Boolean(state.showHiddenGuidelines);
+  const markerGuidelines = (state.guidelines || []).filter((item) => {
+    const itemId = getGuidelineId(item);
+    return shouldShowHidden || !hiddenSet.has(itemId);
+  });
+  if (markerGuidelines.length === 0) {
     overlay.hidden = true;
     return;
   }
@@ -2487,7 +2618,7 @@ function renderGuidelineMarkers() {
 
   const informationalGuidelineTypes = new Set(['heading', 'list-transition']);
 
-  state.guidelines.forEach((item, index) => {
+  markerGuidelines.forEach((item, index) => {
     if (typeof item.line !== 'number' || !Number.isFinite(item.line)) {
       return;
     }
@@ -2507,6 +2638,8 @@ function renderGuidelineMarkers() {
     const markerId = getGuidelineId(item);
     marker.dataset.guidelineId = markerId;
     marker.classList.toggle('is-active', state.activeGuidelineId === markerId);
+    const isHidden = hiddenSet.has(markerId);
+    marker.classList.toggle('is-hidden', isHidden);
     const markerDefault = translate('guidelines.markerLabel', { index: index + 1 }, '⚠️');
     const markerText = informationalGuidelineTypes.has(item.type) ? '💡' : markerDefault;
     const anchorLabel = item.anchor || translate('guidelines.anchorFallback');
@@ -2884,6 +3017,7 @@ function renderAll() {
 function updateGuidelinesAndWarnings() {
   const previousActive = state.activeGuidelineId;
   state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+  pruneHiddenGuidelines();
   if (previousActive) {
     const stillExists = state.guidelines.some((item) => getGuidelineId(item) === previousActive);
     state.activeGuidelineId = stillExists ? previousActive : null;
@@ -2922,6 +3056,7 @@ function setLanguage(languageCode) {
     state.initialContentHTML = newTemplate;
   }
   state.guidelines = computeGuidelines(state.contentHTML, state.glossary, targetLanguage);
+  pruneHiddenGuidelines();
   state.activeGuidelineId = null;
   state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
   renderAll();
@@ -3303,6 +3438,7 @@ function handleNewProcedure() {
   state.contentHTML = template;
   state.initialContentHTML = template;
   state.guidelines = computeGuidelines(template, state.glossary, state.language);
+  pruneHiddenGuidelines();
   state.activeGuidelineId = null;
   state.blockingWarnings = detectBlockingIssues(template, initialQAItems);
   state.previewMarkdown = '';
@@ -3343,6 +3479,7 @@ async function handleImportMarkdown(event) {
     state.contentHTML = contentHTML;
     state.qaItems = qaItems;
     state.guidelines = computeGuidelines(contentHTML, state.glossary);
+    pruneHiddenGuidelines();
     state.activeGuidelineId = null;
     state.blockingWarnings = detectBlockingIssues(contentHTML, qaItems);
     state.previewMarkdown = '';
@@ -3437,6 +3574,7 @@ function applyTemplateUpdate(languageCode) {
         elements.editor.innerHTML = nextTemplate;
       }
       state.guidelines = computeGuidelines(nextTemplate, state.glossary, state.language);
+      pruneHiddenGuidelines();
       state.activeGuidelineId = null;
       state.blockingWarnings = detectBlockingIssues(nextTemplate, state.qaItems);
     } else {
@@ -3577,6 +3715,12 @@ function registerEventListeners() {
   if (elements.importInput) {
     elements.importInput.addEventListener('change', handleImportMarkdown);
   }
+  if (elements.guidelinesHiddenToggle) {
+    elements.guidelinesHiddenToggle.addEventListener('click', () => {
+      state.showHiddenGuidelines = !state.showHiddenGuidelines;
+      renderGuidelines();
+    });
+  }
   if (elements.backofficeButton) {
     elements.backofficeButton.addEventListener('click', openBackoffice);
   }
@@ -3637,6 +3781,7 @@ async function bootstrap() {
       state.isGlossaryLoading = false;
       const previousActive = state.activeGuidelineId;
       state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+      pruneHiddenGuidelines();
       if (previousActive) {
         const stillExists = state.guidelines.some((item) => getGuidelineId(item) === previousActive);
         state.activeGuidelineId = stillExists ? previousActive : null;
