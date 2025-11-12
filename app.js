@@ -752,7 +752,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.17';
+const APP_VERSION = '1.2.18';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1204,6 +1204,30 @@ const PROCEDURE_TEMPLATES = {
 `
 };
 
+function sanitizeTemplateContent(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return '';
+  }
+  return sanitizeHTML(trimmed);
+}
+
+function normalizeTemplateConfiguration(templates, fallbackTemplates = PROCEDURE_TEMPLATES) {
+  const normalized = {};
+  const fallback = fallbackTemplates && typeof fallbackTemplates === 'object' ? fallbackTemplates : {};
+  SUPPORTED_LANGUAGES.forEach(({ code }) => {
+    const defaultTemplate = sanitizeTemplateContent(fallback[code] || PROCEDURE_TEMPLATES[code] || '');
+    const sanitized = sanitizeTemplateContent(templates && templates[code]);
+    normalized[code] = sanitized || defaultTemplate || '';
+  });
+  return normalized;
+}
+
+let procedureTemplateDefaults = normalizeTemplateConfiguration(PROCEDURE_TEMPLATES);
+
 const PROCEDURE_TEMPLATE_STORAGE_KEY = 'procedureBuilderTemplates';
 
 function loadCustomTemplates() {
@@ -1220,8 +1244,9 @@ function loadCustomTemplates() {
       return {};
     }
     return Object.entries(parsed).reduce((acc, [language, value]) => {
-      if (typeof value === 'string' && value.trim().length > 0) {
-        acc[language] = sanitizeHTML(value);
+      const sanitized = sanitizeTemplateContent(value);
+      if (sanitized) {
+        acc[language] = sanitized;
       }
       return acc;
     }, {});
@@ -1237,8 +1262,9 @@ function persistCustomTemplates(templates) {
   }
   try {
     const sanitized = Object.entries(templates).reduce((acc, [language, value]) => {
-      if (typeof value === 'string' && value.trim().length > 0) {
-        acc[language] = sanitizeHTML(value);
+      const normalized = sanitizeTemplateContent(value);
+      if (normalized) {
+        acc[language] = normalized;
       }
       return acc;
     }, {});
@@ -1252,11 +1278,11 @@ let customProcedureTemplates = loadCustomTemplates();
 
 function getInitialContentHTML(language = currentLanguage) {
   const override = customProcedureTemplates[language];
-  const template = (typeof override === 'string' && override.trim().length > 0)
-    ? override
-    : PROCEDURE_TEMPLATES[language];
-  const fallback = template || PROCEDURE_TEMPLATES[DEFAULT_LANGUAGE] || '';
-  return sanitizeHTML(fallback);
+  const baseTemplate = procedureTemplateDefaults[language]
+    || procedureTemplateDefaults[DEFAULT_LANGUAGE]
+    || '';
+  const sanitizedOverride = sanitizeTemplateContent(override);
+  return sanitizedOverride || baseTemplate || '';
 }
 
 function createInitialTemplateDrafts() {
@@ -1938,6 +1964,7 @@ function parseMarkdownProcedure(markdown, language) {
 }
 
 async function loadFieldConfigurationFromFile() {
+  const fallback = { selectOptions: DEFAULT_SELECT_OPTIONS, templates: PROCEDURE_TEMPLATES };
   try {
     const response = await fetch('./field-config.json', { cache: 'no-store' });
     if (!response.ok) {
@@ -1946,13 +1973,17 @@ async function loadFieldConfigurationFromFile() {
 
     const data = await response.json();
     if (!data || typeof data !== 'object') {
-      return DEFAULT_SELECT_OPTIONS;
+      return fallback;
     }
 
-    return data;
+    const hasSelectOptions = data.selectOptions && typeof data.selectOptions === 'object' && !Array.isArray(data.selectOptions);
+    const selectOptions = hasSelectOptions ? data.selectOptions : data;
+    const templates = data.templates && typeof data.templates === 'object' ? data.templates : {};
+
+    return { selectOptions, templates };
   } catch (error) {
     console.warn('Impossible de charger la configuration des champs :', error);
-    return DEFAULT_SELECT_OPTIONS;
+    return fallback;
   }
 }
 
@@ -3835,7 +3866,7 @@ function handleTemplateSave(languageCode) {
   if (trimmed.length === 0) {
     delete nextTemplates[languageCode];
   } else {
-    nextTemplates[languageCode] = sanitizeHTML(trimmed);
+    nextTemplates[languageCode] = sanitizeTemplateContent(trimmed);
   }
   customProcedureTemplates = nextTemplates;
   persistCustomTemplates(customProcedureTemplates);
@@ -3856,8 +3887,10 @@ function handleTemplateReset(languageCode) {
 
 function handleExportConfig() {
   try {
-    const data = normalizeSelectOptions(state.selectOptions, state.configDefaults);
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const selectOptions = normalizeSelectOptions(state.selectOptions, state.configDefaults);
+    const templates = normalizeTemplateConfiguration(state.templateDrafts, procedureTemplateDefaults);
+    const exportData = { selectOptions, templates };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -4023,10 +4056,36 @@ async function bootstrap() {
       loadFieldConfigurationFromFile(),
       loadLogoImageSafely(LFB_LOGO_URL, 'lfb-logo'),
     ]);
-    const normalizedConfiguration = normalizeSelectOptions(configuration, configuration);
-    state.configDefaults = normalizedConfiguration;
-    state.selectOptions = loadInitialSelectOptions(normalizedConfiguration);
+    const normalizedSelectDefaults = normalizeSelectOptions(
+      configuration.selectOptions,
+      configuration.selectOptions
+    );
+    const normalizedTemplateDefaults = normalizeTemplateConfiguration(
+      configuration.templates,
+      PROCEDURE_TEMPLATES
+    );
+
+    procedureTemplateDefaults = normalizedTemplateDefaults;
+
+    const previousInitialContent = state.initialContentHTML;
+    const previousContent = state.contentHTML;
+
+    state.configDefaults = normalizedSelectDefaults;
+    state.selectOptions = loadInitialSelectOptions(normalizedSelectDefaults);
     state.selectOptionDrafts = createEmptyOptionDrafts();
+    state.templateDrafts = createInitialTemplateDrafts();
+
+    const nextInitialContent = getInitialContentHTML(state.language);
+    state.initialContentHTML = nextInitialContent;
+    if (!state.hasStarted || normalizeForComparison(previousContent) === normalizeForComparison(previousInitialContent)) {
+      state.contentHTML = nextInitialContent;
+      if (elements.editor) {
+        elements.editor.innerHTML = nextInitialContent;
+      }
+    }
+
+    state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+    state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
     state.logoImageData = logoImage;
     synchronizeMetadataWithSelectOptions();
     renderAll();
