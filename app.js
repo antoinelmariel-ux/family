@@ -27,6 +27,7 @@ const TEXT = {
   },
   'header.import': { fr: 'Importer un Markdown', en: 'Import Markdown', es: 'Importar Markdown' },
   'header.backoffice': { fr: 'Gérer le backoffice', en: 'Manage back office', es: 'Gestionar el backoffice' },
+  'header.glossary': { fr: 'Consulter les acronymes', en: 'Browse acronyms', es: 'Consultar acrónimos' },
   'header.newProcedure': { fr: 'Nouvelle procédure', en: 'New procedure', es: 'Nuevo procedimiento' },
   'startInfo.title': { fr: 'Démarrer une nouvelle procédure', en: 'Start a new procedure', es: 'Iniciar un nuevo procedimiento' },
   'startInfo.description': {
@@ -147,12 +148,27 @@ const TEXT = {
     en: 'Line {{line}}',
     es: 'Línea {{line}}'
   },
+  'guidelines.markerLabel': {
+    fr: 'Optimisation {{index}}',
+    en: 'Optimization {{index}}',
+    es: 'Optimización {{index}}'
+  },
+  'guidelines.markerAria': {
+    fr: 'Afficher le commentaire d’optimisation {{index}} pour « {{anchor}} »',
+    en: 'Show optimization comment {{index}} for “{{anchor}}”',
+    es: 'Mostrar el comentario de optimización {{index}} para «{{anchor}}»'
+  },
   'guidelines.bulletListLabel': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'guidelines.numberedListLabel': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
   'glossary.title': {
     fr: 'Liste des acronymes',
     en: 'Acronym list',
     es: 'Lista de acrónimos'
+  },
+  'glossary.description': {
+    fr: 'Consultez la base des acronymes partagés pour assurer une terminologie cohérente.',
+    en: 'Review the shared acronym repository to keep terminology consistent.',
+    es: 'Consulta la base de acrónimos compartida para mantener una terminología coherente.'
   },
   'insights.tabs.aria': {
     fr: 'Onglets des ressources complémentaires',
@@ -170,6 +186,7 @@ const TEXT = {
     en: 'The acronym list could not be loaded.',
     es: 'No se pudo cargar la lista de acrónimos.'
   },
+  'glossary.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
   'preview.title': { fr: 'Aperçu Markdown', en: 'Markdown preview', es: 'Vista previa de Markdown' },
   'preview.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
   'backoffice.title': {
@@ -635,7 +652,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.2';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -1843,13 +1860,13 @@ const state = {
   glossary: {},
   glossaryError: null,
   isGlossaryLoading: true,
+  isGlossaryOpen: false,
   keywordInput: '',
   isBackofficeOpen: false,
   isPreviewOpen: false,
   previewMarkdown: '',
   isExportingPDF: false,
-  activeGuidelineId: null,
-  activeInsightTab: 'guidelines'
+  activeGuidelineId: null
 };
 
 const elements = {
@@ -1859,6 +1876,8 @@ const elements = {
   startInfoList: document.getElementById('start-info-list'),
   metadataGroups: document.getElementById('metadata-groups'),
   editor: document.getElementById('procedure-editor'),
+  editorPane: document.querySelector('.editor-pane'),
+  editorMarkerLayer: document.getElementById('editor-guideline-layer'),
   toolbar: document.getElementById('editor-toolbar'),
   insertRationalButton: document.getElementById('insert-rational-btn'),
   qaList: document.getElementById('qa-list'),
@@ -1878,19 +1897,18 @@ const elements = {
   backofficeTitle: document.getElementById('backoffice-title'),
   closeBackofficeButton: document.getElementById('close-backoffice-btn'),
   backofficeButton: document.getElementById('backoffice-btn'),
+  glossaryButton: document.getElementById('glossary-btn'),
   newProcedureButton: document.getElementById('new-procedure-btn'),
   importButton: document.getElementById('import-btn'),
   importInput: document.getElementById('import-input'),
   guidelinesList: document.getElementById('guidelines-list'),
   guidelinesEmpty: document.getElementById('guidelines-empty'),
-  insightTabList: document.getElementById('insight-tab-list'),
-  guidelinesTab: document.getElementById('insight-tab-guidelines'),
-  glossaryTab: document.getElementById('insight-tab-glossary'),
-  guidelinesPanel: document.getElementById('insight-panel-guidelines'),
-  glossaryPanel: document.getElementById('insight-panel-glossary'),
+  glossaryOverlay: document.getElementById('glossary-overlay'),
   glossaryList: document.getElementById('glossary-list'),
   glossaryLoading: document.getElementById('glossary-loading'),
   glossaryError: document.getElementById('glossary-error'),
+  glossaryDescription: document.getElementById('glossary-description'),
+  closeGlossaryButton: document.getElementById('close-glossary-btn'),
   exportConfigButton: document.getElementById('export-config-btn'),
   languageSelect: document.getElementById('language-select'),
   headerTitle: document.getElementById('header-title'),
@@ -1961,6 +1979,7 @@ function renderHeader() {
   setLabelText(elements.headerTitle, translate('header.title'));
   setLabelText(elements.importButton, translate('header.import'));
   setLabelText(elements.backofficeButton, translate('header.backoffice'));
+  setLabelText(elements.glossaryButton, translate('header.glossary'));
   setLabelText(elements.newProcedureButton, translate('header.newProcedure'));
   if (elements.languageSelect) {
     elements.languageSelect.setAttribute('aria-label', translate('language.aria'));
@@ -1995,6 +2014,10 @@ function renderSectionTitles() {
   setLabelText(elements.blockingWarningText, translate('export.warning'));
   setLabelText(elements.guidelinesTitle, translate('guidelines.title'));
   setLabelText(elements.glossaryTitle, translate('glossary.title'));
+  if (elements.glossaryDescription) {
+    elements.glossaryDescription.textContent = translate('glossary.description');
+  }
+  setLabelText(elements.closeGlossaryButton, translate('glossary.close'));
   setLabelText(elements.previewTitle, translate('preview.title'));
   setLabelText(elements.closePreviewButton, translate('preview.close'));
 }
@@ -2285,10 +2308,12 @@ function renderGuidelines() {
     state.activeGuidelineId = null;
   } else {
     elements.guidelinesEmpty.hidden = true;
-    state.guidelines.forEach((item) => {
+    state.guidelines.forEach((item, index) => {
       const listItem = document.createElement('li');
       listItem.className = 'guideline-entry';
       const itemId = getGuidelineId(item);
+      listItem.dataset.guidelineId = itemId;
+      listItem.classList.toggle('is-active', state.activeGuidelineId === itemId);
       if (item.line != null) {
         listItem.dataset.lineNumber = String(item.line);
       }
@@ -2313,7 +2338,7 @@ function renderGuidelines() {
       toggleButton.className = 'guideline-comment-toggle';
       toggleButton.setAttribute('aria-expanded', String(state.activeGuidelineId === itemId));
       toggleButton.setAttribute('aria-label', translate('guidelines.toggleComment'));
-      toggleButton.textContent = '!';
+      toggleButton.textContent = String(index + 1);
       toggleButton.addEventListener('click', () => {
         const isOpen = state.activeGuidelineId === itemId;
         state.activeGuidelineId = isOpen ? null : itemId;
@@ -2331,27 +2356,116 @@ function renderGuidelines() {
       elements.guidelinesList.appendChild(listItem);
     });
   }
+  renderGuidelineMarkers();
+}
+
+function buildEditorBlockMap() {
+  if (!elements.editor) {
+    return [];
+  }
+  const blocks = [];
+  const language = state.language;
+  let currentLine = 1;
+  Array.from(elements.editor.childNodes).forEach((node) => {
+    const markdown = convertBlock(node, language);
+    if (!markdown || markdown.trim().length === 0) {
+      return;
+    }
+    const blockLines = markdown.split('\n');
+    const startLine = currentLine;
+    const endLine = currentLine + blockLines.length - 1;
+    const elementNode = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    if (elementNode instanceof HTMLElement) {
+      blocks.push({ node: elementNode, startLine, endLine });
+    }
+    currentLine = endLine + 2;
+  });
+  return blocks;
+}
+
+function renderGuidelineMarkers() {
+  if (!elements.editor || !elements.editorMarkerLayer || !elements.editorPane) {
+    return;
+  }
+  const overlay = elements.editorMarkerLayer;
+  overlay.innerHTML = '';
+  if (!state.guidelines || state.guidelines.length === 0) {
+    overlay.hidden = true;
+    return;
+  }
+  overlay.hidden = false;
+  const blocks = buildEditorBlockMap();
+  const editorRect = elements.editor.getBoundingClientRect();
+  const overlayTop = elements.editor.offsetTop || 0;
+  const overlayLeft = elements.editor.offsetLeft || 0;
+  overlay.style.top = `${overlayTop}px`;
+  overlay.style.left = `${overlayLeft}px`;
+  overlay.style.width = `${elements.editor.offsetWidth}px`;
+  overlay.style.height = `${elements.editor.offsetHeight}px`;
+
+  state.guidelines.forEach((item, index) => {
+    if (typeof item.line !== 'number' || !Number.isFinite(item.line)) {
+      return;
+    }
+    const target = blocks.find((entry) => item.line >= entry.startLine && item.line <= entry.endLine);
+    const blockElement = target?.node;
+    if (!(blockElement instanceof HTMLElement)) {
+      return;
+    }
+    const blockRect = blockElement.getBoundingClientRect();
+    const relativeTop = blockRect.top - editorRect.top + blockRect.height / 2;
+    if (!Number.isFinite(relativeTop)) {
+      return;
+    }
+    const marker = document.createElement('button');
+    marker.type = 'button';
+    marker.className = 'guideline-marker';
+    const markerId = getGuidelineId(item);
+    marker.dataset.guidelineId = markerId;
+    marker.classList.toggle('is-active', state.activeGuidelineId === markerId);
+    const markerText = translate('guidelines.markerLabel', { index: index + 1 }, `Optimisation ${index + 1}`);
+    const anchorLabel = item.anchor || translate('guidelines.anchorFallback');
+    marker.textContent = markerText;
+    marker.setAttribute(
+      'aria-label',
+      translate('guidelines.markerAria', { index: index + 1, anchor: anchorLabel }, markerText)
+    );
+    marker.style.top = `${relativeTop}px`;
+    marker.addEventListener('click', (event) => {
+      event.preventDefault();
+      const isOpen = state.activeGuidelineId === markerId;
+      state.activeGuidelineId = isOpen ? null : markerId;
+      renderGuidelines();
+      const entries = Array.from(elements.guidelinesList?.children || []);
+      const targetEntry = entries.find((entry) => entry.dataset.guidelineId === markerId);
+      if (targetEntry && typeof targetEntry.scrollIntoView === 'function') {
+        targetEntry.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+    overlay.appendChild(marker);
+  });
 }
 
 function renderGlossary() {
   if (!elements.glossaryList) {
     return;
   }
+  const isOpen = state.isGlossaryOpen;
+  if (elements.glossaryOverlay) {
+    elements.glossaryOverlay.hidden = !isOpen;
+    elements.glossaryOverlay.classList.toggle('open', isOpen);
+    elements.glossaryOverlay.setAttribute('aria-hidden', String(!isOpen));
+  }
   elements.glossaryList.innerHTML = '';
   if (elements.glossaryLoading) {
     elements.glossaryLoading.textContent = translate('glossary.loading');
+    elements.glossaryLoading.hidden = !state.isGlossaryLoading;
+  }
+  if (elements.glossaryError) {
+    elements.glossaryError.hidden = true;
   }
   if (state.isGlossaryLoading) {
-    if (elements.glossaryLoading) {
-      elements.glossaryLoading.hidden = false;
-    }
-    if (elements.glossaryError) {
-      elements.glossaryError.hidden = true;
-    }
     return;
-  }
-  if (elements.glossaryLoading) {
-    elements.glossaryLoading.hidden = true;
   }
   if (elements.glossaryError) {
     elements.glossaryError.hidden = !state.glossaryError;
@@ -2667,48 +2781,6 @@ function renderExportActions() {
   }
 }
 
-function renderInsightTabs() {
-  if (!elements.guidelinesTab || !elements.glossaryTab) {
-    return;
-  }
-  if (elements.insightTabList) {
-    elements.insightTabList.setAttribute('aria-label', translate('insights.tabs.aria'));
-  }
-  const tabs = [
-    {
-      key: 'guidelines',
-      button: elements.guidelinesTab,
-      panel: elements.guidelinesPanel,
-      labelKey: 'guidelines.title'
-    },
-    {
-      key: 'glossary',
-      button: elements.glossaryTab,
-      panel: elements.glossaryPanel,
-      labelKey: 'glossary.title'
-    }
-  ];
-  tabs.forEach(({ key, button, panel, labelKey }) => {
-    if (button) {
-      const isActive = state.activeInsightTab === key;
-      button.setAttribute('aria-selected', String(isActive));
-      button.classList.toggle('is-active', isActive);
-      const label = translate(labelKey);
-      const labelSpan = button.querySelector('.label-text');
-      if (labelSpan) {
-        labelSpan.textContent = label;
-      } else {
-        button.textContent = label;
-      }
-    }
-    if (panel) {
-      const isActive = state.activeInsightTab === key;
-      panel.hidden = !isActive;
-      panel.setAttribute('aria-hidden', String(!isActive));
-    }
-  });
-}
-
 function renderAll() {
   renderHeader();
   renderSectionTitles();
@@ -2721,7 +2793,6 @@ function renderAll() {
   renderPreview();
   renderBackoffice();
   renderToolbar();
-  renderInsightTabs();
   renderExportActions();
 }
 
@@ -3161,14 +3232,6 @@ function handleTemplateReset(languageCode) {
   renderAll();
 }
 
-function handleInsightTabChange(tabKey) {
-  if (state.activeInsightTab === tabKey) {
-    return;
-  }
-  state.activeInsightTab = tabKey;
-  renderInsightTabs();
-}
-
 function handleExportConfig() {
   try {
     const data = normalizeSelectOptions(state.selectOptions, state.configDefaults);
@@ -3202,6 +3265,22 @@ function handleBackofficeOverlayClick(event) {
     closeBackoffice();
   }
 }
+
+function openGlossary() {
+  state.isGlossaryOpen = true;
+  renderGlossary();
+}
+
+function closeGlossary() {
+  state.isGlossaryOpen = false;
+  renderGlossary();
+}
+
+function handleGlossaryOverlayClick(event) {
+  if (event.target === event.currentTarget) {
+    closeGlossary();
+  }
+}
 function registerEventListeners() {
   if (elements.toolbar) {
     elements.toolbar.querySelectorAll('button[data-command]').forEach((button) => {
@@ -3221,6 +3300,7 @@ function registerEventListeners() {
   }
   if (elements.editor) {
     elements.editor.addEventListener('input', handleEditorInput);
+    elements.editor.addEventListener('scroll', renderGuidelineMarkers);
     elements.editor.innerHTML = state.contentHTML;
   }
   if (elements.languageSelect) {
@@ -3267,15 +3347,20 @@ function registerEventListeners() {
   if (elements.backofficeOverlay) {
     elements.backofficeOverlay.addEventListener('click', handleBackofficeOverlayClick);
   }
+  if (elements.glossaryButton) {
+    elements.glossaryButton.addEventListener('click', openGlossary);
+  }
+  if (elements.closeGlossaryButton) {
+    elements.closeGlossaryButton.addEventListener('click', closeGlossary);
+  }
+  if (elements.glossaryOverlay) {
+    elements.glossaryOverlay.addEventListener('click', handleGlossaryOverlayClick);
+  }
   if (elements.exportConfigButton) {
     elements.exportConfigButton.addEventListener('click', handleExportConfig);
   }
-  if (elements.guidelinesTab) {
-    elements.guidelinesTab.addEventListener('click', () => handleInsightTabChange('guidelines'));
-  }
-  if (elements.glossaryTab) {
-    elements.glossaryTab.addEventListener('click', () => handleInsightTabChange('glossary'));
-  }
+
+  window.addEventListener('resize', renderGuidelineMarkers);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
@@ -3284,6 +3369,9 @@ function registerEventListeners() {
       }
       if (state.isPreviewOpen) {
         closePreview();
+      }
+      if (state.isGlossaryOpen) {
+        closeGlossary();
       }
     }
   });
@@ -3308,7 +3396,13 @@ async function bootstrap() {
       state.glossaryError = translate('glossary.error');
     } finally {
       state.isGlossaryLoading = false;
-      renderGlossary();
+      const previousActive = state.activeGuidelineId;
+      state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+      if (previousActive) {
+        const stillExists = state.guidelines.some((item) => getGuidelineId(item) === previousActive);
+        state.activeGuidelineId = stillExists ? previousActive : null;
+      }
+      renderAll();
     }
   } catch (error) {
     console.error("Erreur lors de l'initialisation de l'application :", error);
