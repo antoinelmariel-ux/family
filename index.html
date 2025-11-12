@@ -629,8 +629,23 @@
 
     .insight-comment {
       display: flex;
-      gap: 12px;
-      align-items: flex-start;
+      gap: 8px 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .comment-line {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(28, 34, 64, 0.08);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      border: 1px solid rgba(28, 34, 64, 0.12);
+      white-space: nowrap;
     }
 
     .comment-anchor {
@@ -1126,7 +1141,7 @@
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.30</footer>
+  <footer id="app-version">Version 1.1.31</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
