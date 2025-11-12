@@ -621,17 +621,73 @@
     .guideline-comment-list {
       list-style: none;
       padding-left: 0;
-    }
-
-    .guideline-comment-list li + li {
-      margin-top: 12px;
-    }
-
-    .insight-comment {
       display: flex;
-      gap: 8px 12px;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .guideline-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(28, 34, 64, 0.04);
+      border: 1px solid rgba(28, 34, 64, 0.08);
+    }
+
+    .guideline-entry-header {
+      display: flex;
       align-items: center;
-      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .guideline-line-text {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      min-width: 0;
+    }
+
+    .guideline-comment-toggle {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .guideline-comment-toggle:hover,
+    .guideline-comment-toggle:focus-visible {
+      background: #1c2240;
+      transform: scale(1.05);
+    }
+
+    .guideline-comment-toggle:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(47, 79, 159, 0.25);
+    }
+
+    .guideline-comment-toggle[aria-expanded="true"] {
+      background: var(--accent);
+      color: var(--primary);
+    }
+
+    .guideline-comment-panel {
+      background: white;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(28, 34, 64, 0.08);
     }
 
     .comment-line {
@@ -646,27 +702,6 @@
       font-size: 12px;
       border: 1px solid rgba(28, 34, 64, 0.12);
       white-space: nowrap;
-    }
-
-    .comment-anchor {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: var(--primary);
-      font-weight: 600;
-      font-size: 12px;
-      border: 1px solid rgba(47, 79, 159, 0.2);
-      white-space: nowrap;
-    }
-
-    .comment-message {
-      flex: 1;
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--text);
     }
 
     .export-actions {
@@ -1141,7 +1176,7 @@
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.31</footer>
+  <footer id="app-version">Version 1.1.32</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
