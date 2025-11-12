@@ -397,6 +397,76 @@
       font-size: 16px;
     }
 
+    .backoffice-section-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .backoffice-field-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .backoffice-field-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(47, 79, 159, 0.12);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .backoffice-template-section {
+      background: #fff;
+    }
+
+    .backoffice-template-description {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .backoffice-template-language {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .backoffice-template-language select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      color: var(--text);
+      max-width: 220px;
+    }
+
+    .backoffice-template-input {
+      min-height: 200px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      background: #fff;
+    }
+
+    .backoffice-template-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .backoffice-controls {
       display: flex;
       flex-wrap: wrap;
@@ -500,6 +570,7 @@
     .editor-layout {
       display: grid;
       gap: 24px;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .editor-pane {
@@ -508,12 +579,7 @@
 
     @media (min-width: 1024px) {
       .editor-layout {
-        grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-        align-items: flex-start;
-      }
-      .inline-guidelines {
-        position: sticky;
-        top: 0;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -637,6 +703,61 @@
       top: 120px;
       max-height: calc(100vh - 140px);
       overflow-y: auto;
+    }
+
+    .insight-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .insight-tab-list {
+      display: flex;
+      gap: 8px;
+      padding: 4px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .insight-tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .insight-tab-btn:hover {
+      background: rgba(47, 79, 159, 0.08);
+      color: var(--text);
+    }
+
+    .insight-tab-btn.is-active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(47, 79, 159, 0.2);
+    }
+
+    .insight-tab-btn.is-active:hover {
+      background: var(--primary);
+    }
+
+    .insight-tab-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(47, 79, 159, 0.3);
+    }
+
+    .insight-tab-panel {
+      display: block;
     }
 
     .insight-card {
@@ -1108,19 +1229,6 @@
             <div class="editor-pane">
               <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
             </div>
-            <aside class="inline-guidelines" aria-labelledby="guidelines-title">
-              <h3 id="guidelines-title">
-                <span class="icon icon--guidelines" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
-                    <path d="M12 7.2l1.6 3.2 3.5.3-2.7 2.3.8 3.5-3.2-1.7-3.2 1.7.8-3.5-2.7-2.3 3.5-.3z"></path>
-                  </svg>
-                </span>
-                <span class="label-text">Guidelines IA Friendly</span>
-              </h3>
-              <p id="guidelines-empty">Commencez votre rédaction pour recevoir des recommandations.</p>
-              <ul class="guideline-comment-list" id="guidelines-list"></ul>
-            </aside>
           </div>
         </section>
         <section class="card" id="qa-card">
@@ -1204,26 +1312,73 @@
         </section>
       </div>
       <aside class="insights">
-        <div class="insight-card">
-          <h3 id="glossary-title">
-            <span class="icon icon--glossary" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
-                <path d="M11.8 7.5h-3a2 2 0 00-2 2v10.5a2 2 0 012-2h3"></path>
-                <path d="M12.2 7.5h3a2 2 0 012 2v10.5a2 2 0 00-2-2h-3"></path>
-                <path d="M12 9.5v8.5"></path>
-              </svg>
-            </span>
-            <span class="label-text">Liste des acronymes</span>
-          </h3>
-          <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement de la liste des acronymes…</p>
-          <p class="warning" id="glossary-error" hidden></p>
-          <ul class="insight-list" id="glossary-list"></ul>
+        <div class="insight-tabs">
+          <div class="insight-tab-list" id="insight-tab-list" role="tablist" aria-label="Ressources complémentaires">
+            <button
+              type="button"
+              class="insight-tab-btn is-active"
+              id="insight-tab-guidelines"
+              role="tab"
+              aria-selected="true"
+              aria-controls="insight-panel-guidelines"
+            >
+              <span class="label-text">Guidelines IA Friendly</span>
+            </button>
+            <button
+              type="button"
+              class="insight-tab-btn"
+              id="insight-tab-glossary"
+              role="tab"
+              aria-selected="false"
+              aria-controls="insight-panel-glossary"
+            >
+              <span class="label-text">Liste des acronymes</span>
+            </button>
+          </div>
+          <div class="insight-tab-panel" id="insight-panel-guidelines" role="tabpanel" aria-labelledby="insight-tab-guidelines">
+            <div class="insight-card inline-guidelines" aria-labelledby="guidelines-title">
+              <h3 id="guidelines-title">
+                <span class="icon icon--guidelines" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                    <path d="M12 7.2l1.6 3.2 3.5.3-2.7 2.3.8 3.5-3.2-1.7-3.2 1.7.8-3.5-2.7-2.3 3.5-.3z"></path>
+                  </svg>
+                </span>
+                <span class="label-text">Guidelines IA Friendly</span>
+              </h3>
+              <p id="guidelines-empty">Commencez votre rédaction pour recevoir des recommandations.</p>
+              <ul class="guideline-comment-list" id="guidelines-list"></ul>
+            </div>
+          </div>
+          <div
+            class="insight-tab-panel"
+            id="insight-panel-glossary"
+            role="tabpanel"
+            aria-labelledby="insight-tab-glossary"
+            hidden
+          >
+            <div class="insight-card">
+              <h3 id="glossary-title">
+                <span class="icon icon--glossary" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                    <path d="M11.8 7.5h-3a2 2 0 00-2 2v10.5a2 2 0 012-2h3"></path>
+                    <path d="M12.2 7.5h3a2 2 0 012 2v10.5a2 2 0 00-2-2h-3"></path>
+                    <path d="M12 9.5v8.5"></path>
+                  </svg>
+                </span>
+                <span class="label-text">Liste des acronymes</span>
+              </h3>
+              <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement de la liste des acronymes…</p>
+              <p class="warning" id="glossary-error" hidden></p>
+              <ul class="insight-list" id="glossary-list"></ul>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.33</footer>
+  <footer id="app-version">Version 1.2.0</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
