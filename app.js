@@ -149,9 +149,9 @@ const TEXT = {
     es: 'Línea {{line}}'
   },
   'guidelines.markerLabel': {
-    fr: 'Optimisation {{index}}',
-    en: 'Optimization {{index}}',
-    es: 'Optimización {{index}}'
+    fr: '⚠️',
+    en: '⚠️',
+    es: '⚠️'
   },
   'guidelines.markerAria': {
     fr: 'Afficher le commentaire d’optimisation {{index}} pour « {{anchor}} »',
@@ -652,7 +652,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.2';
+const APP_VERSION = '1.2.3';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2423,7 +2423,7 @@ function renderGuidelineMarkers() {
     const markerId = getGuidelineId(item);
     marker.dataset.guidelineId = markerId;
     marker.classList.toggle('is-active', state.activeGuidelineId === markerId);
-    const markerText = translate('guidelines.markerLabel', { index: index + 1 }, `Optimisation ${index + 1}`);
+    const markerText = translate('guidelines.markerLabel', { index: index + 1 }, '⚠️');
     const anchorLabel = item.anchor || translate('guidelines.anchorFallback');
     marker.textContent = markerText;
     marker.setAttribute(
