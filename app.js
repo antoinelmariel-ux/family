@@ -589,7 +589,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.29';
+const APP_VERSION = '1.1.30';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2101,6 +2101,11 @@ function renderBackoffice() {
     return;
   }
   elements.backofficeOverlay.hidden = !state.isBackofficeOpen;
+  if (state.isBackofficeOpen) {
+    elements.backofficeOverlay.classList.add('open');
+  } else {
+    elements.backofficeOverlay.classList.remove('open');
+  }
   elements.backofficeSections.innerHTML = '';
   setLabelText(elements.backofficeTitle, translate('backoffice.title'));
   setLabelText(elements.closeBackofficeButton, translate('backoffice.close'));
