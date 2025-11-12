@@ -154,6 +154,11 @@ const TEXT = {
     en: 'Acronym list',
     es: 'Lista de acrónimos'
   },
+  'insights.tabs.aria': {
+    fr: 'Onglets des ressources complémentaires',
+    en: 'Complementary resources tabs',
+    es: 'Pestañas de recursos complementarios'
+  },
   'glossary.loading': {
     fr: 'Chargement de la liste des acronymes…',
     en: 'Loading acronym list…',
@@ -174,9 +179,9 @@ const TEXT = {
   },
   'backoffice.close': { fr: 'Fermer', en: 'Close', es: 'Cerrar' },
   'backoffice.description': {
-    fr: 'Personnalisez les listes de choix proposées dans les menus déroulants du formulaire.',
-    en: 'Customize the choice lists displayed in the form dropdowns.',
-    es: 'Personaliza las listas de opciones mostradas en los desplegables del formulario.'
+    fr: 'Personnalisez les listes de choix proposées dans les menus déroulants et le contenu inséré par défaut.',
+    en: 'Customize the dropdown choice lists and the default content inserted in the editor.',
+    es: 'Personaliza las listas de opciones de los desplegables y el contenido predeterminado del editor.'
   },
   'backoffice.reset': { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer' },
   'backoffice.addOptionLabel': { fr: 'Ajouter une option', en: 'Add an option', es: 'Agregar una opción' },
@@ -197,6 +202,37 @@ const TEXT = {
     en: 'Export JSON configuration',
     es: 'Exportar la configuración JSON'
   },
+  'backoffice.fieldKeyHint': {
+    fr: 'Clé technique : {{key}}',
+    en: 'Technical key: {{key}}',
+    es: 'Clave técnica: {{key}}'
+  },
+  'backoffice.optionKeyHint': {
+    fr: 'Liste partagée : {{key}}',
+    en: 'Shared list: {{key}}',
+    es: 'Lista compartida: {{key}}'
+  },
+  'backoffice.template.title': {
+    fr: 'Modèle de contenu par défaut',
+    en: 'Default content template',
+    es: 'Plantilla de contenido predeterminada'
+  },
+  'backoffice.template.description': {
+    fr: 'Personnalisez le canevas inséré automatiquement dans l’éditeur lors de la création d’une nouvelle procédure.',
+    en: 'Customize the canvas automatically inserted in the editor when a new procedure is created.',
+    es: 'Personaliza el contenido insertado automáticamente en el editor al crear un nuevo procedimiento.'
+  },
+  'backoffice.template.languageLabel': {
+    fr: 'Langue du modèle',
+    en: 'Template language',
+    es: 'Idioma de la plantilla'
+  },
+  'backoffice.template.inputLabel': {
+    fr: 'Contenu HTML inséré par défaut',
+    en: 'Default inserted HTML content',
+    es: 'Contenido HTML insertado por defecto'
+  },
+  'backoffice.template.save': { fr: 'Enregistrer', en: 'Save', es: 'Guardar' },
   'keywords.empty': {
     fr: 'Ajoutez un mot clef puis validez avec Entrée.',
     en: 'Add a keyword then validate with Enter.',
@@ -599,7 +635,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.1.31';
+const APP_VERSION = '1.2.0';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -985,9 +1021,67 @@ const PROCEDURE_TEMPLATES = {
 `
 };
 
+const PROCEDURE_TEMPLATE_STORAGE_KEY = 'procedureBuilderTemplates';
+
+function loadCustomTemplates() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(PROCEDURE_TEMPLATE_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+    return Object.entries(parsed).reduce((acc, [language, value]) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        acc[language] = sanitizeHTML(value);
+      }
+      return acc;
+    }, {});
+  } catch (error) {
+    console.warn('Impossible de charger les modèles personnalisés :', error);
+    return {};
+  }
+}
+
+function persistCustomTemplates(templates) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  try {
+    const sanitized = Object.entries(templates).reduce((acc, [language, value]) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        acc[language] = sanitizeHTML(value);
+      }
+      return acc;
+    }, {});
+    window.localStorage.setItem(PROCEDURE_TEMPLATE_STORAGE_KEY, JSON.stringify(sanitized));
+  } catch (error) {
+    console.warn('Impossible de sauvegarder les modèles personnalisés :', error);
+  }
+}
+
+let customProcedureTemplates = loadCustomTemplates();
+
 function getInitialContentHTML(language = currentLanguage) {
-  const template = PROCEDURE_TEMPLATES[language] || PROCEDURE_TEMPLATES[DEFAULT_LANGUAGE];
-  return sanitizeHTML(template);
+  const override = customProcedureTemplates[language];
+  const template = (typeof override === 'string' && override.trim().length > 0)
+    ? override
+    : PROCEDURE_TEMPLATES[language];
+  const fallback = template || PROCEDURE_TEMPLATES[DEFAULT_LANGUAGE] || '';
+  return sanitizeHTML(fallback);
+}
+
+function createInitialTemplateDrafts() {
+  const drafts = {};
+  SUPPORTED_LANGUAGES.forEach(({ code }) => {
+    drafts[code] = getInitialContentHTML(code);
+  });
+  return drafts;
 }
 
 function normalizeForComparison(value) {
@@ -1730,6 +1824,7 @@ function persistSelectOptions(options) {
 }
 const initialQAItems = createInitialQAItems();
 const initialContentHTML = getInitialContentHTML(initialLanguage);
+const initialTemplateDrafts = createInitialTemplateDrafts();
 
 const state = {
   language: initialLanguage,
@@ -1743,6 +1838,8 @@ const state = {
   selectOptions: normalizeSelectOptions(DEFAULT_SELECT_OPTIONS),
   selectOptionDrafts: createEmptyOptionDrafts(),
   configDefaults: DEFAULT_SELECT_OPTIONS,
+  templateDrafts: initialTemplateDrafts,
+  templateEditorLanguage: initialLanguage,
   glossary: {},
   glossaryError: null,
   isGlossaryLoading: true,
@@ -1751,7 +1848,8 @@ const state = {
   isPreviewOpen: false,
   previewMarkdown: '',
   isExportingPDF: false,
-  activeGuidelineId: null
+  activeGuidelineId: null,
+  activeInsightTab: 'guidelines'
 };
 
 const elements = {
@@ -1785,6 +1883,11 @@ const elements = {
   importInput: document.getElementById('import-input'),
   guidelinesList: document.getElementById('guidelines-list'),
   guidelinesEmpty: document.getElementById('guidelines-empty'),
+  insightTabList: document.getElementById('insight-tab-list'),
+  guidelinesTab: document.getElementById('insight-tab-guidelines'),
+  glossaryTab: document.getElementById('insight-tab-glossary'),
+  guidelinesPanel: document.getElementById('insight-panel-guidelines'),
+  glossaryPanel: document.getElementById('insight-panel-glossary'),
   glossaryList: document.getElementById('glossary-list'),
   glossaryLoading: document.getElementById('glossary-loading'),
   glossaryError: document.getElementById('glossary-error'),
@@ -2328,15 +2431,115 @@ function renderBackoffice() {
   if (!state.isBackofficeOpen) {
     return;
   }
+  const editorLanguage = state.templateEditorLanguage || state.language;
+
+  const templateSection = document.createElement('div');
+  templateSection.className = 'backoffice-section backoffice-template-section';
+
+  const templateHeader = document.createElement('div');
+  templateHeader.className = 'backoffice-section-header';
+
+  const templateInfo = document.createElement('div');
+  templateInfo.className = 'backoffice-section-info';
+
+  const templateTitle = document.createElement('h3');
+  templateTitle.textContent = translate('backoffice.template.title');
+  templateInfo.appendChild(templateTitle);
+  templateHeader.appendChild(templateInfo);
+
+  const templateResetButton = document.createElement('button');
+  templateResetButton.type = 'button';
+  templateResetButton.className = 'backoffice-reset-btn';
+  templateResetButton.textContent = translate('backoffice.reset');
+  templateResetButton.addEventListener('click', () => handleTemplateReset(editorLanguage));
+  templateHeader.appendChild(templateResetButton);
+
+  templateSection.appendChild(templateHeader);
+
+  const templateDescription = document.createElement('p');
+  templateDescription.className = 'backoffice-template-description';
+  templateDescription.textContent = translate('backoffice.template.description');
+  templateSection.appendChild(templateDescription);
+
+  const languageField = document.createElement('div');
+  languageField.className = 'backoffice-template-language';
+
+  const languageLabel = document.createElement('label');
+  languageLabel.htmlFor = 'backoffice-template-language';
+  languageLabel.textContent = translate('backoffice.template.languageLabel');
+  languageField.appendChild(languageLabel);
+
+  const languageSelect = document.createElement('select');
+  languageSelect.id = 'backoffice-template-language';
+  SUPPORTED_LANGUAGES.forEach((entry) => {
+    const option = document.createElement('option');
+    option.value = entry.code;
+    const optionKey = `language.option.${entry.code}`;
+    option.textContent = translate(optionKey, {}, entry.label);
+    languageSelect.appendChild(option);
+  });
+  languageSelect.value = editorLanguage;
+  languageSelect.addEventListener('change', (event) => handleTemplateEditorLanguageChange(event.target.value));
+  languageField.appendChild(languageSelect);
+  templateSection.appendChild(languageField);
+
+  const templateLabel = document.createElement('label');
+  templateLabel.htmlFor = 'backoffice-template-content';
+  templateLabel.textContent = translate('backoffice.template.inputLabel');
+  templateSection.appendChild(templateLabel);
+
+  const templateInput = document.createElement('textarea');
+  templateInput.id = 'backoffice-template-content';
+  templateInput.className = 'backoffice-template-input';
+  templateInput.value = state.templateDrafts[editorLanguage] || '';
+  templateInput.addEventListener('input', (event) => handleTemplateDraftChange(editorLanguage, event.target.value));
+  templateSection.appendChild(templateInput);
+
+  const templateActions = document.createElement('div');
+  templateActions.className = 'backoffice-template-actions';
+
+  const templateSaveButton = document.createElement('button');
+  templateSaveButton.type = 'button';
+  templateSaveButton.className = 'backoffice-add-btn';
+  templateSaveButton.textContent = translate('backoffice.template.save');
+  templateSaveButton.addEventListener('click', () => handleTemplateSave(editorLanguage));
+  templateActions.appendChild(templateSaveButton);
+
+  templateSection.appendChild(templateActions);
+  elements.backofficeSections.appendChild(templateSection);
+
   SELECT_FIELD_SCHEMAS.forEach((field) => {
     const section = document.createElement('div');
     section.className = 'backoffice-section';
 
     const header = document.createElement('div');
     header.className = 'backoffice-section-header';
+    const optionsKey = field.optionsKey || field.key;
+    const info = document.createElement('div');
+    info.className = 'backoffice-section-info';
     const title = document.createElement('h3');
-    title.textContent = field.label;
-    header.appendChild(title);
+    const fieldLabel = field.labelKey
+      ? translate(field.labelKey, {}, field.label || field.key)
+      : (field.label || field.key);
+    title.textContent = fieldLabel;
+    info.appendChild(title);
+
+    const meta = document.createElement('div');
+    meta.className = 'backoffice-field-meta';
+    const fieldKeyChip = document.createElement('span');
+    fieldKeyChip.className = 'backoffice-field-chip';
+    fieldKeyChip.textContent = translate('backoffice.fieldKeyHint', { key: field.key });
+    meta.appendChild(fieldKeyChip);
+    if (field.optionsKey && field.optionsKey !== field.key) {
+      const optionChip = document.createElement('span');
+      optionChip.className = 'backoffice-field-chip';
+      optionChip.textContent = translate('backoffice.optionKeyHint', { key: field.optionsKey });
+      meta.appendChild(optionChip);
+    }
+    if (meta.childElementCount > 0) {
+      info.appendChild(meta);
+    }
+    header.appendChild(info);
 
     const resetButton = document.createElement('button');
     resetButton.type = 'button';
@@ -2359,7 +2562,7 @@ function renderBackoffice() {
     input.id = `${field.key}-new-option`;
     input.type = 'text';
     input.placeholder = translate('backoffice.newOptionPlaceholder');
-    input.value = state.selectOptionDrafts[field.optionsKey || field.key] || '';
+    input.value = state.selectOptionDrafts[optionsKey] || '';
     input.addEventListener('input', (event) => handleSelectOptionDraftChange(field.key, event.target.value));
     input.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -2378,7 +2581,7 @@ function renderBackoffice() {
 
     section.appendChild(controls);
 
-    const options = state.selectOptions[field.optionsKey || field.key] || [];
+    const options = state.selectOptions[optionsKey] || [];
     const optionList = document.createElement('div');
     optionList.className = 'option-list';
     optionList.setAttribute('aria-live', 'polite');
@@ -2394,7 +2597,7 @@ function renderBackoffice() {
         pill.className = 'option-pill';
 
         const labelSpan = document.createElement('span');
-        labelSpan.textContent = getSelectOptionLabel(field.optionsKey || field.key, option, state.language);
+        labelSpan.textContent = getSelectOptionLabel(optionsKey, option, state.language);
         pill.appendChild(labelSpan);
 
         const remove = document.createElement('button');
@@ -2464,6 +2667,48 @@ function renderExportActions() {
   }
 }
 
+function renderInsightTabs() {
+  if (!elements.guidelinesTab || !elements.glossaryTab) {
+    return;
+  }
+  if (elements.insightTabList) {
+    elements.insightTabList.setAttribute('aria-label', translate('insights.tabs.aria'));
+  }
+  const tabs = [
+    {
+      key: 'guidelines',
+      button: elements.guidelinesTab,
+      panel: elements.guidelinesPanel,
+      labelKey: 'guidelines.title'
+    },
+    {
+      key: 'glossary',
+      button: elements.glossaryTab,
+      panel: elements.glossaryPanel,
+      labelKey: 'glossary.title'
+    }
+  ];
+  tabs.forEach(({ key, button, panel, labelKey }) => {
+    if (button) {
+      const isActive = state.activeInsightTab === key;
+      button.setAttribute('aria-selected', String(isActive));
+      button.classList.toggle('is-active', isActive);
+      const label = translate(labelKey);
+      const labelSpan = button.querySelector('.label-text');
+      if (labelSpan) {
+        labelSpan.textContent = label;
+      } else {
+        button.textContent = label;
+      }
+    }
+    if (panel) {
+      const isActive = state.activeInsightTab === key;
+      panel.hidden = !isActive;
+      panel.setAttribute('aria-hidden', String(!isActive));
+    }
+  });
+}
+
 function renderAll() {
   renderHeader();
   renderSectionTitles();
@@ -2476,6 +2721,7 @@ function renderAll() {
   renderPreview();
   renderBackoffice();
   renderToolbar();
+  renderInsightTabs();
   renderExportActions();
 }
 
@@ -2497,6 +2743,7 @@ function setLanguage(languageCode) {
   }
   state.language = targetLanguage;
   currentLanguage = targetLanguage;
+  state.templateEditorLanguage = targetLanguage;
   saveLanguagePreference(targetLanguage);
   if (elements.languageSelect && elements.languageSelect.value !== targetLanguage) {
     elements.languageSelect.value = targetLanguage;
@@ -2854,6 +3101,74 @@ function handleSelectOptionDraftChange(fieldKey, value) {
   state.selectOptionDrafts = { ...state.selectOptionDrafts, [optionsKey]: value };
 }
 
+function handleTemplateEditorLanguageChange(languageCode) {
+  const supported = SUPPORTED_LANGUAGES.some((entry) => entry.code === languageCode);
+  const targetLanguage = supported ? languageCode : DEFAULT_LANGUAGE;
+  if (state.templateEditorLanguage === targetLanguage) {
+    return;
+  }
+  state.templateEditorLanguage = targetLanguage;
+  renderBackoffice();
+}
+
+function handleTemplateDraftChange(languageCode, value) {
+  state.templateDrafts = { ...state.templateDrafts, [languageCode]: value };
+}
+
+function applyTemplateUpdate(languageCode) {
+  const nextTemplate = getInitialContentHTML(languageCode);
+  state.templateDrafts = { ...state.templateDrafts, [languageCode]: nextTemplate };
+  if (languageCode === state.language) {
+    const previousTemplate = (state.initialContentHTML || '').trim();
+    if (!state.hasStarted || state.contentHTML.trim() === previousTemplate) {
+      state.contentHTML = nextTemplate;
+      state.initialContentHTML = nextTemplate;
+      if (elements.editor) {
+        elements.editor.innerHTML = nextTemplate;
+      }
+      state.guidelines = computeGuidelines(nextTemplate, state.glossary, state.language);
+      state.activeGuidelineId = null;
+      state.blockingWarnings = detectBlockingIssues(nextTemplate, state.qaItems);
+    } else {
+      state.initialContentHTML = nextTemplate;
+    }
+  }
+}
+
+function handleTemplateSave(languageCode) {
+  const draft = state.templateDrafts[languageCode] || '';
+  const trimmed = draft.trim();
+  const nextTemplates = { ...customProcedureTemplates };
+  if (trimmed.length === 0) {
+    delete nextTemplates[languageCode];
+  } else {
+    nextTemplates[languageCode] = sanitizeHTML(trimmed);
+  }
+  customProcedureTemplates = nextTemplates;
+  persistCustomTemplates(customProcedureTemplates);
+  applyTemplateUpdate(languageCode);
+  renderAll();
+}
+
+function handleTemplateReset(languageCode) {
+  if (customProcedureTemplates[languageCode]) {
+    const nextTemplates = { ...customProcedureTemplates };
+    delete nextTemplates[languageCode];
+    customProcedureTemplates = nextTemplates;
+    persistCustomTemplates(customProcedureTemplates);
+  }
+  applyTemplateUpdate(languageCode);
+  renderAll();
+}
+
+function handleInsightTabChange(tabKey) {
+  if (state.activeInsightTab === tabKey) {
+    return;
+  }
+  state.activeInsightTab = tabKey;
+  renderInsightTabs();
+}
+
 function handleExportConfig() {
   try {
     const data = normalizeSelectOptions(state.selectOptions, state.configDefaults);
@@ -2954,6 +3269,12 @@ function registerEventListeners() {
   }
   if (elements.exportConfigButton) {
     elements.exportConfigButton.addEventListener('click', handleExportConfig);
+  }
+  if (elements.guidelinesTab) {
+    elements.guidelinesTab.addEventListener('click', () => handleInsightTabChange('guidelines'));
+  }
+  if (elements.glossaryTab) {
+    elements.glossaryTab.addEventListener('click', () => handleInsightTabChange('glossary'));
   }
 
   document.addEventListener('keydown', (event) => {
