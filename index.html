@@ -497,6 +497,26 @@
       gap: 8px;
     }
 
+    .editor-layout {
+      display: grid;
+      gap: 24px;
+    }
+
+    .editor-pane {
+      min-width: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .editor-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+        align-items: flex-start;
+      }
+      .inline-guidelines {
+        position: sticky;
+        top: 0;
+      }
+    }
+
     .toolbar button {
       padding: 8px 12px;
       border: 1px solid var(--border);
@@ -547,6 +567,30 @@
       font-size: 15px;
       background: #fff;
       overflow-y: auto;
+    }
+
+    .inline-guidelines {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .inline-guidelines h3 {
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inline-guidelines p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
     }
 
     .editor h1,
@@ -621,6 +665,7 @@
     .guideline-comment-list {
       list-style: none;
       padding-left: 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -1059,7 +1104,24 @@
             <button type="button" data-command="insertUnorderedList">Liste à puces</button>
             <button type="button" data-command="insertOrderedList">Liste numérotée</button>
           </div>
-          <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
+          <div class="editor-layout">
+            <div class="editor-pane">
+              <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
+            </div>
+            <aside class="inline-guidelines" aria-labelledby="guidelines-title">
+              <h3 id="guidelines-title">
+                <span class="icon icon--guidelines" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                    <path d="M12 7.2l1.6 3.2 3.5.3-2.7 2.3.8 3.5-3.2-1.7-3.2 1.7.8-3.5-2.7-2.3 3.5-.3z"></path>
+                  </svg>
+                </span>
+                <span class="label-text">Guidelines IA Friendly</span>
+              </h3>
+              <p id="guidelines-empty">Commencez votre rédaction pour recevoir des recommandations.</p>
+              <ul class="guideline-comment-list" id="guidelines-list"></ul>
+            </aside>
+          </div>
         </section>
         <section class="card" id="qa-card">
           <h2 id="qa-card-title">
@@ -1143,21 +1205,6 @@
       </div>
       <aside class="insights">
         <div class="insight-card">
-          <h3 id="guidelines-title">
-            <span class="icon icon--guidelines" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
-                <path d="M12 7.2l1.6 3.2 3.5.3-2.7 2.3.8 3.5-3.2-1.7-3.2 1.7.8-3.5-2.7-2.3 3.5-.3z"></path>
-              </svg>
-            </span>
-            <span class="label-text">Guidelines IA Friendly</span>
-          </h3>
-          <p id="guidelines-empty" style="color: var(--muted); margin: 0;">
-            Commencez votre rédaction pour recevoir des recommandations.
-          </p>
-          <ul class="insight-list guideline-comment-list" id="guidelines-list"></ul>
-        </div>
-        <div class="insight-card">
           <h3 id="glossary-title">
             <span class="icon icon--glossary" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -1176,7 +1223,7 @@
       </aside>
     </div>
   </div>
-  <footer id="app-version">Version 1.1.32</footer>
+  <footer id="app-version">Version 1.1.33</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
