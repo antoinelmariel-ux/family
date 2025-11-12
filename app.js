@@ -682,7 +682,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.7';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2457,6 +2457,8 @@ function renderGuidelineMarkers() {
   overlay.style.width = `${elements.editor.offsetWidth}px`;
   overlay.style.height = `${elements.editor.offsetHeight}px`;
 
+  const informationalGuidelineTypes = new Set(['heading', 'list-transition']);
+
   state.guidelines.forEach((item, index) => {
     if (typeof item.line !== 'number' || !Number.isFinite(item.line)) {
       return;
@@ -2477,7 +2479,8 @@ function renderGuidelineMarkers() {
     const markerId = getGuidelineId(item);
     marker.dataset.guidelineId = markerId;
     marker.classList.toggle('is-active', state.activeGuidelineId === markerId);
-    const markerText = translate('guidelines.markerLabel', { index: index + 1 }, '⚠️');
+    const markerDefault = translate('guidelines.markerLabel', { index: index + 1 }, '⚠️');
+    const markerText = informationalGuidelineTypes.has(item.type) ? '💡' : markerDefault;
     const anchorLabel = item.anchor || translate('guidelines.anchorFallback');
     marker.textContent = markerText;
     marker.setAttribute(
