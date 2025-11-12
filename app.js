@@ -137,6 +137,11 @@ const TEXT = {
     en: 'Make sure this term is defined in the “Definition” section.',
     es: 'Asegúrese de que este término esté definido en la sección «Definición».'
   },
+  'guidelines.toggleComment': {
+    fr: 'Afficher ou masquer le commentaire',
+    en: 'Show or hide the comment',
+    es: 'Mostrar u ocultar el comentario'
+  },
   'guidelines.lineLabel': {
     fr: 'Ligne {{line}}',
     en: 'Line {{line}}',
@@ -1745,7 +1750,8 @@ const state = {
   isBackofficeOpen: false,
   isPreviewOpen: false,
   previewMarkdown: '',
-  isExportingPDF: false
+  isExportingPDF: false,
+  activeGuidelineId: null
 };
 
 const elements = {
@@ -2156,6 +2162,14 @@ function renderQAList() {
   });
 }
 
+function getGuidelineId(item) {
+  if (!item) {
+    return '';
+  }
+  const linePart = typeof item.line === 'number' ? item.line : 'none';
+  return `${linePart}-${item.order}`;
+}
+
 function renderGuidelines() {
   if (!elements.guidelinesList || !elements.guidelinesEmpty) {
     return;
@@ -2164,32 +2178,52 @@ function renderGuidelines() {
   elements.guidelinesEmpty.textContent = translate('guidelines.empty');
   if (state.guidelines.length === 0) {
     elements.guidelinesEmpty.hidden = false;
+    state.activeGuidelineId = null;
   } else {
     elements.guidelinesEmpty.hidden = true;
     state.guidelines.forEach((item) => {
       const listItem = document.createElement('li');
-      const wrapper = document.createElement('div');
-      wrapper.className = 'insight-comment';
+      listItem.className = 'guideline-entry';
+      const itemId = getGuidelineId(item);
+      if (item.line != null) {
+        listItem.dataset.lineNumber = String(item.line);
+      }
+
+      const header = document.createElement('div');
+      header.className = 'guideline-entry-header';
 
       if (typeof item.line === 'number' && Number.isFinite(item.line)) {
         const lineBadge = document.createElement('span');
         lineBadge.className = 'comment-line';
         lineBadge.textContent = translate('guidelines.lineLabel', { line: item.line }, `Ligne ${item.line}`);
-        wrapper.appendChild(lineBadge);
-        listItem.dataset.lineNumber = String(item.line);
+        header.appendChild(lineBadge);
       }
 
-      const anchor = document.createElement('span');
-      anchor.className = 'comment-anchor';
-      anchor.textContent = item.anchor || translate('guidelines.anchorFallback');
-      wrapper.appendChild(anchor);
+      const lineText = document.createElement('span');
+      lineText.className = 'guideline-line-text';
+      lineText.textContent = item.anchor || translate('guidelines.anchorFallback');
+      header.appendChild(lineText);
 
-      const message = document.createElement('span');
-      message.className = 'comment-message';
+      const toggleButton = document.createElement('button');
+      toggleButton.type = 'button';
+      toggleButton.className = 'guideline-comment-toggle';
+      toggleButton.setAttribute('aria-expanded', String(state.activeGuidelineId === itemId));
+      toggleButton.setAttribute('aria-label', translate('guidelines.toggleComment'));
+      toggleButton.textContent = '!';
+      toggleButton.addEventListener('click', () => {
+        const isOpen = state.activeGuidelineId === itemId;
+        state.activeGuidelineId = isOpen ? null : itemId;
+        renderGuidelines();
+      });
+      header.appendChild(toggleButton);
+
+      const message = document.createElement('div');
+      message.className = 'guideline-comment-panel';
       message.textContent = item.message;
-      wrapper.appendChild(message);
+      message.hidden = state.activeGuidelineId !== itemId;
 
-      listItem.appendChild(wrapper);
+      listItem.appendChild(header);
+      listItem.appendChild(message);
       elements.guidelinesList.appendChild(listItem);
     });
   }
@@ -2445,7 +2479,12 @@ function renderAll() {
 }
 
 function updateGuidelinesAndWarnings() {
+  const previousActive = state.activeGuidelineId;
   state.guidelines = computeGuidelines(state.contentHTML, state.glossary, state.language);
+  if (previousActive) {
+    const stillExists = state.guidelines.some((item) => getGuidelineId(item) === previousActive);
+    state.activeGuidelineId = stillExists ? previousActive : null;
+  }
   state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
 }
 
@@ -2479,6 +2518,7 @@ function setLanguage(languageCode) {
     state.initialContentHTML = newTemplate;
   }
   state.guidelines = computeGuidelines(state.contentHTML, state.glossary, targetLanguage);
+  state.activeGuidelineId = null;
   state.blockingWarnings = detectBlockingIssues(state.contentHTML, state.qaItems);
   renderAll();
 }
@@ -2705,6 +2745,7 @@ function handleNewProcedure() {
   state.contentHTML = template;
   state.initialContentHTML = template;
   state.guidelines = computeGuidelines(template, state.glossary, state.language);
+  state.activeGuidelineId = null;
   state.blockingWarnings = detectBlockingIssues(template, initialQAItems);
   state.previewMarkdown = '';
   state.isPreviewOpen = false;
@@ -2744,6 +2785,7 @@ async function handleImportMarkdown(event) {
     state.contentHTML = contentHTML;
     state.qaItems = qaItems;
     state.guidelines = computeGuidelines(contentHTML, state.glossary);
+    state.activeGuidelineId = null;
     state.blockingWarnings = detectBlockingIssues(contentHTML, qaItems);
     state.previewMarkdown = '';
     state.isPreviewOpen = false;
