@@ -682,7 +682,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.10';
+const APP_VERSION = '1.2.11';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -871,7 +871,20 @@ function createEmptyOptionDrafts() {
 
 const createInitialQAItems = () => [{ question: '', answer: '' }];
 
-const pronouns = ['il', 'elle', 'ils', 'elles', 'lui', 'leur', 'leurs', 'son', 'sa', 'ses', 'eux'];
+const PRONOUNS_BY_LANGUAGE = {
+  fr: ['il', 'elle', 'ils', 'elles', 'on'],
+  en: ['he', 'she', 'they', 'one'],
+  es: ['él', 'ella', 'ellos', 'ellas', 'uno']
+};
+
+function getPronounsForLanguage(language) {
+  const fallback = PRONOUNS_BY_LANGUAGE[DEFAULT_LANGUAGE] || [];
+  return PRONOUNS_BY_LANGUAGE[language] || fallback;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function normalizeDefinitionTerm(value) {
   if (typeof value !== 'string') {
@@ -1305,9 +1318,11 @@ function computeGuidelines(html, acronymDB = {}, language = currentLanguage) {
     }
   });
 
-  const pronounPattern = `\\b(?:${pronouns.join('|')})\\b`;
+  const pronouns = getPronounsForLanguage(language);
+  const pronounPattern =
+    pronouns.length > 0 ? `\\b(?:${pronouns.map(escapeRegExp).join('|')})\\b` : null;
   markdownEntries.forEach(({ lineNumber, plainText }) => {
-    if (!plainText) {
+    if (!plainText || !pronounPattern) {
       return;
     }
     const pronounRegex = new RegExp(pronounPattern, 'gi');
