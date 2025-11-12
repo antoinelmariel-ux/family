@@ -767,11 +767,69 @@
       flex-direction: column;
       gap: 12px;
       background: #fafbff;
+      position: relative;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .qa-item-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qa-drag-handle {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor: grab;
+      border-radius: 10px;
+      padding: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .qa-drag-handle:hover {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.24);
+      color: var(--primary);
+    }
+
+    .qa-drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .qa-drag-handle:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .qa-drag-handle-icon {
+      font-size: 18px;
+      line-height: 1;
     }
 
     .qa-actions {
       display: flex;
-      justify-content: flex-end;
+      gap: 8px;
+      margin-left: auto;
+      align-items: center;
+    }
+
+    .qa-item.dragging {
+      opacity: 0.6;
+    }
+
+    .qa-item.drag-over-before {
+      border-color: var(--primary);
+      box-shadow: inset 0 3px 0 rgba(47, 79, 159, 0.35);
+    }
+
+    .qa-item.drag-over-after {
+      border-color: var(--primary);
+      box-shadow: inset 0 -3px 0 rgba(47, 79, 159, 0.35);
     }
 
     .remove-btn {
@@ -1657,7 +1715,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.19</footer>
+  <footer id="app-version">Version 1.2.20</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
