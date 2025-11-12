@@ -91,6 +91,11 @@ const TEXT = {
     es: 'Ofrece una respuesta precisa y contextualizada'
   },
   'qa.remove': { fr: 'Retirer', en: 'Remove', es: 'Eliminar' },
+  'qa.reorder': {
+    fr: 'Réorganiser la question',
+    en: 'Reorder question',
+    es: 'Reordenar la pregunta'
+  },
   'export.warning': {
     fr: '⚠️ Export impossible tant que les points suivants ne sont pas corrigés :',
     en: '⚠️ Export is not possible until the following points are resolved:',
@@ -760,7 +765,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.19';
+const APP_VERSION = '1.2.20';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2148,6 +2153,152 @@ const elements = {
   appVersion: document.getElementById('app-version')
 };
 
+let draggingQAIndex = null;
+
+function focusQAHandleAfterRender(index) {
+  const focusTask = () => {
+    if (!elements.qaList) {
+      return;
+    }
+    const selector = `.qa-item[data-index="${index}"] .qa-drag-handle`;
+    const handle = elements.qaList.querySelector(selector);
+    if (handle && typeof handle.focus === 'function') {
+      handle.focus();
+    }
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(focusTask);
+  } else {
+    setTimeout(focusTask, 0);
+  }
+}
+
+function reorderQAItems(fromIndex, toIndex, { focusIndex = toIndex } = {}) {
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= state.qaItems.length ||
+    toIndex >= state.qaItems.length
+  ) {
+    return;
+  }
+  const updated = [...state.qaItems];
+  const [moved] = updated.splice(fromIndex, 1);
+  updated.splice(toIndex, 0, moved);
+  state.qaItems = updated;
+  state.hasStarted = true;
+  updateGuidelinesAndWarnings();
+  renderAll();
+  if (typeof focusIndex === 'number') {
+    focusQAHandleAfterRender(focusIndex);
+  }
+}
+
+function handleQADragStart(event) {
+  const currentTarget = event.currentTarget;
+  if (!(currentTarget instanceof HTMLElement)) {
+    return;
+  }
+  const qaItem = currentTarget.classList.contains('qa-item')
+    ? currentTarget
+    : currentTarget.closest('.qa-item');
+  if (!(qaItem instanceof HTMLElement)) {
+    return;
+  }
+  const index = Number.parseInt(qaItem.dataset.index || '', 10);
+  if (Number.isNaN(index)) {
+    return;
+  }
+  draggingQAIndex = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    try {
+      event.dataTransfer.setData('text/plain', String(index));
+    } catch (error) {
+      console.warn('Impossible de définir les données de glisser-déposer :', error);
+    }
+    if (typeof event.dataTransfer.setDragImage === 'function') {
+      event.dataTransfer.setDragImage(qaItem, 16, 16);
+    }
+  }
+  qaItem.classList.add('dragging');
+}
+
+function handleQADragOver(event) {
+  event.preventDefault();
+  const qaItem = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (!qaItem) {
+    return;
+  }
+  const rect = qaItem.getBoundingClientRect();
+  const offsetY = event.clientY - rect.top;
+  const position = offsetY < rect.height / 2 ? 'before' : 'after';
+  qaItem.dataset.dropPosition = position;
+  qaItem.classList.toggle('drag-over-before', position === 'before');
+  qaItem.classList.toggle('drag-over-after', position === 'after');
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+}
+
+function handleQADragLeave(event) {
+  const qaItem = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (!qaItem) {
+    return;
+  }
+  qaItem.classList.remove('drag-over-before', 'drag-over-after');
+  delete qaItem.dataset.dropPosition;
+}
+
+function handleQADragEnd(event) {
+  const currentTarget = event.currentTarget;
+  const qaItem = currentTarget instanceof HTMLElement
+    ? (currentTarget.classList.contains('qa-item') ? currentTarget : currentTarget.closest('.qa-item'))
+    : null;
+  if (qaItem) {
+    qaItem.classList.remove('dragging', 'drag-over-before', 'drag-over-after');
+    delete qaItem.dataset.dropPosition;
+  }
+  draggingQAIndex = null;
+}
+
+function handleQADrop(event) {
+  event.preventDefault();
+  const qaItem = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (!qaItem) {
+    return;
+  }
+  const dropPosition = qaItem.dataset.dropPosition || 'before';
+  let destinationIndex = Number.parseInt(qaItem.dataset.index || '', 10);
+  if (Number.isNaN(destinationIndex)) {
+    return;
+  }
+  let sourceIndex = draggingQAIndex;
+  if (sourceIndex === null && event.dataTransfer) {
+    const raw = event.dataTransfer.getData('text/plain');
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isNaN(parsed)) {
+      sourceIndex = parsed;
+    }
+  }
+  qaItem.classList.remove('drag-over-before', 'drag-over-after');
+  delete qaItem.dataset.dropPosition;
+  if (sourceIndex === null) {
+    return;
+  }
+  if (dropPosition === 'after') {
+    destinationIndex += 1;
+  }
+  if (sourceIndex < destinationIndex) {
+    destinationIndex -= 1;
+  }
+  if (sourceIndex !== destinationIndex) {
+    reorderQAItems(sourceIndex, destinationIndex);
+  }
+  draggingQAIndex = null;
+}
+
 function setLabelText(element, text) {
   if (!element) {
     return;
@@ -2489,6 +2640,38 @@ function renderQAList() {
   state.qaItems.forEach((item, index) => {
     const qaItem = document.createElement('div');
     qaItem.className = 'qa-item';
+    qaItem.dataset.index = String(index);
+    qaItem.draggable = true;
+    qaItem.addEventListener('dragstart', handleQADragStart);
+    qaItem.addEventListener('dragend', handleQADragEnd);
+    qaItem.addEventListener('dragover', handleQADragOver);
+    qaItem.addEventListener('dragleave', handleQADragLeave);
+    qaItem.addEventListener('drop', handleQADrop);
+
+    const header = document.createElement('div');
+    header.className = 'qa-item-header';
+
+    const dragHandle = document.createElement('button');
+    dragHandle.type = 'button';
+    dragHandle.className = 'qa-drag-handle';
+    dragHandle.setAttribute('aria-label', translate('qa.reorder'));
+    dragHandle.title = translate('qa.reorder');
+    dragHandle.innerHTML = '<span aria-hidden="true" class="qa-drag-handle-icon">⠿</span>';
+    dragHandle.draggable = true;
+    dragHandle.addEventListener('dragstart', handleQADragStart);
+    dragHandle.addEventListener('dragend', handleQADragEnd);
+    dragHandle.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        return;
+      }
+      event.preventDefault();
+      const direction = event.key === 'ArrowUp' ? -1 : 1;
+      const targetIndex = index + direction;
+      if (targetIndex >= 0 && targetIndex < state.qaItems.length) {
+        reorderQAItems(index, targetIndex, { focusIndex: targetIndex });
+      }
+    });
+    header.appendChild(dragHandle);
 
     const questionWrapper = document.createElement('div');
     const questionLabel = document.createElement('label');
@@ -2499,6 +2682,7 @@ function renderQAList() {
     questionTextarea.placeholder = translate('qa.questionPlaceholder');
     questionTextarea.value = item.question;
     questionTextarea.addEventListener('input', (event) => handleQAChange(index, 'question', event.target.value));
+    questionTextarea.addEventListener('dragstart', (event) => event.preventDefault());
     questionWrapper.appendChild(questionLabel);
     questionWrapper.appendChild(questionTextarea);
 
@@ -2511,6 +2695,7 @@ function renderQAList() {
     answerTextarea.placeholder = translate('qa.answerPlaceholder');
     answerTextarea.value = item.answer;
     answerTextarea.addEventListener('input', (event) => handleQAChange(index, 'answer', event.target.value));
+    answerTextarea.addEventListener('dragstart', (event) => event.preventDefault());
     answerWrapper.appendChild(answerLabel);
     answerWrapper.appendChild(answerTextarea);
 
@@ -2525,9 +2710,13 @@ function renderQAList() {
       actions.appendChild(removeButton);
     }
 
+    if (actions.childNodes.length > 0) {
+      header.appendChild(actions);
+    }
+
+    qaItem.appendChild(header);
     qaItem.appendChild(questionWrapper);
     qaItem.appendChild(answerWrapper);
-    qaItem.appendChild(actions);
 
     elements.qaList.appendChild(qaItem);
   });
