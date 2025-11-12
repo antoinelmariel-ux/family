@@ -752,7 +752,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.16';
+const APP_VERSION = '1.2.17';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -910,7 +910,60 @@ function createResolvedMetadataGroups(selectOptions, baseOptions = DEFAULT_SELEC
   }));
 }
 
-const LFB_LOGO_URL = './assets/images/lfb-logo.svg';
+const LFB_LOGO_URL = './assets/images/lfb-ethical-commitment-quadri.jpg';
+
+async function readImageDimensionsFromBlob(blob) {
+  return new Promise((resolve, reject) => {
+    if (!blob) {
+      resolve({ width: 0, height: 0 });
+      return;
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload = () => {
+      const width = image.naturalWidth || image.width || 0;
+      const height = image.naturalHeight || image.height || 0;
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width, height });
+    };
+    image.onerror = (event) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(event?.error || new Error('Impossible de charger les dimensions du logo.'));
+    };
+    image.src = objectUrl;
+  });
+}
+
+async function loadLogoImage(url, key = 'lfb-logo') {
+  if (!url) {
+    return null;
+  }
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Impossible de récupérer le logo (${response.status})`);
+  }
+  const blob = await response.blob();
+  const { width, height } = await readImageDimensionsFromBlob(blob);
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const format = (blob.type || 'image/jpeg').toLowerCase();
+  return {
+    key,
+    bytes,
+    width,
+    height,
+    format,
+  };
+}
+
+async function loadLogoImageSafely(url, key) {
+  try {
+    return await loadLogoImage(url, key);
+  } catch (error) {
+    console.warn('Impossible de charger le logo LFB pour le PDF :', error);
+    return null;
+  }
+}
 
 function loadInitialSelectOptions(configOptions = DEFAULT_SELECT_OPTIONS) {
   const fallback = normalizeSelectOptions(configOptions, configOptions);
@@ -1986,7 +2039,8 @@ const state = {
   isExportingPDF: false,
   activeGuidelineId: null,
   hiddenGuidelineIds: new Set(),
-  showHiddenGuidelines: false
+  showHiddenGuidelines: false,
+  logoImageData: null
 };
 
 const elements = {
@@ -3525,6 +3579,9 @@ async function handleExportPDF() {
     if (!window.ReactPDF || typeof window.ReactPDF.generatePDF !== 'function') {
       throw new Error('ReactPDF library unavailable');
     }
+    if (!state.logoImageData) {
+      state.logoImageData = await loadLogoImageSafely(LFB_LOGO_URL, 'lfb-logo');
+    }
     const language = state.language || currentLanguage;
     const fallbackTitle = translate('pdf.fallbackTitle', {}, 'Procédure', language);
     const selectOptions = state.selectOptions || DEFAULT_SELECT_OPTIONS;
@@ -3580,6 +3637,7 @@ async function handleExportPDF() {
       },
       branding: {
         showLogo: true,
+        logoImage: state.logoImageData,
       },
       footer: {
         title: footerTitle,
@@ -3961,11 +4019,15 @@ function registerEventListeners() {
 
 async function bootstrap() {
   try {
-    const configuration = await loadFieldConfigurationFromFile();
+    const [configuration, logoImage] = await Promise.all([
+      loadFieldConfigurationFromFile(),
+      loadLogoImageSafely(LFB_LOGO_URL, 'lfb-logo'),
+    ]);
     const normalizedConfiguration = normalizeSelectOptions(configuration, configuration);
     state.configDefaults = normalizedConfiguration;
     state.selectOptions = loadInitialSelectOptions(normalizedConfiguration);
     state.selectOptionDrafts = createEmptyOptionDrafts();
+    state.logoImageData = logoImage;
     synchronizeMetadataWithSelectOptions();
     renderAll();
     registerEventListeners();

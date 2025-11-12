@@ -223,6 +223,54 @@
     };
   }
 
+  function createImageItem({
+    x = DEFAULT_MARGIN,
+    y = DEFAULT_MARGIN,
+    width = 0,
+    height = 0,
+    data = null,
+    format = 'jpeg',
+    key = null,
+    pixelWidth = 0,
+    pixelHeight = 0,
+  } = {}) {
+    if (!data) {
+      return null;
+    }
+    let bytes;
+    if (data instanceof Uint8Array) {
+      bytes = data;
+    } else if (data instanceof ArrayBuffer) {
+      bytes = new Uint8Array(data);
+    } else if (Array.isArray(data)) {
+      bytes = Uint8Array.from(data);
+    } else {
+      return null;
+    }
+    if (!bytes || bytes.length === 0) {
+      return null;
+    }
+    const normalizedFormat = typeof format === 'string' ? format.toLowerCase() : 'jpeg';
+    const formatHint = normalizedFormat.includes('jpg') || normalizedFormat.includes('jpeg') ? 'jpeg' : normalizedFormat;
+    if (formatHint !== 'jpeg') {
+      return null;
+    }
+    const naturalWidth = Number.isFinite(pixelWidth) && pixelWidth > 0 ? pixelWidth : width;
+    const naturalHeight = Number.isFinite(pixelHeight) && pixelHeight > 0 ? pixelHeight : height;
+    return {
+      type: 'image',
+      x,
+      y,
+      width,
+      height,
+      bytes,
+      format: formatHint,
+      key,
+      pixelWidth: naturalWidth,
+      pixelHeight: naturalHeight,
+    };
+  }
+
   function wrapText(text, maxChars) {
     if (!text) {
       return [];
@@ -266,6 +314,34 @@
     const items = [];
     const logoX = DEFAULT_MARGIN;
     const logoY = PAGE_HEIGHT - DEFAULT_MARGIN - LOGO_HEIGHT;
+    const maxWidth = LOGO_WIDTH;
+    const maxHeight = LOGO_HEIGHT;
+    const logoImage = branding.logoImage;
+    if (logoImage && logoImage.bytes && logoImage.bytes.length > 0) {
+      const naturalWidth = Number.isFinite(logoImage.width) && logoImage.width > 0 ? logoImage.width : LOGO_WIDTH;
+      const naturalHeight =
+        Number.isFinite(logoImage.height) && logoImage.height > 0 ? logoImage.height : LOGO_HEIGHT;
+      const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight);
+      const drawWidth = naturalWidth * (Number.isFinite(scale) && scale > 0 ? scale : 1);
+      const drawHeight = naturalHeight * (Number.isFinite(scale) && scale > 0 ? scale : 1);
+      const offsetX = logoX + (maxWidth - drawWidth) / 2;
+      const offsetY = logoY + (maxHeight - drawHeight) / 2;
+      const imageItem = createImageItem({
+        x: offsetX,
+        y: offsetY,
+        width: drawWidth,
+        height: drawHeight,
+        data: logoImage.bytes,
+        format: logoImage.format || 'jpeg',
+        key: logoImage.key || 'logo-image',
+        pixelWidth: naturalWidth,
+        pixelHeight: naturalHeight,
+      });
+      if (imageItem) {
+        items.push(imageItem);
+        return items;
+      }
+    }
     items.push(
       createRectangleItem({
         x: logoX,
@@ -482,6 +558,25 @@
         parts.push('Q');
         return;
       }
+      if (item.type === 'image') {
+        if (!item.resourceName) {
+          return;
+        }
+        const width = Number.isFinite(item.width) ? item.width : 0;
+        const height = Number.isFinite(item.height) ? item.height : 0;
+        if (width <= 0 || height <= 0) {
+          return;
+        }
+        const x = Number.isFinite(item.x) ? item.x : 0;
+        const y = Number.isFinite(item.y) ? item.y : 0;
+        parts.push('q');
+        parts.push(
+          `${toFixedNumber(width)} 0 0 ${toFixedNumber(height)} ${toFixedNumber(x)} ${toFixedNumber(y)} cm`
+        );
+        parts.push(`/${item.resourceName} Do`);
+        parts.push('Q');
+        return;
+      }
       if (item.type === 'text') {
         const color = Array.isArray(item.color) && item.color.length === 3 ? item.color : [0, 0, 0];
         parts.push('BT');
@@ -511,6 +606,61 @@
     const pageObjectIds = [];
     let nextId = 4;
 
+    const imageEntries = [];
+    const imageEntriesByKey = new Map();
+    const imageEntriesByName = new Map();
+    const pageImageResources = [];
+
+    for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+      pageImageResources[pageIndex] = new Set();
+      const pageItems = Array.isArray(pages[pageIndex]) ? pages[pageIndex] : [];
+      pageItems.forEach((item) => {
+        if (!item || item.type !== 'image') {
+          return;
+        }
+        if (!item.bytes || item.bytes.length === 0) {
+          return;
+        }
+        const key = item.key || `image_${imageEntries.length}`;
+        let entry = imageEntriesByKey.get(key);
+        if (!entry) {
+          const name = `Im${imageEntries.length + 1}`;
+          const bytes = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes || []);
+          const width = Math.max(
+            1,
+            Math.round(
+              Number.isFinite(item.pixelWidth) && item.pixelWidth > 0 ? item.pixelWidth : item.width || 1
+            )
+          );
+          const height = Math.max(
+            1,
+            Math.round(
+              Number.isFinite(item.pixelHeight) && item.pixelHeight > 0 ? item.pixelHeight : item.height || 1
+            )
+          );
+          entry = {
+            key,
+            name,
+            bytes,
+            format: item.format || 'jpeg',
+            width,
+            height,
+            objectId: 0,
+          };
+          imageEntries.push(entry);
+          imageEntriesByKey.set(key, entry);
+          imageEntriesByName.set(name, entry);
+        }
+        item.resourceName = entry.name;
+        pageImageResources[pageIndex].add(entry.name);
+      });
+    }
+
+    imageEntries.forEach((entry) => {
+      entry.objectId = nextId;
+      nextId += 1;
+    });
+
     for (let i = 0; i < pageCount; i += 1) {
       contentObjectIds.push(nextId);
       nextId += 1;
@@ -527,16 +677,51 @@
     const kids = pageObjectIds.map((id) => `${id} 0 R`).join(' ');
     objects.push({ id: pagesObjectId, content: `<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>` });
 
+    imageEntries.forEach((entry) => {
+      const dictionary = [
+        '<< /Type /XObject',
+        '/Subtype /Image',
+        `/Width ${entry.width}`,
+        `/Height ${entry.height}`,
+        '/ColorSpace /DeviceRGB',
+        '/BitsPerComponent 8',
+        '/Filter /DCTDecode',
+        `/Length ${entry.bytes.length}`,
+        '>>',
+      ].join('\n');
+      objects.push({
+        id: entry.objectId,
+        content: {
+          stream: true,
+          dictionary,
+          bytes: entry.bytes,
+        },
+      });
+    });
+
     for (let i = 0; i < pageCount; i += 1) {
       const lines = pages[i] || [];
       const contentId = contentObjectIds[i];
       const pageId = pageObjectIds[i];
       const stream = buildContentStream(lines);
       objects.push({ id: contentId, content: stream });
+      const xObjectEntries = [];
+      const imageNames = pageImageResources[i] ? Array.from(pageImageResources[i]) : [];
+      imageNames.forEach((name) => {
+        const entry = imageEntriesByName.get(name);
+        if (entry) {
+          xObjectEntries.push(`/${name} ${entry.objectId} 0 R`);
+        }
+      });
+      const resourceParts = [`/Font << /${REGULAR_FONT} ${fontRegularId} 0 R /${BOLD_FONT} ${fontBoldId} 0 R >>`];
+      if (xObjectEntries.length > 0) {
+        resourceParts.push(`/XObject << ${xObjectEntries.join(' ')} >>`);
+      }
+      const resources = `<< ${resourceParts.join(' ')} >>`;
       const pageContent = [
         '<< /Type /Page',
         `/Parent ${pagesObjectId} 0 R`,
-        `/Resources << /Font << /${REGULAR_FONT} ${fontRegularId} 0 R /${BOLD_FONT} ${fontBoldId} 0 R >> >>`,
+        `/Resources ${resources}`,
         `/MediaBox [0 0 ${toFixedNumber(PAGE_WIDTH)} ${toFixedNumber(PAGE_HEIGHT)}]`,
         `/Contents ${contentId} 0 R >>`,
       ].join(' ');
@@ -554,11 +739,25 @@
     let byteLength = headerBytes.length;
 
     objects.forEach((object) => {
-      const chunk = `${object.id} 0 obj\n${object.content}\nendobj\n`;
       offsets[object.id] = byteLength;
-      const bytes = encoder.encode(chunk);
-      parts.push(bytes);
-      byteLength += bytes.length;
+      const content = object.content;
+      if (content && typeof content === 'object' && content.stream) {
+        const header = `${object.id} 0 obj\n${content.dictionary}\nstream\n`;
+        const headerBytes = encoder.encode(header);
+        parts.push(headerBytes);
+        byteLength += headerBytes.length;
+        const dataBytes = content.bytes instanceof Uint8Array ? content.bytes : new Uint8Array(content.bytes || []);
+        parts.push(dataBytes);
+        byteLength += dataBytes.length;
+        const footerBytes = encoder.encode('\nendstream\nendobj\n');
+        parts.push(footerBytes);
+        byteLength += footerBytes.length;
+      } else {
+        const chunk = `${object.id} 0 obj\n${content}\nendobj\n`;
+        const bytes = encoder.encode(chunk);
+        parts.push(bytes);
+        byteLength += bytes.length;
+      }
     });
 
     const xrefOffset = byteLength;
