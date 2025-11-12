@@ -596,6 +596,28 @@
       position: relative;
     }
 
+    .procedure-title-container {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 16px 60px;
+    }
+
+    .procedure-title-display {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .procedure-title-display.procedure-title-display--placeholder {
+      color: var(--muted);
+      font-style: italic;
+      font-weight: 500;
+    }
+
     .editor-guideline-layer {
       position: absolute;
       top: 0;
@@ -691,7 +713,8 @@
     .editor {
       min-height: 320px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
       padding: 16px 60px;
       line-height: 1.6;
       font-size: 15px;
@@ -1375,6 +1398,18 @@
       .backoffice-actions .secondary-btn {
         width: 100%;
       }
+
+      .procedure-title-container {
+        padding: 12px 20px;
+      }
+
+      .procedure-title-display {
+        font-size: 18px;
+      }
+
+      .editor {
+        padding: 16px 20px;
+      }
     }
   </style>
 </head>
@@ -1497,10 +1532,9 @@
               <span class="label-text">2. Contenu de la procédure</span>
             </h2>
             <div class="toolbar" id="editor-toolbar">
-              <button type="button" data-command="formatBlock" data-value="H1">H1</button>
-              <button type="button" data-command="formatBlock" data-value="H2">H2</button>
-              <button type="button" data-command="formatBlock" data-value="H3">H3</button>
-              <button type="button" data-command="formatBlock" data-value="H4">H4</button>
+              <button type="button" data-command="formatBlock" data-value="H2">Sous-titre</button>
+              <button type="button" data-command="formatBlock" data-value="H3">Section</button>
+              <button type="button" data-command="formatBlock" data-value="H4">Sous-section</button>
               <button type="button" data-command="bold">Gras</button>
               <button type="button" data-command="italic">Italique</button>
               <button type="button" id="insert-rational-btn">Rationnel</button>
@@ -1509,6 +1543,14 @@
             </div>
             <div class="editor-layout">
               <div class="editor-pane">
+                <div class="procedure-title-container" aria-live="polite">
+                  <div
+                    id="procedure-title-display"
+                    class="procedure-title-display"
+                    role="heading"
+                    aria-level="1"
+                  ></div>
+                </div>
                 <div class="editor" id="procedure-editor" contenteditable="true" aria-label="Zone d'édition du contenu"></div>
                 <div class="editor-guideline-layer" id="editor-guideline-layer" aria-hidden="true"></div>
               </div>
@@ -1615,7 +1657,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.18</footer>
+  <footer id="app-version">Version 1.2.19</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">

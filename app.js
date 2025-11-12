@@ -54,11 +54,19 @@ const TEXT = {
   'sections.editor': { fr: '2. Contenu de la procédure', en: '2. Procedure content', es: '2. Contenido del procedimiento' },
   'sections.qa': { fr: '3. Questions & Réponses', en: '3. Questions & Answers', es: '3. Preguntas y respuestas' },
   'sections.export': { fr: 'Aperçu & Export', en: 'Preview & Export', es: 'Vista previa y exportación' },
+  'toolbar.heading2': { fr: 'Sous-titre', en: 'Subtitle', es: 'Subtítulo' },
+  'toolbar.heading3': { fr: 'Section', en: 'Section', es: 'Sección' },
+  'toolbar.heading4': { fr: 'Sous-section', en: 'Subsection', es: 'Subsección' },
   'toolbar.bold': { fr: 'Gras', en: 'Bold', es: 'Negrita' },
   'toolbar.italic': { fr: 'Italique', en: 'Italic', es: 'Cursiva' },
   'toolbar.rational': { fr: 'Rationnel', en: 'Rationale', es: 'Racional' },
   'toolbar.unorderedList': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'toolbar.orderedList': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
+  'editor.title.placeholder': {
+    fr: 'Titre de la procédure',
+    en: 'Procedure title',
+    es: 'Título del procedimiento'
+  },
   'editor.ariaLabel': {
     fr: "Zone d'édition du contenu",
     en: 'Content editing area',
@@ -752,7 +760,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.18';
+const APP_VERSION = '1.2.19';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2084,6 +2092,7 @@ const elements = {
   editorPane: document.querySelector('.editor-pane'),
   editorMarkerLayer: document.getElementById('editor-guideline-layer'),
   toolbar: document.getElementById('editor-toolbar'),
+  procedureTitleDisplay: document.getElementById('procedure-title-display'),
   insertRationalButton: document.getElementById('insert-rational-btn'),
   qaList: document.getElementById('qa-list'),
   addQaButton: document.getElementById('add-qa-btn'),
@@ -2235,6 +2244,27 @@ function renderSectionTitles() {
   setLabelText(elements.closeGlossaryButton, translate('glossary.close'));
   setLabelText(elements.previewTitle, translate('preview.title'));
   setLabelText(elements.closePreviewButton, translate('preview.close'));
+}
+
+function renderProcedureTitleDisplay() {
+  if (!elements.procedureTitleDisplay) {
+    return;
+  }
+  const rawTitle = (state.metadata && state.metadata.title) || '';
+  const trimmedTitle = rawTitle.trim();
+  const placeholder = translate(
+    'editor.title.placeholder',
+    {},
+    translate('metadata.field.title.placeholder', {}, 'Titre de la procédure')
+  );
+  const displayText = trimmedTitle || placeholder;
+  elements.procedureTitleDisplay.textContent = displayText;
+  elements.procedureTitleDisplay.setAttribute('title', displayText);
+  if (trimmedTitle) {
+    elements.procedureTitleDisplay.classList.remove('procedure-title-display--placeholder');
+  } else {
+    elements.procedureTitleDisplay.classList.add('procedure-title-display--placeholder');
+  }
 }
 
 function renderStartInfo() {
@@ -3167,6 +3197,18 @@ function renderToolbar() {
   buttons.forEach((button) => {
     button.disabled = false;
   });
+  const heading2Button = elements.toolbar.querySelector('button[data-value="H2"]');
+  if (heading2Button) {
+    heading2Button.textContent = translate('toolbar.heading2');
+  }
+  const heading3Button = elements.toolbar.querySelector('button[data-value="H3"]');
+  if (heading3Button) {
+    heading3Button.textContent = translate('toolbar.heading3');
+  }
+  const heading4Button = elements.toolbar.querySelector('button[data-value="H4"]');
+  if (heading4Button) {
+    heading4Button.textContent = translate('toolbar.heading4');
+  }
   const boldButton = elements.toolbar.querySelector('button[data-command="bold"]');
   if (boldButton) {
     boldButton.textContent = translate('toolbar.bold');
@@ -3208,6 +3250,7 @@ function renderAll() {
   renderSectionTitles();
   renderStartInfo();
   renderMetadataGroups();
+  renderProcedureTitleDisplay();
   renderQAList();
   renderGuidelines();
   renderGlossary();
