@@ -1233,6 +1233,13 @@
       line-height: 1.5;
     }
 
+    .glossary-actions {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
     .glossary-list {
       list-style: none;
       margin: 0;
@@ -1715,7 +1722,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.20</footer>
+  <footer id="app-version">Version 1.2.21</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
@@ -1793,6 +1800,19 @@
       <p class="glossary-description" id="glossary-description">
         Consultez la base des acronymes partagés pour assurer une terminologie cohérente.
       </p>
+      <div class="glossary-actions">
+        <button type="button" class="secondary-btn" id="download-glossary-json-btn">
+          <span class="icon icon--export" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+              <rect x="6.5" y="9" width="11" height="8.5" rx="2"></rect>
+              <path d="M12 6.5V14"></path>
+              <polyline points="8.75 10.5 12 7.25 15.25 10.5"></polyline>
+            </svg>
+          </span>
+          <span class="label-text">Télécharger (JSON)</span>
+        </button>
+      </div>
       <p id="glossary-loading" style="color: var(--muted); margin: 0;">Chargement de la liste des acronymes…</p>
       <p class="warning" id="glossary-error" hidden></p>
       <div class="glossary-form" id="glossary-form-container">

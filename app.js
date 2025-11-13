@@ -238,6 +238,11 @@ const TEXT = {
     en: 'Review the shared acronym repository to keep terminology consistent.',
     es: 'Consulta la base de acrónimos compartida para mantener una terminología coherente.'
   },
+  'glossary.downloadJson': {
+    fr: 'Télécharger (JSON)',
+    en: 'Download (JSON)',
+    es: 'Descargar (JSON)'
+  },
   'glossary.form.title': {
     fr: 'Ajouter un acronyme',
     en: 'Add an acronym',
@@ -765,7 +770,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.20';
+const APP_VERSION = '1.2.21';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -2128,6 +2133,7 @@ const elements = {
   glossaryLoading: document.getElementById('glossary-loading'),
   glossaryError: document.getElementById('glossary-error'),
   glossaryDescription: document.getElementById('glossary-description'),
+  downloadGlossaryJsonButton: document.getElementById('download-glossary-json-btn'),
   glossaryFormContainer: document.getElementById('glossary-form-container'),
   glossaryForm: document.getElementById('glossary-form'),
   glossaryFormTitle: document.getElementById('glossary-form-title'),
@@ -2392,6 +2398,7 @@ function renderSectionTitles() {
   if (elements.glossaryDescription) {
     elements.glossaryDescription.textContent = translate('glossary.description');
   }
+  setLabelText(elements.downloadGlossaryJsonButton, translate('glossary.downloadJson'));
   setLabelText(elements.closeGlossaryButton, translate('glossary.close'));
   setLabelText(elements.previewTitle, translate('preview.title'));
   setLabelText(elements.closePreviewButton, translate('preview.close'));
@@ -3077,6 +3084,10 @@ function renderGlossary() {
     setLabelText(elements.addGlossaryEntryButton, translate('glossary.form.submit'));
     elements.addGlossaryEntryButton.disabled = Boolean(state.isGlossaryLoading);
   }
+  if (elements.downloadGlossaryJsonButton) {
+    setLabelText(elements.downloadGlossaryJsonButton, translate('glossary.downloadJson'));
+    elements.downloadGlossaryJsonButton.disabled = Boolean(state.isGlossaryLoading);
+  }
   if (elements.glossaryFormError) {
     if (state.glossaryFormErrorKey) {
       const message = translate(
@@ -3600,6 +3611,27 @@ function handleGlossaryFormSubmit(event) {
   if (elements.glossaryTermInput && typeof elements.glossaryTermInput.focus === 'function') {
     elements.glossaryTermInput.focus();
   }
+}
+
+function handleDownloadGlossaryJSON() {
+  if (!elements.downloadGlossaryJsonButton) {
+    return;
+  }
+  const sortLocale = state.language || DEFAULT_LANGUAGE;
+  const entries = Object.entries(state.glossary || {})
+    .sort(([termA], [termB]) => termA.localeCompare(termB, sortLocale, { sensitivity: 'base' }))
+    .map(([term, definition]) => ({ term, definition }));
+  const payload = { acronyms: entries };
+  const jsonString = `${JSON.stringify(payload, null, 2)}\n`;
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'acronyms.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function handleQAChange(index, field, value) {
@@ -4254,6 +4286,9 @@ function registerEventListeners() {
   }
   if (elements.glossaryForm) {
     elements.glossaryForm.addEventListener('submit', handleGlossaryFormSubmit);
+  }
+  if (elements.downloadGlossaryJsonButton) {
+    elements.downloadGlossaryJsonButton.addEventListener('click', handleDownloadGlossaryJSON);
   }
   if (elements.glossaryTermInput) {
     elements.glossaryTermInput.addEventListener('input', handleGlossaryTermInput);
