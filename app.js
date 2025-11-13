@@ -1,3 +1,5 @@
+import { LFB_LOGO_BASE64 } from './assets/images/lfb-logo-base64.js';
+
 const LANGUAGE_STORAGE_KEY = 'procedureBuilderLanguage';
 const DEFAULT_LANGUAGE = 'fr';
 const SUPPORTED_LANGUAGES = [
@@ -770,7 +772,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.21';
+const APP_VERSION = '1.2.23';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -952,6 +954,45 @@ async function readImageDimensionsFromBlob(blob) {
   });
 }
 
+function decodeBase64ToUint8Array(base64) {
+  if (typeof base64 !== 'string') {
+    return null;
+  }
+  const normalized = base64.replace(/\s/g, '');
+  if (!normalized) {
+    return null;
+  }
+  let binaryString;
+  try {
+    binaryString = window.atob(normalized);
+  } catch (error) {
+    console.warn('Impossible de décoder le logo LFB encodé en base64 :', error);
+    return null;
+  }
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    bytes[index] = binaryString.charCodeAt(index);
+  }
+  return bytes;
+}
+
+async function createLogoImageFromBase64(base64, key = 'lfb-logo') {
+  const bytes = decodeBase64ToUint8Array(base64);
+  if (!bytes) {
+    return null;
+  }
+  const blob = new Blob([bytes], { type: 'image/jpeg' });
+  const { width, height } = await readImageDimensionsFromBlob(blob);
+  return {
+    key,
+    bytes,
+    width,
+    height,
+    format: 'image/jpeg',
+  };
+}
+
 async function loadLogoImage(url, key = 'lfb-logo') {
   if (!url) {
     return null;
@@ -979,7 +1020,12 @@ async function loadLogoImageSafely(url, key) {
     return await loadLogoImage(url, key);
   } catch (error) {
     console.warn('Impossible de charger le logo LFB pour le PDF :', error);
-    return null;
+    try {
+      return await createLogoImageFromBase64(LFB_LOGO_BASE64, key);
+    } catch (fallbackError) {
+      console.warn('Impossible de charger le logo LFB intégré au fallback :', fallbackError);
+      return null;
+    }
   }
 }
 
