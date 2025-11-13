@@ -573,6 +573,19 @@
       color: var(--muted);
     }
 
+    [data-risk-table] .risk-actions-stacked {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    [data-risk-table] .risk-actions-stacked .risk-action-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .editor-card {
       display: flex;
       flex-direction: column;
@@ -1722,7 +1735,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.23</footer>
+  <footer id="app-version">Version 1.2.24</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">

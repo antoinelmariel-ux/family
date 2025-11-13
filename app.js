@@ -1294,6 +1294,8 @@ let procedureTemplateDefaults = normalizeTemplateConfiguration(PROCEDURE_TEMPLAT
 
 const PROCEDURE_TEMPLATE_STORAGE_KEY = 'procedureBuilderTemplates';
 
+let riskLayoutObserver = null;
+
 function loadCustomTemplates() {
   if (typeof window === 'undefined' || !window.localStorage) {
     return {};
@@ -3521,6 +3523,111 @@ function renderExportActions() {
   }
 }
 
+function matchesRiskHeadingText(value) {
+  const normalized = normalizeForComparison(value || '');
+  return (
+    normalized.includes('liste des risques') ||
+    normalized.includes('risk list') ||
+    normalized.includes('lista de riesgos')
+  );
+}
+
+function findActionsColumnIndex(table) {
+  const headerCells = Array.from(table.querySelectorAll('thead th'));
+  if (headerCells.length > 0) {
+    const matchingIndex = headerCells.findIndex((cell) => {
+      const text = normalizeForComparison(cell.textContent || '');
+      return text.includes('action') || text.includes('accion');
+    });
+    if (matchingIndex !== -1) {
+      return matchingIndex;
+    }
+    return headerCells.length - 1;
+  }
+  const firstBody = table.tBodies && table.tBodies.length > 0 ? table.tBodies[0] : null;
+  if (firstBody && firstBody.rows.length > 0 && firstBody.rows[0].cells.length > 0) {
+    return firstBody.rows[0].cells.length - 1;
+  }
+  return -1;
+}
+
+function applyRiskActionsLayout(table, columnIndex) {
+  if (!table || columnIndex < 0) {
+    return;
+  }
+  table.setAttribute('data-risk-table', 'true');
+  const bodies = table.tBodies && table.tBodies.length > 0 ? Array.from(table.tBodies) : [];
+  bodies.forEach((tbody) => {
+    Array.from(tbody.rows).forEach((row) => {
+      const targetCell = row.cells && row.cells.length > columnIndex ? row.cells[columnIndex] : null;
+      if (!targetCell) {
+        return;
+      }
+      if (!targetCell.classList.contains('risk-actions-stacked')) {
+        targetCell.classList.add('risk-actions-stacked');
+      }
+      Array.from(targetCell.children).forEach((child) => {
+        if (child instanceof HTMLElement && !child.classList.contains('risk-action-item')) {
+          child.classList.add('risk-action-item');
+        }
+      });
+    });
+  });
+}
+
+function enhanceRiskTableLayout() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  headings.forEach((heading) => {
+    if (!matchesRiskHeadingText(heading.textContent || '')) {
+      return;
+    }
+    const tables = new Set();
+    let sibling = heading.nextElementSibling;
+    while (sibling) {
+      if (sibling.tagName === 'TABLE') {
+        tables.add(sibling);
+        break;
+      }
+      if (sibling.querySelector) {
+        sibling.querySelectorAll('table').forEach((table) => tables.add(table));
+        if (tables.size > 0) {
+          break;
+        }
+      }
+      sibling = sibling.nextElementSibling;
+    }
+    if (tables.size === 0) {
+      const container = heading.closest('section, article, div');
+      if (container && container.querySelectorAll) {
+        container.querySelectorAll('table').forEach((table) => tables.add(table));
+      }
+    }
+    tables.forEach((table) => {
+      const columnIndex = findActionsColumnIndex(table);
+      applyRiskActionsLayout(table, columnIndex);
+    });
+  });
+}
+
+function ensureRiskLayoutObserver() {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+    return;
+  }
+  if (riskLayoutObserver) {
+    return;
+  }
+  riskLayoutObserver = new MutationObserver((mutations) => {
+    const hasAddedNodes = mutations.some((mutation) => mutation.addedNodes && mutation.addedNodes.length > 0);
+    if (hasAddedNodes) {
+      enhanceRiskTableLayout();
+    }
+  });
+  riskLayoutObserver.observe(document.body, { childList: true, subtree: true });
+}
+
 function renderAll() {
   renderHeader();
   renderSectionTitles();
@@ -3535,6 +3642,7 @@ function renderAll() {
   renderBackoffice();
   renderToolbar();
   renderExportActions();
+  enhanceRiskTableLayout();
 }
 
 function updateGuidelinesAndWarnings() {
@@ -4440,6 +4548,7 @@ async function bootstrap() {
     synchronizeMetadataWithSelectOptions();
     renderAll();
     registerEventListeners();
+    ensureRiskLayoutObserver();
     try {
       const glossaryData = await loadGlossaryData(configuration.acronyms);
       state.glossary = glossaryData;
