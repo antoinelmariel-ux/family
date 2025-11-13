@@ -1981,8 +1981,55 @@ function parseMarkdownProcedure(markdown, language) {
   };
 }
 
+function normalizeGlossaryEntries(source) {
+  if (!source) {
+    return {};
+  }
+
+  const normalized = {};
+
+  const registerEntry = (term, definition) => {
+    if (typeof term !== 'string' || typeof definition !== 'string') {
+      return;
+    }
+    const normalizedTerm = term.trim().toUpperCase();
+    if (!normalizedTerm) {
+      return;
+    }
+    const normalizedDefinition = definition.replace(/\s+/g, ' ').trim();
+    if (!normalizedDefinition) {
+      return;
+    }
+    normalized[normalizedTerm] = normalizedDefinition;
+  };
+
+  if (Array.isArray(source)) {
+    source.forEach((entry) => {
+      if (entry && typeof entry === 'object') {
+        registerEntry(entry.term, entry.definition);
+      }
+    });
+    return normalized;
+  }
+
+  if (typeof source === 'object') {
+    if (Array.isArray(source.acronyms)) {
+      return normalizeGlossaryEntries(source.acronyms);
+    }
+    Object.entries(source).forEach(([term, definition]) => {
+      registerEntry(term, definition);
+    });
+  }
+
+  return normalized;
+}
+
 async function loadFieldConfigurationFromFile() {
-  const fallback = { selectOptions: DEFAULT_SELECT_OPTIONS, templates: PROCEDURE_TEMPLATES };
+  const fallback = {
+    selectOptions: DEFAULT_SELECT_OPTIONS,
+    templates: PROCEDURE_TEMPLATES,
+    acronyms: {},
+  };
   try {
     const response = await fetch('./field-config.json', { cache: 'no-store' });
     if (!response.ok) {
@@ -1997,51 +2044,34 @@ async function loadFieldConfigurationFromFile() {
     const hasSelectOptions = data.selectOptions && typeof data.selectOptions === 'object' && !Array.isArray(data.selectOptions);
     const selectOptions = hasSelectOptions ? data.selectOptions : data;
     const templates = data.templates && typeof data.templates === 'object' ? data.templates : {};
+    const acronymsSource = data.acronyms || data.glossary || null;
+    const acronyms = normalizeGlossaryEntries(acronymsSource);
 
-    return { selectOptions, templates };
+    return { selectOptions, templates, acronyms };
   } catch (error) {
     console.warn('Impossible de charger la configuration des champs :', error);
     return fallback;
   }
 }
 
-async function loadGlossaryData() {
+async function loadGlossaryData(fallbackAcronyms = null) {
+  const fallbackNormalized = normalizeGlossaryEntries(fallbackAcronyms);
   try {
     const response = await fetch('./glossary.json');
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
-    if (!data) {
-      return {};
+    const normalized = normalizeGlossaryEntries(data);
+    if (Object.keys(normalized).length === 0) {
+      return fallbackNormalized;
     }
-    if (Array.isArray(data)) {
-      return data.reduce((acc, entry) => {
-        if (entry && typeof entry.term === 'string' && typeof entry.definition === 'string') {
-          acc[entry.term] = entry.definition;
-        }
-        return acc;
-      }, {});
-    }
-    if (Array.isArray(data.acronyms)) {
-      return data.acronyms.reduce((acc, entry) => {
-        if (entry && typeof entry.term === 'string' && typeof entry.definition === 'string') {
-          acc[entry.term] = entry.definition;
-        }
-        return acc;
-      }, {});
-    }
-    if (typeof data === 'object') {
-      return Object.entries(data).reduce((acc, [key, value]) => {
-        if (typeof key === 'string' && typeof value === 'string') {
-          acc[key] = value;
-        }
-        return acc;
-      }, {});
-    }
-    return {};
+    return normalized;
   } catch (error) {
     console.error('Erreur lors du chargement de la liste des acronymes :', error);
+    if (Object.keys(fallbackNormalized).length > 0) {
+      return fallbackNormalized;
+    }
     throw error;
   }
 }
@@ -3613,14 +3643,18 @@ function handleGlossaryFormSubmit(event) {
   }
 }
 
+function getSortedAcronymEntries(locale = DEFAULT_LANGUAGE) {
+  const sortLocale = locale || DEFAULT_LANGUAGE;
+  return Object.entries(state.glossary || {})
+    .sort(([termA], [termB]) => termA.localeCompare(termB, sortLocale, { sensitivity: 'base' }))
+    .map(([term, definition]) => ({ term, definition }));
+}
+
 function handleDownloadGlossaryJSON() {
   if (!elements.downloadGlossaryJsonButton) {
     return;
   }
-  const sortLocale = state.language || DEFAULT_LANGUAGE;
-  const entries = Object.entries(state.glossary || {})
-    .sort(([termA], [termB]) => termA.localeCompare(termB, sortLocale, { sensitivity: 'base' }))
-    .map(([term, definition]) => ({ term, definition }));
+  const entries = getSortedAcronymEntries(state.language);
   const payload = { acronyms: entries };
   const jsonString = `${JSON.stringify(payload, null, 2)}\n`;
   const blob = new Blob([jsonString], { type: 'application/json' });
@@ -4153,7 +4187,8 @@ function handleExportConfig() {
   try {
     const selectOptions = normalizeSelectOptions(state.selectOptions, state.configDefaults);
     const templates = normalizeTemplateConfiguration(state.templateDrafts, procedureTemplateDefaults);
-    const exportData = { selectOptions, templates };
+    const acronyms = getSortedAcronymEntries(DEFAULT_LANGUAGE);
+    const exportData = { selectOptions, templates, acronyms };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -4323,6 +4358,7 @@ async function bootstrap() {
       loadFieldConfigurationFromFile(),
       loadLogoImageSafely(LFB_LOGO_URL, 'lfb-logo'),
     ]);
+    const configurationAcronyms = normalizeGlossaryEntries(configuration.acronyms);
     const normalizedSelectDefaults = normalizeSelectOptions(
       configuration.selectOptions,
       configuration.selectOptions
@@ -4341,6 +4377,7 @@ async function bootstrap() {
     state.selectOptions = loadInitialSelectOptions(normalizedSelectDefaults);
     state.selectOptionDrafts = createEmptyOptionDrafts();
     state.templateDrafts = createInitialTemplateDrafts();
+    state.glossary = configurationAcronyms;
 
     const nextInitialContent = getInitialContentHTML(state.language);
     state.initialContentHTML = nextInitialContent;
@@ -4358,11 +4395,10 @@ async function bootstrap() {
     renderAll();
     registerEventListeners();
     try {
-      const glossaryData = await loadGlossaryData();
+      const glossaryData = await loadGlossaryData(configuration.acronyms);
       state.glossary = glossaryData;
       state.glossaryError = null;
     } catch (error) {
-      state.glossary = {};
       state.glossaryError = translate('glossary.error');
     } finally {
       state.isGlossaryLoading = false;
