@@ -34,6 +34,18 @@
   const LOGO_COLOR = hexToRgbFraction(LOGO_COLOR_HEX);
   const WHITE_COLOR = [1, 1, 1];
 
+  const FLOWCHART_PALETTES = {
+    start: { fill: hexToRgbFraction('#E6F4ED'), text: hexToRgbFraction('#146C43') },
+    action: { fill: hexToRgbFraction('#E7ECFF'), text: hexToRgbFraction('#273E88') },
+    decision: { fill: hexToRgbFraction('#FCEFD6'), text: hexToRgbFraction('#8B5A14') },
+    end: { fill: hexToRgbFraction('#F9E1E4'), text: hexToRgbFraction('#A1273D') },
+    connector: hexToRgbFraction('#CBD5F5'),
+  };
+
+  function getFlowchartPalette(type) {
+    return FLOWCHART_PALETTES[type] || FLOWCHART_PALETTES.action;
+  }
+
   function estimateTextWidth(text, fontSize) {
     if (!text) {
       return 0;
@@ -531,11 +543,107 @@
       currentY -= amount;
     }
 
+    function addFlowchart(flowchart, options = {}) {
+      if (!flowchart || !Array.isArray(flowchart.nodes)) {
+        return;
+      }
+      const nodes = flowchart.nodes
+        .map((node) => ({
+          type: typeof node.type === 'string' ? node.type : 'action',
+          label: typeof node.label === 'string' ? node.label : '',
+          typeLabel: typeof node.typeLabel === 'string' ? node.typeLabel : '',
+        }))
+        .filter((node) => node.label && node.label.length > 0);
+      if (nodes.length === 0) {
+        return;
+      }
+      const nodeHeight = 48;
+      const connectorHeight = 24;
+      const spacingAfter = Number.isFinite(options.spacingAfter) ? options.spacingAfter : 12;
+      const totalHeight = nodes.length * nodeHeight + Math.max(0, nodes.length - 1) * connectorHeight;
+      ensureSpace(totalHeight + spacingAfter);
+      currentY -= totalHeight;
+      const chartBottom = currentY;
+      const chartTop = chartBottom + totalHeight;
+      const centerX = PAGE_WIDTH / 2;
+      const nodeWidth = Math.min(320, PAGE_WIDTH - DEFAULT_MARGIN * 2);
+      let cursorTop = chartTop;
+      nodes.forEach((node, index) => {
+        const palette = getFlowchartPalette(node.type);
+        const nodeBottom = cursorTop - nodeHeight;
+        currentPage.push(
+          createRectangleItem({
+            x: centerX - nodeWidth / 2,
+            y: nodeBottom,
+            width: nodeWidth,
+            height: nodeHeight,
+            color: palette.fill,
+          })
+        );
+        let textBaseline = nodeBottom + nodeHeight - 14;
+        const typeLabel = (node.typeLabel || '').toUpperCase();
+        if (typeLabel) {
+          const typeWidth = estimateTextWidth(typeLabel, 9);
+          const typeX = centerX - typeWidth / 2;
+          currentPage.push(
+            createTextItem(typeLabel, {
+              fontSize: 9,
+              bold: true,
+              x: typeX,
+              y: textBaseline,
+              color: palette.text,
+            })
+          );
+          textBaseline -= 12;
+        }
+        const availableWidth = nodeWidth - 32;
+        const maxChars = Math.max(8, Math.floor(availableWidth / (12 * 0.55)));
+        const labelLines = wrapText(node.label, maxChars).slice(0, 4);
+        if (labelLines.length === 0) {
+          labelLines.push(node.label);
+        }
+        labelLines.forEach((line) => {
+          const width = estimateTextWidth(line, 12);
+          const textX = centerX - width / 2;
+          currentPage.push(
+            createTextItem(line, {
+              fontSize: 12,
+              x: textX,
+              y: textBaseline,
+              color: palette.text,
+            })
+          );
+          textBaseline -= 14;
+        });
+        cursorTop = nodeBottom;
+        if (index < nodes.length - 1) {
+          const connectorBottom = cursorTop - connectorHeight;
+          const connectorColor = FLOWCHART_PALETTES.connector || [0.7, 0.75, 0.9];
+          currentPage.push(
+            createRectangleItem({
+              x: centerX - 2,
+              y: connectorBottom + 6,
+              width: 4,
+              height: connectorHeight - 12,
+              color: connectorColor,
+            })
+          );
+          cursorTop = connectorBottom;
+        }
+      });
+      currentY = chartBottom;
+      if (spacingAfter > 0) {
+        ensureSpace(spacingAfter);
+        currentY -= spacingAfter;
+      }
+    }
+
     return {
       pages,
       addLine,
       addParagraph,
       addSpacer,
+      addFlowchart,
     };
   }
 
@@ -842,6 +950,16 @@
 
     if (content.length > 0) {
       layout.addSpacer(12);
+    }
+
+    const flowchart = data.flowchart;
+    const hasFlowchart = flowchart && Array.isArray(flowchart.nodes) && flowchart.nodes.length > 0;
+    if (hasFlowchart) {
+      const flowchartTitle = (flowchart.title && flowchart.title.trim())
+        || (strings.flowchartTitle && strings.flowchartTitle.trim())
+        || 'Logigramme';
+      layout.addLine(flowchartTitle, 14, { bold: true, spacingAfter: 8 });
+      layout.addFlowchart(flowchart, { spacingAfter: 12 });
     }
 
     const sectionTitle = strings.sectionTitle || 'Questions & Réponses';
