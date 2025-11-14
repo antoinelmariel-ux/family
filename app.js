@@ -64,6 +64,65 @@ const TEXT = {
   'toolbar.rational': { fr: 'Rationnel', en: 'Rationale', es: 'Racional' },
   'toolbar.unorderedList': { fr: 'Liste à puces', en: 'Bulleted list', es: 'Lista con viñetas' },
   'toolbar.orderedList': { fr: 'Liste numérotée', en: 'Numbered list', es: 'Lista numerada' },
+  'flowchart.title': {
+    fr: 'Atelier logigramme',
+    en: 'Flowchart studio',
+    es: 'Taller de diagrama de flujo'
+  },
+  'flowchart.subtitle': {
+    fr: 'Visualisez vos étapes clés avec un diagramme clair et harmonieux.',
+    en: 'Map key steps through a beautifully styled, easy-to-read flowchart.',
+    es: 'Representa los pasos clave con un diagrama de flujo claro y atractivo.'
+  },
+  'flowchart.typeSelectorLabel': { fr: 'Type d’étape', en: 'Step type', es: 'Tipo de paso' },
+  'flowchart.type.start': { fr: 'Début', en: 'Start', es: 'Inicio' },
+  'flowchart.type.action': { fr: 'Action', en: 'Action', es: 'Acción' },
+  'flowchart.type.decision': { fr: 'Décision', en: 'Decision', es: 'Decisión' },
+  'flowchart.type.end': { fr: 'Fin', en: 'End', es: 'Fin' },
+  'flowchart.labelLabel': { fr: 'Nom de l’étape', en: 'Step name', es: 'Nombre del paso' },
+  'flowchart.labelPlaceholder': {
+    fr: 'Ex. Vérifier la demande',
+    en: 'e.g. Validate the request',
+    es: 'Ej. Verificar la solicitud'
+  },
+  'flowchart.addStep': { fr: 'Ajouter l’étape', en: 'Add step', es: 'Añadir paso' },
+  'flowchart.updateStep': { fr: 'Mettre à jour l’étape', en: 'Update step', es: 'Actualizar paso' },
+  'flowchart.cancelEdit': { fr: 'Annuler', en: 'Cancel', es: 'Cancelar' },
+  'flowchart.empty': {
+    fr: 'Ajoutez des étapes pour construire votre logigramme.',
+    en: 'Add steps to build your flowchart.',
+    es: 'Añade pasos para construir tu diagrama de flujo.'
+  },
+  'flowchart.previewTitle': {
+    fr: 'Aperçu du logigramme',
+    en: 'Flowchart preview',
+    es: 'Vista previa del diagrama'
+  },
+  'flowchart.descriptionLabel': {
+    fr: 'Description du logigramme',
+    en: 'Flowchart description',
+    es: 'Descripción del diagrama'
+  },
+  'flowchart.descriptionHelper': {
+    fr: 'Cette description sera ajoutée uniquement dans l’export Markdown.',
+    en: 'This description is exported only in the Markdown file.',
+    es: 'Esta descripción solo se añadirá en la exportación Markdown.'
+  },
+  'flowchart.descriptionPlaceholder': {
+    fr: 'Décrivez la logique générale du logigramme',
+    en: 'Describe the overall logic of the flowchart',
+    es: 'Describe la lógica general del diagrama de flujo'
+  },
+  'flowchart.descriptionWarning': {
+    fr: '⚠️ Ajoutez une description pour documenter ce logigramme dans le Markdown.',
+    en: '⚠️ Add a description to document this flowchart in the Markdown export.',
+    es: '⚠️ Añade una descripción para documentar este diagrama en la exportación Markdown.'
+  },
+  'flowchart.stepActions.edit': { fr: 'Modifier', en: 'Edit', es: 'Editar' },
+  'flowchart.stepActions.delete': { fr: 'Supprimer', en: 'Remove', es: 'Eliminar' },
+  'flowchart.stepActions.moveUp': { fr: 'Monter', en: 'Move up', es: 'Subir' },
+  'flowchart.stepActions.moveDown': { fr: 'Descendre', en: 'Move down', es: 'Bajar' },
+  'flowchart.sectionTitle': { fr: 'Logigramme', en: 'Flowchart', es: 'Diagrama de flujo' },
   'editor.title.placeholder': {
     fr: 'Titre de la procédure',
     en: 'Procedure title',
@@ -772,7 +831,7 @@ const DEFAULT_SELECT_OPTIONS = SELECT_FIELD_SCHEMAS.reduce((acc, field) => {
   return acc;
 }, {});
 const SELECT_OPTION_STORAGE_KEY = 'procedureBuilderSelectOptions';
-const APP_VERSION = '1.2.23';
+const APP_VERSION = '1.2.24';
 
 function createInitialMetadata() {
   return METADATA_FIELD_SCHEMAS.reduce((acc, field) => {
@@ -786,6 +845,24 @@ function createInitialMetadata() {
 }
 
 let currentLanguage = DEFAULT_LANGUAGE;
+
+let flowchartStepIdCounter = 0;
+
+function generateFlowchartStepId() {
+  flowchartStepIdCounter += 1;
+  return `flow-step-${Date.now()}-${flowchartStepIdCounter}`;
+}
+
+function sanitizeFlowchartLabel(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function normalizeFlowchartType(type) {
+  return FLOWCHART_TYPES.includes(type) ? type : 'action';
+}
 
 function getTranslationValue(key, language = currentLanguage) {
   const entry = TEXT[key];
@@ -1057,6 +1134,7 @@ function createEmptyOptionDrafts() {
 }
 
 const createInitialQAItems = () => [{ question: '', answer: '' }];
+const createInitialFlowchartSteps = () => [];
 
 const PRONOUNS_BY_LANGUAGE = {
   fr: ['il', 'elle', 'ils', 'elles', 'on'],
@@ -1146,6 +1224,21 @@ const DEFINITION_TITLES = {
   fr: 'Définition',
   en: 'Definition',
   es: 'Definición'
+};
+
+const FLOWCHART_SECTION_TITLES = {
+  fr: 'Logigramme',
+  en: 'Flowchart',
+  es: 'Diagrama de flujo'
+};
+
+const FLOWCHART_TYPES = ['start', 'action', 'decision', 'end'];
+
+const FLOWCHART_TYPE_ICONS = {
+  start: '●',
+  action: '⬛',
+  decision: '◆',
+  end: '⏹'
 };
 
 const PROCEDURE_TEMPLATES = {
@@ -1787,7 +1880,7 @@ function htmlToMarkdown(html, language = (state && state.language) || currentLan
   return blocks.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function buildMarkdown(metadata, contentHTML, qaItems) {
+function buildMarkdown(metadata, contentHTML, qaItems, flowchartDescription = '') {
   const activeLanguage = (state && state.language) || currentLanguage;
   const contentMarkdown = htmlToMarkdown(contentHTML || '', activeLanguage);
   const cleanContent = contentMarkdown
@@ -1795,6 +1888,14 @@ function buildMarkdown(metadata, contentHTML, qaItems) {
     .replace(/\s+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+  const normalizedQAItems = Array.isArray(qaItems)
+    ? qaItems
+        .map((item) => ({
+          question: (item && item.question ? item.question : '').trim(),
+          answer: (item && item.answer ? item.answer : '').trim(),
+        }))
+        .filter((item) => item.question.length > 0 || item.answer.length > 0)
+    : [];
 
   const lines = [
     '---',
@@ -1814,11 +1915,28 @@ function buildMarkdown(metadata, contentHTML, qaItems) {
     cleanContent
   ];
 
-  if (qaItems.length > 0) {
+  const normalizedDescription = typeof flowchartDescription === 'string'
+    ? flowchartDescription.replace(/\r\n/g, '\n').trim()
+    : '';
+  if (normalizedDescription) {
+    const flowchartTitle = translate(
+      'flowchart.sectionTitle',
+      {},
+      FLOWCHART_SECTION_TITLES[activeLanguage] || FLOWCHART_SECTION_TITLES[DEFAULT_LANGUAGE],
+      activeLanguage
+    );
+    const descriptionLines = normalizedDescription.split('\n');
+    lines.push('', `## ${flowchartTitle}`, '');
+    descriptionLines.forEach((line) => {
+      lines.push(line);
+    });
+  }
+
+  if (normalizedQAItems.length > 0) {
     lines.push('', '## Questions & Réponses');
-    qaItems.forEach((item, index) => {
-      const question = (item.question || '').trim().replace(/[ \t]+/g, ' ');
-      const answer = (item.answer || '').trim().replace(/[ \t]+/g, ' ');
+    normalizedQAItems.forEach((item, index) => {
+      const question = item.question.replace(/[ \t]+/g, ' ');
+      const answer = item.answer.replace(/[ \t]+/g, ' ');
       lines.push('', `### Question ${index + 1}`, `**Question :** ${question}`, `**Réponse :** ${answer}`);
     });
   }
@@ -1999,6 +2117,27 @@ function parseMarkdownProcedure(markdown, language) {
     body = body.slice(0, qaIndex);
   }
 
+  let flowchartDescription = '';
+  if (body) {
+    const titles = Object.values(FLOWCHART_SECTION_TITLES)
+      .map((title) => (typeof title === 'string' ? title.trim() : ''))
+      .filter(Boolean);
+    if (titles.length > 0) {
+      const pattern = new RegExp(`^##\s+(?:${titles.map(escapeRegExp).join('|')})\s*$`, 'i');
+      const bodyLines = body.split(/\r?\n/);
+      const headingIndex = bodyLines.findIndex((line) => pattern.test(line.trim()));
+      if (headingIndex !== -1) {
+        let endIndex = headingIndex + 1;
+        while (endIndex < bodyLines.length && !/^##\s+/.test(bodyLines[endIndex].trim())) {
+          endIndex += 1;
+        }
+        flowchartDescription = bodyLines.slice(headingIndex + 1, endIndex).join('\n').trim();
+        bodyLines.splice(headingIndex, endIndex - headingIndex);
+        body = bodyLines.join('\n');
+      }
+    }
+  }
+
   const qaItems = [];
   if (qaMarkdown) {
     const qaItemRegex = /###\s+Question\s+\d+\s*[\r\n]+(?:\*\*Question\s*:\*\*\s*)([\s\S]*?)(?:\r?\n)+(?:\*\*Réponse\s*:\*\*\s*)([\s\S]*?)(?=(?:\r?\n###\s+Question|\r?\n##\s+|$))/gi;
@@ -2023,7 +2162,11 @@ function parseMarkdownProcedure(markdown, language) {
   return {
     metadata: normalizedMetadata,
     contentHTML: sanitizedHTML,
-    qaItems: normalizedQAItems
+    qaItems: normalizedQAItems,
+    flowchart: {
+      steps: [],
+      description: flowchartDescription,
+    }
   };
 }
 
@@ -2142,6 +2285,11 @@ const state = {
   contentHTML: initialContentHTML,
   initialContentHTML,
   qaItems: initialQAItems,
+  flowchartSteps: createInitialFlowchartSteps(),
+  flowchartSelectedType: 'start',
+  flowchartLabelDraft: '',
+  flowchartEditingStepId: null,
+  flowchartDescription: '',
   guidelines: computeGuidelines(initialContentHTML, {}, initialLanguage),
   blockingWarnings: detectBlockingIssues(initialContentHTML, initialQAItems),
   hasStarted: false,
@@ -2180,6 +2328,23 @@ const elements = {
   toolbar: document.getElementById('editor-toolbar'),
   procedureTitleDisplay: document.getElementById('procedure-title-display'),
   insertRationalButton: document.getElementById('insert-rational-btn'),
+  flowchartTitle: document.getElementById('flowchart-title'),
+  flowchartSubtitle: document.getElementById('flowchart-subtitle'),
+  flowchartTypeSelectorLabel: document.getElementById('flowchart-type-selector-label'),
+  flowchartTypeSelector: document.getElementById('flowchart-type-selector'),
+  flowchartForm: document.getElementById('flowchart-form'),
+  flowchartLabelLabel: document.getElementById('flowchart-label-label'),
+  flowchartLabelInput: document.getElementById('flowchart-label'),
+  flowchartSubmitButton: document.getElementById('flowchart-submit'),
+  flowchartCancelButton: document.getElementById('flowchart-cancel'),
+  flowchartSteps: document.getElementById('flowchart-steps'),
+  flowchartPreviewTitle: document.getElementById('flowchart-preview-title'),
+  flowchartPreview: document.getElementById('flowchart-preview'),
+  flowchartPreviewEmpty: document.getElementById('flowchart-preview-empty'),
+  flowchartDescriptionLabel: document.getElementById('flowchart-description-label'),
+  flowchartDescriptionHelper: document.getElementById('flowchart-description-helper'),
+  flowchartDescriptionTextarea: document.getElementById('flowchart-description'),
+  flowchartDescriptionWarning: document.getElementById('flowchart-description-warning'),
   qaList: document.getElementById('qa-list'),
   addQaButton: document.getElementById('add-qa-btn'),
   blockingWarning: document.getElementById('blocking-warning'),
@@ -2236,6 +2401,48 @@ const elements = {
 };
 
 let draggingQAIndex = null;
+
+function resetFlowchartState(initial = {}) {
+  const stepsSource = Array.isArray(initial.steps) ? initial.steps : [];
+  const normalizedSteps = stepsSource
+    .map((step) => ({
+      id: step && step.id ? step.id : generateFlowchartStepId(),
+      type: normalizeFlowchartType(step && step.type),
+      label: sanitizeFlowchartLabel(step && step.label),
+    }))
+    .filter((step) => step.label.length > 0);
+  state.flowchartSteps = normalizedSteps;
+  state.flowchartSelectedType = normalizeFlowchartType(initial.selectedType || 'start');
+  state.flowchartLabelDraft = '';
+  state.flowchartEditingStepId = null;
+  state.flowchartDescription = typeof initial.description === 'string' ? initial.description : '';
+}
+
+function getActiveFlowchartSteps() {
+  const steps = Array.isArray(state.flowchartSteps) ? state.flowchartSteps : [];
+  return steps
+    .map((step) => ({
+      ...step,
+      id: step && step.id ? step.id : generateFlowchartStepId(),
+      type: normalizeFlowchartType(step && step.type),
+      label: sanitizeFlowchartLabel(step && step.label),
+    }))
+    .filter((step) => step.label.length > 0);
+}
+
+function focusFlowchartLabel() {
+  if (!elements.flowchartLabelInput || typeof elements.flowchartLabelInput.focus !== 'function') {
+    return;
+  }
+  const focusTask = () => {
+    elements.flowchartLabelInput.focus();
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(focusTask);
+  } else {
+    setTimeout(focusTask, 0);
+  }
+}
 
 function focusQAHandleAfterRender(index) {
   const focusTask = () => {
@@ -2429,7 +2636,11 @@ function getIsFormDirty() {
     .replace(/&nbsp;/g, ' ')
     .trim().length > 0;
   const qaFilled = state.qaItems.some((item) => item.question.trim().length > 0 || item.answer.trim().length > 0);
-  return metadataFilled || contentFilled || qaFilled;
+  const flowchartFilled =
+    getActiveFlowchartSteps().length > 0 ||
+    sanitizeFlowchartLabel(state.flowchartDescription).length > 0 ||
+    sanitizeFlowchartLabel(state.flowchartLabelDraft).length > 0;
+  return metadataFilled || contentFilled || qaFilled || flowchartFilled;
 }
 
 function renderHeader() {
@@ -2715,6 +2926,216 @@ function renderMetadataGroups() {
     elements.metadataGroups.appendChild(section);
   });
 }
+function renderFlowchart() {
+  const activeSteps = getActiveFlowchartSteps();
+  if (elements.flowchartTitle) {
+    setLabelText(elements.flowchartTitle, translate('flowchart.title'));
+  }
+  if (elements.flowchartSubtitle) {
+    elements.flowchartSubtitle.textContent = translate('flowchart.subtitle');
+  }
+  const typeLabel = translate('flowchart.typeSelectorLabel');
+  if (elements.flowchartTypeSelectorLabel) {
+    elements.flowchartTypeSelectorLabel.textContent = typeLabel;
+  }
+  if (elements.flowchartTypeSelector) {
+    elements.flowchartTypeSelector.setAttribute('aria-label', typeLabel);
+    const selectedType = normalizeFlowchartType(state.flowchartSelectedType);
+    const typeButtons = Array.from(elements.flowchartTypeSelector.querySelectorAll('[data-flowchart-type]'));
+    typeButtons.forEach((button) => {
+      const rawType = button.dataset.flowchartType;
+      const resolvedType = normalizeFlowchartType(rawType);
+      button.dataset.flowchartType = resolvedType;
+      const label = translate(`flowchart.type.${resolvedType}`);
+      const iconSpan = button.querySelector('.flowchart-type-icon');
+      if (iconSpan) {
+        iconSpan.textContent = FLOWCHART_TYPE_ICONS[resolvedType] || FLOWCHART_TYPE_ICONS.action;
+      }
+      const labelSpan = button.querySelector('.flowchart-type-label');
+      if (labelSpan) {
+        labelSpan.textContent = label;
+      }
+      const isSelected = selectedType === resolvedType;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      button.setAttribute('title', label);
+    });
+  }
+  if (elements.flowchartLabelLabel) {
+    elements.flowchartLabelLabel.textContent = translate('flowchart.labelLabel');
+  }
+  if (elements.flowchartLabelInput) {
+    const placeholder = translate('flowchart.labelPlaceholder');
+    if (elements.flowchartLabelInput.placeholder !== placeholder) {
+      elements.flowchartLabelInput.placeholder = placeholder;
+    }
+    if (elements.flowchartLabelInput.value !== (state.flowchartLabelDraft || '')) {
+      elements.flowchartLabelInput.value = state.flowchartLabelDraft || '';
+    }
+  }
+  const isEditing = Boolean(state.flowchartEditingStepId);
+  const draftLabel = sanitizeFlowchartLabel(state.flowchartLabelDraft);
+  if (elements.flowchartSubmitButton) {
+    setLabelText(
+      elements.flowchartSubmitButton,
+      isEditing ? translate('flowchart.updateStep') : translate('flowchart.addStep')
+    );
+    elements.flowchartSubmitButton.disabled = draftLabel.length === 0;
+  }
+  if (elements.flowchartCancelButton) {
+    elements.flowchartCancelButton.hidden = !isEditing;
+    setLabelText(elements.flowchartCancelButton, translate('flowchart.cancelEdit'));
+  }
+  if (elements.flowchartSteps) {
+    elements.flowchartSteps.innerHTML = '';
+    if (activeSteps.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'flowchart-empty';
+      empty.textContent = translate('flowchart.empty');
+      elements.flowchartSteps.appendChild(empty);
+    } else {
+      const list = document.createElement('ul');
+      list.className = 'flowchart-step-items';
+      activeSteps.forEach((step, index) => {
+        const item = document.createElement('li');
+        item.className = 'flowchart-step-item';
+        item.dataset.stepId = step.id;
+        if (state.flowchartEditingStepId === step.id) {
+          item.classList.add('is-editing');
+        }
+
+        const info = document.createElement('div');
+        info.className = 'flowchart-step-info';
+
+        const indexBadge = document.createElement('span');
+        indexBadge.className = 'flowchart-step-index';
+        indexBadge.textContent = `${index + 1}.`;
+        info.appendChild(indexBadge);
+
+        const typeBadge = document.createElement('span');
+        typeBadge.className = 'flowchart-step-badge';
+        typeBadge.dataset.type = step.type;
+        typeBadge.textContent = translate(`flowchart.type.${step.type}`);
+        info.appendChild(typeBadge);
+
+        const label = document.createElement('span');
+        label.className = 'flowchart-step-label';
+        label.textContent = step.label;
+        label.title = step.label;
+        info.appendChild(label);
+
+        item.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.className = 'flowchart-step-actions';
+
+        const moveUp = document.createElement('button');
+        moveUp.type = 'button';
+        moveUp.innerHTML = '<span aria-hidden="true">↑</span>';
+        moveUp.setAttribute('aria-label', translate('flowchart.stepActions.moveUp'));
+        moveUp.title = translate('flowchart.stepActions.moveUp');
+        moveUp.disabled = index === 0;
+        moveUp.addEventListener('click', () => handleFlowchartStepMove(step.id, -1));
+        actions.appendChild(moveUp);
+
+        const moveDown = document.createElement('button');
+        moveDown.type = 'button';
+        moveDown.innerHTML = '<span aria-hidden="true">↓</span>';
+        moveDown.setAttribute('aria-label', translate('flowchart.stepActions.moveDown'));
+        moveDown.title = translate('flowchart.stepActions.moveDown');
+        moveDown.disabled = index === activeSteps.length - 1;
+        moveDown.addEventListener('click', () => handleFlowchartStepMove(step.id, 1));
+        actions.appendChild(moveDown);
+
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.innerHTML = '<span aria-hidden="true">✏️</span>';
+        edit.setAttribute('aria-label', translate('flowchart.stepActions.edit'));
+        edit.title = translate('flowchart.stepActions.edit');
+        edit.addEventListener('click', () => handleFlowchartStepEdit(step.id));
+        actions.appendChild(edit);
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.innerHTML = '<span aria-hidden="true">🗑️</span>';
+        remove.setAttribute('aria-label', translate('flowchart.stepActions.delete'));
+        remove.title = translate('flowchart.stepActions.delete');
+        remove.addEventListener('click', () => handleFlowchartStepDelete(step.id));
+        actions.appendChild(remove);
+
+        item.appendChild(actions);
+        list.appendChild(item);
+      });
+      elements.flowchartSteps.appendChild(list);
+    }
+  }
+  if (elements.flowchartPreviewTitle) {
+    elements.flowchartPreviewTitle.textContent = translate('flowchart.previewTitle');
+  }
+  if (elements.flowchartPreviewEmpty) {
+    elements.flowchartPreviewEmpty.textContent = translate('flowchart.empty');
+  }
+  if (elements.flowchartPreview) {
+    elements.flowchartPreview.innerHTML = '';
+    if (activeSteps.length > 0) {
+      activeSteps.forEach((step, index) => {
+        const node = document.createElement('div');
+        node.className = 'flowchart-node';
+        node.dataset.type = step.type;
+
+        const badge = document.createElement('span');
+        badge.className = 'flowchart-node-badge';
+        badge.textContent = translate(`flowchart.type.${step.type}`);
+        node.appendChild(badge);
+
+        const text = document.createElement('p');
+        text.className = 'flowchart-node-label';
+        text.textContent = step.label;
+        node.appendChild(text);
+
+        elements.flowchartPreview.appendChild(node);
+
+        if (index < activeSteps.length - 1) {
+          const connector = document.createElement('div');
+          connector.className = 'flowchart-connector';
+          const arrow = document.createElement('span');
+          arrow.setAttribute('aria-hidden', 'true');
+          arrow.textContent = '▼';
+          connector.appendChild(arrow);
+          elements.flowchartPreview.appendChild(connector);
+        }
+      });
+      if (elements.flowchartPreviewEmpty) {
+        elements.flowchartPreviewEmpty.hidden = true;
+      }
+    } else if (elements.flowchartPreviewEmpty) {
+      elements.flowchartPreviewEmpty.hidden = false;
+    }
+  }
+  if (elements.flowchartDescriptionLabel) {
+    elements.flowchartDescriptionLabel.textContent = translate('flowchart.descriptionLabel');
+  }
+  if (elements.flowchartDescriptionHelper) {
+    elements.flowchartDescriptionHelper.textContent = translate('flowchart.descriptionHelper');
+  }
+  if (elements.flowchartDescriptionTextarea) {
+    const placeholder = translate('flowchart.descriptionPlaceholder');
+    if (elements.flowchartDescriptionTextarea.placeholder !== placeholder) {
+      elements.flowchartDescriptionTextarea.placeholder = placeholder;
+    }
+    if (elements.flowchartDescriptionTextarea.value !== (state.flowchartDescription || '')) {
+      elements.flowchartDescriptionTextarea.value = state.flowchartDescription || '';
+    }
+  }
+  if (elements.flowchartDescriptionWarning) {
+    const showWarning = activeSteps.length > 0 && sanitizeFlowchartLabel(state.flowchartDescription).length === 0;
+    elements.flowchartDescriptionWarning.hidden = !showWarning;
+    if (showWarning) {
+      elements.flowchartDescriptionWarning.textContent = translate('flowchart.descriptionWarning');
+    }
+  }
+}
+
 function renderQAList() {
   if (!elements.qaList) {
     return;
@@ -3527,6 +3948,7 @@ function renderAll() {
   renderStartInfo();
   renderMetadataGroups();
   renderProcedureTitleDisplay();
+  renderFlowchart();
   renderQAList();
   renderGuidelines();
   renderGlossary();
@@ -3619,6 +4041,113 @@ function handleKeywordRemove(index) {
   state.metadata = { ...state.metadata, keywords: updated.join(', ') };
   state.hasStarted = true;
   renderAll();
+}
+
+function handleFlowchartTypeSelect(type) {
+  const normalized = normalizeFlowchartType(type);
+  if (state.flowchartSelectedType === normalized) {
+    return;
+  }
+  state.flowchartSelectedType = normalized;
+  renderFlowchart();
+}
+
+function handleFlowchartLabelInput(event) {
+  const nextValue = event?.target?.value ?? '';
+  state.flowchartLabelDraft = nextValue;
+  renderFlowchart();
+}
+
+function handleFlowchartFormSubmit(event) {
+  if (event) {
+    event.preventDefault();
+  }
+  const sanitizedLabel = sanitizeFlowchartLabel(state.flowchartLabelDraft);
+  if (!sanitizedLabel) {
+    renderFlowchart();
+    return;
+  }
+  const type = normalizeFlowchartType(state.flowchartSelectedType);
+  if (state.flowchartEditingStepId) {
+    state.flowchartSteps = state.flowchartSteps.map((step) =>
+      step.id === state.flowchartEditingStepId ? { ...step, label: sanitizedLabel, type } : step
+    );
+  } else {
+    const newStep = { id: generateFlowchartStepId(), label: sanitizedLabel, type };
+    state.flowchartSteps = [...state.flowchartSteps, newStep];
+  }
+  state.flowchartLabelDraft = '';
+  state.flowchartEditingStepId = null;
+  if (!state.hasStarted) {
+    state.hasStarted = true;
+  }
+  renderAll();
+  focusFlowchartLabel();
+}
+
+function handleFlowchartCancelEdit() {
+  if (!state.flowchartEditingStepId && !state.flowchartLabelDraft) {
+    return;
+  }
+  state.flowchartEditingStepId = null;
+  state.flowchartLabelDraft = '';
+  renderFlowchart();
+  focusFlowchartLabel();
+}
+
+function handleFlowchartStepEdit(stepId) {
+  const target = (state.flowchartSteps || []).find((step) => step.id === stepId);
+  if (!target) {
+    return;
+  }
+  state.flowchartEditingStepId = target.id;
+  state.flowchartLabelDraft = target.label;
+  state.flowchartSelectedType = normalizeFlowchartType(target.type);
+  renderFlowchart();
+  focusFlowchartLabel();
+}
+
+function handleFlowchartStepDelete(stepId) {
+  const steps = Array.isArray(state.flowchartSteps) ? state.flowchartSteps : [];
+  if (!steps.some((step) => step.id === stepId)) {
+    return;
+  }
+  state.flowchartSteps = steps.filter((step) => step.id !== stepId);
+  if (state.flowchartEditingStepId === stepId) {
+    state.flowchartEditingStepId = null;
+    state.flowchartLabelDraft = '';
+  }
+  state.hasStarted = true;
+  renderAll();
+  focusFlowchartLabel();
+}
+
+function handleFlowchartStepMove(stepId, direction) {
+  const steps = Array.isArray(state.flowchartSteps) ? [...state.flowchartSteps] : [];
+  const index = steps.findIndex((step) => step.id === stepId);
+  if (index === -1) {
+    return;
+  }
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= steps.length) {
+    return;
+  }
+  const [moved] = steps.splice(index, 1);
+  steps.splice(targetIndex, 0, moved);
+  state.flowchartSteps = steps;
+  state.hasStarted = true;
+  renderFlowchart();
+}
+
+function handleFlowchartDescriptionInput(event) {
+  const nextValue = event?.target?.value ?? '';
+  const wasStarted = state.hasStarted;
+  state.flowchartDescription = nextValue;
+  if (!wasStarted && sanitizeFlowchartLabel(nextValue).length > 0) {
+    state.hasStarted = true;
+    renderStartInfo();
+  }
+  renderFlowchart();
 }
 
 function clearGlossaryFormError() {
@@ -3765,7 +4294,12 @@ function insertRationalBlock() {
 }
 
 function handlePreview() {
-  state.previewMarkdown = buildMarkdown(state.metadata, state.contentHTML, state.qaItems);
+  state.previewMarkdown = buildMarkdown(
+    state.metadata,
+    state.contentHTML,
+    state.qaItems,
+    state.flowchartDescription
+  );
   state.isPreviewOpen = true;
   renderPreview();
 }
@@ -3777,7 +4311,12 @@ function closePreview() {
 }
 
 function handleExportMarkdown() {
-  const markdown = buildMarkdown(state.metadata, state.contentHTML, state.qaItems);
+  const markdown = buildMarkdown(
+    state.metadata,
+    state.contentHTML,
+    state.qaItems,
+    state.flowchartDescription
+  );
   const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -3837,6 +4376,35 @@ function buildPDFMetadataEntries(metadata, selectOptions, configDefaults, langua
     });
   });
   return entries;
+}
+
+function buildPDFFlowchartData(steps, language = currentLanguage) {
+  const rawSteps = Array.isArray(steps) ? steps : [];
+  const normalized = rawSteps
+    .map((step) => {
+      const type = normalizeFlowchartType(step && step.type);
+      const label = sanitizeFlowchartLabel(step && step.label);
+      if (!label) {
+        return null;
+      }
+      const fallbackTypeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+      return {
+        type,
+        label,
+        typeLabel: translate(`flowchart.type.${type}`, {}, fallbackTypeLabel, language),
+      };
+    })
+    .filter(Boolean);
+  if (normalized.length === 0) {
+    return null;
+  }
+  const title = translate(
+    'flowchart.sectionTitle',
+    {},
+    FLOWCHART_SECTION_TITLES[language] || FLOWCHART_SECTION_TITLES[DEFAULT_LANGUAGE],
+    language
+  );
+  return { title, nodes: normalized };
 }
 
 function extractPDFContentBlocks(html) {
@@ -3964,6 +4532,7 @@ async function handleExportPDF() {
     const metadataEntries = buildPDFMetadataEntries(state.metadata, selectOptions, configDefaults, language);
     const contentBlocks = extractPDFContentBlocks(state.contentHTML);
     const qaItems = normalizePDFQAItems(state.qaItems);
+    const flowchartData = buildPDFFlowchartData(state.flowchartSteps, language);
     const resolvedGroups = createResolvedMetadataGroups(selectOptions, configDefaults, language);
     const metadataFieldsByKey = resolvedGroups.reduce((acc, group) => {
       group.fields.forEach((field) => {
@@ -4003,12 +4572,14 @@ async function handleExportPDF() {
       title: (state.metadata.title && state.metadata.title.trim()) || fallbackTitle,
       metadata: metadataEntries,
       content: contentBlocks,
+      flowchart: flowchartData,
       qaItems,
       strings: {
         sectionTitle: translate('pdf.sectionTitle', {}, 'Questions & Réponses', language),
         noQuestionText: translate('pdf.noQuestions', {}, 'Aucune question enregistrée.', language),
         questionLabel: translate('qa.questionLabel', {}, 'Question', language),
         answerLabel: translate('qa.answerLabel', {}, 'Réponse', language),
+        flowchartTitle: flowchartData ? flowchartData.title : undefined,
       },
       branding: {
         showLogo: true,
@@ -4057,6 +4628,7 @@ function handleNewProcedure() {
   state.qaItems = initialQAItems;
   state.contentHTML = template;
   state.initialContentHTML = template;
+  resetFlowchartState();
   state.guidelines = computeGuidelines(template, state.glossary, state.language);
   pruneHiddenGuidelines();
   state.activeGuidelineId = null;
@@ -4094,10 +4666,11 @@ async function handleImportMarkdown(event) {
 
   try {
     const text = await file.text();
-    const { metadata, contentHTML, qaItems } = parseMarkdownProcedure(text, state.language);
+    const { metadata, contentHTML, qaItems, flowchart } = parseMarkdownProcedure(text, state.language);
     state.metadata = metadata;
     state.contentHTML = contentHTML;
     state.qaItems = qaItems;
+    resetFlowchartState(flowchart);
     state.guidelines = computeGuidelines(contentHTML, state.glossary);
     pruneHiddenGuidelines();
     state.activeGuidelineId = null;
@@ -4305,6 +4878,23 @@ function registerEventListeners() {
     elements.editor.addEventListener('input', handleEditorInput);
     elements.editor.addEventListener('scroll', renderGuidelineMarkers);
     elements.editor.innerHTML = state.contentHTML;
+  }
+  if (elements.flowchartForm) {
+    elements.flowchartForm.addEventListener('submit', handleFlowchartFormSubmit);
+  }
+  if (elements.flowchartLabelInput) {
+    elements.flowchartLabelInput.addEventListener('input', handleFlowchartLabelInput);
+  }
+  if (elements.flowchartCancelButton) {
+    elements.flowchartCancelButton.addEventListener('click', handleFlowchartCancelEdit);
+  }
+  if (elements.flowchartTypeSelector) {
+    Array.from(elements.flowchartTypeSelector.querySelectorAll('[data-flowchart-type]')).forEach((button) => {
+      button.addEventListener('click', () => handleFlowchartTypeSelect(button.dataset.flowchartType));
+    });
+  }
+  if (elements.flowchartDescriptionTextarea) {
+    elements.flowchartDescriptionTextarea.addEventListener('input', handleFlowchartDescriptionInput);
   }
   if (elements.languageSelect) {
     elements.languageSelect.value = state.language;

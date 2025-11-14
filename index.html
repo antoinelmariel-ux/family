@@ -127,6 +127,10 @@
       color: #0ea5e9;
     }
 
+    .icon--flowchart {
+      color: #06b6d4;
+    }
+
     .icon--preview {
       color: #8b5cf6;
     }
@@ -720,6 +724,381 @@
       font-size: 15px;
       background: #fff;
       overflow-y: auto;
+    }
+
+    .flowchart-builder {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #f7f9ff;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: inset 0 0 0 1px rgba(47, 79, 159, 0.05);
+    }
+
+    .flowchart-header h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+    }
+
+    .flowchart-header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .flowchart-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .flowchart-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .flowchart-form-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .flowchart-field-label {
+      font-weight: 600;
+      font-size: 13px;
+      margin: 0 0 6px;
+    }
+
+    .flowchart-type-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .flowchart-type-option {
+      border: 1px solid rgba(47, 79, 159, 0.15);
+      background: #fff;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border 0.15s ease;
+    }
+
+    .flowchart-type-option:hover,
+    .flowchart-type-option:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      border-color: rgba(47, 79, 159, 0.35);
+      box-shadow: 0 6px 12px rgba(47, 79, 159, 0.12);
+    }
+
+    .flowchart-type-option.is-selected {
+      background: rgba(6, 182, 212, 0.12);
+      border-color: rgba(6, 182, 212, 0.45);
+      box-shadow: 0 8px 18px rgba(6, 182, 212, 0.2);
+    }
+
+    .flowchart-type-icon {
+      font-size: 14px;
+    }
+
+    .flowchart-form-control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .flowchart-form-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .flowchart-form-actions button {
+      flex: none;
+    }
+
+    .flowchart-step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .flowchart-step-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flowchart-step-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid rgba(47, 79, 159, 0.1);
+      box-shadow: 0 6px 18px rgba(28, 34, 64, 0.08);
+    }
+
+    .flowchart-step-item.is-editing {
+      border-color: rgba(6, 182, 212, 0.6);
+      box-shadow: 0 8px 22px rgba(6, 182, 212, 0.2);
+    }
+
+    .flowchart-step-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .flowchart-step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(47, 79, 159, 0.12);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .flowchart-step-index {
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .flowchart-step-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .flowchart-step-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .flowchart-step-actions button {
+      border: none;
+      background: rgba(28, 34, 64, 0.05);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .flowchart-step-actions button:hover,
+    .flowchart-step-actions button:focus-visible {
+      background: rgba(6, 182, 212, 0.18);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .flowchart-step-actions button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      background: rgba(28, 34, 64, 0.05);
+    }
+
+    .flowchart-step-actions button:disabled:hover,
+    .flowchart-step-actions button:disabled:focus-visible {
+      background: rgba(28, 34, 64, 0.05);
+      transform: none;
+    }
+
+    .flowchart-preview-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .flowchart-preview-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .flowchart-preview {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      min-height: 160px;
+      box-shadow: 0 12px 24px rgba(28, 34, 64, 0.08);
+    }
+
+    .flowchart-node {
+      width: min(100%, 360px);
+      border-radius: 18px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      text-align: center;
+      background: rgba(47, 79, 159, 0.08);
+      color: var(--text);
+      box-shadow: 0 10px 24px rgba(28, 34, 64, 0.12);
+    }
+
+    .flowchart-node-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .flowchart-node-label {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .flowchart-connector {
+      position: relative;
+      height: 40px;
+      width: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .flowchart-connector::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 30px;
+      background: rgba(47, 79, 159, 0.25);
+      border-radius: 2px;
+    }
+
+    .flowchart-connector span {
+      font-size: 14px;
+      color: rgba(47, 79, 159, 0.45);
+      line-height: 1;
+    }
+
+    .flowchart-preview-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .flowchart-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flowchart-description-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flowchart-helper {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .flowchart-warning {
+      margin: 0;
+      font-size: 13px;
+      color: var(--warning);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .flowchart-node[data-type='start'],
+    .flowchart-step-badge[data-type='start'] {
+      background: #e6f4ed;
+      color: #146c43;
+    }
+
+    .flowchart-node[data-type='action'],
+    .flowchart-step-badge[data-type='action'] {
+      background: #e7ecff;
+      color: #273e88;
+    }
+
+    .flowchart-node[data-type='decision'],
+    .flowchart-step-badge[data-type='decision'] {
+      background: #fcefdc;
+      color: #8b5a14;
+    }
+
+    .flowchart-node[data-type='end'],
+    .flowchart-step-badge[data-type='end'] {
+      background: #f9e1e4;
+      color: #a1273d;
+    }
+
+    .flowchart-type-option[data-flowchart-type='start'] {
+      border-color: rgba(20, 108, 67, 0.35);
+    }
+
+    .flowchart-type-option[data-flowchart-type='action'] {
+      border-color: rgba(39, 62, 136, 0.35);
+    }
+
+    .flowchart-type-option[data-flowchart-type='decision'] {
+      border-color: rgba(139, 90, 20, 0.35);
+    }
+
+    .flowchart-type-option[data-flowchart-type='end'] {
+      border-color: rgba(161, 39, 61, 0.35);
+    }
+
+    @media (min-width: 1024px) {
+      .flowchart-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
     }
 
     .inline-guidelines {
@@ -1620,6 +1999,73 @@
                 <div class="editor-guideline-layer" id="editor-guideline-layer" aria-hidden="true"></div>
               </div>
             </div>
+            <div class="flowchart-builder" id="flowchart-builder">
+              <div class="flowchart-header">
+                <h3 id="flowchart-title">
+                  <span class="icon icon--flowchart" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle class="icon-accent" cx="12" cy="12" r="10"></circle>
+                      <rect x="9" y="7" width="6" height="4" rx="1.2"></rect>
+                      <path d="M12 11v3"></path>
+                      <rect x="9" y="14" width="6" height="4" rx="1.2"></rect>
+                      <path d="M12 18v2"></path>
+                      <path d="M9 20h6"></path>
+                    </svg>
+                  </span>
+                  <span class="label-text">Logigramme</span>
+                </h3>
+                <p id="flowchart-subtitle">Visualisez vos étapes clés grâce à un logigramme clair.</p>
+              </div>
+              <div class="flowchart-grid">
+                <div class="flowchart-form-panel">
+                  <form class="flowchart-form" id="flowchart-form" novalidate>
+                    <div>
+                      <p class="flowchart-field-label" id="flowchart-type-selector-label">Type d’étape</p>
+                      <div class="flowchart-type-selector" id="flowchart-type-selector" role="group" aria-label="Type d’étape">
+                        <button type="button" class="flowchart-type-option is-selected" data-flowchart-type="start" aria-pressed="true">
+                          <span class="flowchart-type-icon">●</span>
+                          <span class="flowchart-type-label">Début</span>
+                        </button>
+                        <button type="button" class="flowchart-type-option" data-flowchart-type="action" aria-pressed="false">
+                          <span class="flowchart-type-icon">⬛</span>
+                          <span class="flowchart-type-label">Action</span>
+                        </button>
+                        <button type="button" class="flowchart-type-option" data-flowchart-type="decision" aria-pressed="false">
+                          <span class="flowchart-type-icon">◆</span>
+                          <span class="flowchart-type-label">Décision</span>
+                        </button>
+                        <button type="button" class="flowchart-type-option" data-flowchart-type="end" aria-pressed="false">
+                          <span class="flowchart-type-icon">⏹</span>
+                          <span class="flowchart-type-label">Fin</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flowchart-form-control">
+                      <label for="flowchart-label" id="flowchart-label-label">Nom de l’étape</label>
+                      <input type="text" id="flowchart-label" autocomplete="off" placeholder="Ex. Vérifier la demande" />
+                    </div>
+                    <div class="flowchart-form-actions">
+                      <button type="submit" class="primary-btn" id="flowchart-submit">Ajouter l’étape</button>
+                      <button type="button" class="ghost-btn" id="flowchart-cancel" hidden>Annuler</button>
+                    </div>
+                  </form>
+                  <div class="flowchart-step-list" id="flowchart-steps"></div>
+                </div>
+                <div class="flowchart-preview-panel">
+                  <h4 class="flowchart-preview-title" id="flowchart-preview-title">Aperçu du logigramme</h4>
+                  <div class="flowchart-preview" id="flowchart-preview" aria-live="polite"></div>
+                  <p class="flowchart-preview-empty" id="flowchart-preview-empty">Ajoutez des étapes pour construire votre logigramme.</p>
+                </div>
+              </div>
+              <div class="flowchart-description-wrapper">
+                <div>
+                  <label for="flowchart-description" id="flowchart-description-label">Description du logigramme</label>
+                  <p class="flowchart-helper" id="flowchart-description-helper">Cette description sera ajoutée uniquement dans l’export Markdown.</p>
+                </div>
+                <textarea id="flowchart-description" rows="3" placeholder="Décrivez la logique générale du logigramme"></textarea>
+                <p class="flowchart-warning" id="flowchart-description-warning" hidden>⚠️ Ajoutez une description pour documenter ce logigramme dans le Markdown.</p>
+              </div>
+            </div>
           </section>
           <aside class="insights">
             <div class="insight-card inline-guidelines" aria-labelledby="guidelines-title">
@@ -1722,7 +2168,7 @@
       </div>
     </div>
   </div>
-  <footer id="app-version">Version 1.2.23</footer>
+  <footer id="app-version">Version 1.2.24</footer>
   <div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
     <div class="preview-content">
       <div class="preview-header">
